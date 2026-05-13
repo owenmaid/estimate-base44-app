@@ -11,6 +11,9 @@ import Dashboard from '@/pages/Dashboard';
 import EstimatesList from '@/pages/EstimatesList';
 import CreateEstimate from '@/pages/CreateEstimate';
 import EstimateDetail from '@/pages/EstimateDetail';
+import Projects from '@/pages/Projects';
+import CalendarPage from '@/pages/CalendarPage';
+import GanttPage from '@/pages/GanttPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -39,6 +42,9 @@ const AuthenticatedApp = () => {
         <Route path="/estimates" element={<EstimatesList />} />
         <Route path="/estimates/new" element={<CreateEstimate />} />
         <Route path="/estimates/:id" element={<EstimateDetail />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/gantt" element={<GanttPage />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

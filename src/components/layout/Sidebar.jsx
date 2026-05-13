@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
@@ -12,6 +12,8 @@ const navItems = [
 ];
 
 const bottomItems = [
+  { label: 'Calendar', path: '/calendar', icon: Calendar },
+  { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
   { label: 'Settings', path: '/settings', icon: Settings },
   { label: 'Help', path: '/help', icon: HelpCircle },
 ];
