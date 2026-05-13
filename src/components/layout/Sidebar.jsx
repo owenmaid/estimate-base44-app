@@ -26,7 +26,7 @@ export default function Sidebar({ open, onClose }) {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <FileText className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-foreground">EstiMate</span>
+            <span className="text-lg font-bold tracking-tight text-foreground">InfoSignal</span>
           </Link>
           <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
@@ -56,7 +56,7 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="px-4 py-4 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">EstiMate v1.0</p>
+          <p className="text-xs text-muted-foreground text-center">InfoSignal v1.0</p>
         </div>
       </aside>
     </>
