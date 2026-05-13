@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil } from 'lucide-react';
+import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,11 @@ export default function Projects() {
           <p className="text-sm text-muted-foreground mt-1">{projects.length} projects total</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/project-board">
+              <Kanban className="h-4 w-4 mr-1.5" /> Board
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/calendar">
               <Calendar className="h-4 w-4 mr-1.5" /> Calendar
