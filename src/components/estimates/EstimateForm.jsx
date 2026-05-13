@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, ChevronDown, FileText } from 'lucide-react';
 import LineItemRow from './LineItemRow';
 
 const emptyItem = { description: '', quantity: 1, unit_price: 0, total: 0 };
@@ -169,13 +169,33 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
       </Card>
 
       {/* Notes */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">Notes & Terms</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea value={form.notes} onChange={e => updateField('notes', e.target.value)} placeholder="Payment terms, conditions, etc." className="h-24" />
-        </CardContent>
+      <Card className="overflow-hidden">
+        <button
+          type="button"
+          onClick={() => updateField('_notesOpen', !form._notesOpen)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-base font-semibold">Notes & Terms</span>
+            {form.notes && <span className="text-xs text-muted-foreground ml-1">({form.notes.length} chars)</span>}
+          </div>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${(form._notesOpen || form.notes) ? 'rotate-180' : ''}`} />
+        </button>
+        {(form._notesOpen || form.notes) && (
+          <CardContent className="pt-0 pb-4">
+            <Textarea
+              value={form.notes}
+              onChange={e => {
+                updateField('notes', e.target.value);
+                if (!form._notesOpen) updateField('_notesOpen', true);
+              }}
+              placeholder="Payment terms, conditions, etc."
+              className="min-h-[96px] resize-y"
+              autoFocus={form._notesOpen && !form.notes}
+            />
+          </CardContent>
+        )}
       </Card>
 
       <div className="flex justify-end gap-3">
