@@ -1,16 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'New Estimate', path: '/estimates/new', icon: FilePlus },
   { label: 'All Estimates', path: '/estimates', icon: FileText },
+  { label: 'Projects', path: '/projects', icon: FolderKanban },
+];
+
+const bottomItems = [
+  { label: 'Settings', path: '/settings', icon: Settings },
+  { label: 'Help', path: '/help', icon: HelpCircle },
 ];
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
     <>
@@ -48,15 +56,59 @@ export default function Sidebar({ open, onClose }) {
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
-                <item.icon className="h-4.5 w-4.5" />
+                <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="px-4 py-4 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">InfoSignal v1.0</p>
+        {/* Bottom nav items */}
+        <div className="px-3 py-2 space-y-1 border-t border-border">
+          {bottomItems.map(item => {
+            const isActive = location.pathname.startsWith(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* User profile / logout */}
+        <div className="px-3 py-3 border-t border-border">
+          <button
+            onClick={() => setUserMenuOpen(v => !v)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+          >
+            <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <span className="flex-1 text-left truncate">My Account</span>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", userMenuOpen && "rotate-180")} />
+          </button>
+          {userMenuOpen && (
+            <div className="mt-1 ml-2 pl-3 border-l border-border space-y-1">
+              <button
+                onClick={() => base44.auth.logout()}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-all"
+              >
+                <LogOut className="h-4 w-4" />
+                Log Out
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>
