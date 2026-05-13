@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import ProjectModal from '@/components/projects/ProjectModal';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_STYLES = {
   active: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -20,21 +22,22 @@ const STATUS_LABELS = {
   completed: 'Completed',
 };
 
-const SAMPLE_PROJECTS = [
-  { id: 1, name: 'Website Redesign', client: 'Acme Corp', status: 'active', due: '2026-06-30', progress: 65, tasks: 12, done: 8 },
-  { id: 2, name: 'Mobile App MVP', client: 'TechStart Inc', status: 'planning', due: '2026-08-15', progress: 20, tasks: 20, done: 4 },
-  { id: 3, name: 'Brand Identity', client: 'Studio Blue', status: 'on_hold', due: '2026-07-01', progress: 40, tasks: 8, done: 3 },
-  { id: 4, name: 'E-commerce Platform', client: 'RetailCo', status: 'completed', due: '2026-04-10', progress: 100, tasks: 30, done: 30 },
-];
-
 export default function Projects() {
-  const [projects, setProjects] = useState(SAMPLE_PROJECTS);
   const [modalOpen, setModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleAdd = (project) => {
-    setProjects(prev => [...prev, { ...project, id: Date.now(), progress: 0, tasks: 0, done: 0 }]);
-    setModalOpen(false);
-  };
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date'),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Project.create({ ...data, progress: 0, tasks: 0, done: 0 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setModalOpen(false);
+    },
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -82,44 +85,58 @@ export default function Projects() {
       </div>
 
       {/* Project cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {projects.map(project => (
-          <Card key={project.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[1,2,3].map(i => <Card key={i} className="h-40 animate-pulse bg-muted" />)}
+        </div>
+      ) : projects.length === 0 ? (
+        <Card className="py-16 text-center">
+          <CardContent>
+            <FolderKanban className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No projects yet. Create your first one!</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {projects.map(project => (
+            <Card key={project.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-base">{project.name}</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">{project.client}</p>
+                  </div>
+                  <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
+                    {STATUS_LABELS[project.status]}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 <div>
-                  <CardTitle className="text-base">{project.name}</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">{project.client}</p>
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>Progress</span>
+                    <span>{project.progress || 0}%</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${project.progress || 0}%` }} />
+                  </div>
                 </div>
-                <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
-                  {STATUS_LABELS[project.status]}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Progress bar */}
-              <div>
-                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span>Progress</span>
-                  <span>{project.progress}%</span>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{project.done || 0}/{project.tasks || 0} tasks done</span>
+                  <span>{project.due ? `Due ${project.due}` : 'No due date'}</span>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{project.done}/{project.tasks} tasks done</span>
-                <span>Due {project.due}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <Link to={`/project-planning/${project.id}`}>
+                  <Button variant="outline" size="sm" className="w-full mt-1">
+                    <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit in Planning
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {modalOpen && <ProjectModal onClose={() => setModalOpen(false)} onSave={handleAdd} />}
+      {modalOpen && <ProjectModal onClose={() => setModalOpen(false)} onSave={(data) => createMutation.mutate(data)} />}
     </div>
   );
 }

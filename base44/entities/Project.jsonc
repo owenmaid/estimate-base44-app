@@ -1,0 +1,70 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "client": {
+      "type": "string",
+      "description": "Client name"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "active",
+        "on_hold",
+        "completed"
+      ],
+      "default": "planning",
+      "description": "Current project status"
+    },
+    "due": {
+      "type": "string",
+      "format": "date",
+      "description": "Due date"
+    },
+    "progress": {
+      "type": "number",
+      "default": 0,
+      "description": "Progress percentage 0-100"
+    },
+    "tasks": {
+      "type": "number",
+      "default": 0,
+      "description": "Total number of tasks"
+    },
+    "done": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of completed tasks"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description or notes"
+    },
+    "task_list": {
+      "type": "array",
+      "description": "List of tasks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

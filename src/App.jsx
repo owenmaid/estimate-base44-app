@@ -12,6 +12,7 @@ import EstimatesList from '@/pages/EstimatesList';
 import CreateEstimate from '@/pages/CreateEstimate';
 import EstimateDetail from '@/pages/EstimateDetail';
 import Projects from '@/pages/Projects';
+import ProjectPlanning from '@/pages/ProjectPlanning';
 import CalendarPage from '@/pages/CalendarPage';
 import GanttPage from '@/pages/GanttPage';
 import Settings from '@/pages/Settings';
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
         <Route path="/estimates/new" element={<CreateEstimate />} />
         <Route path="/estimates/:id" element={<EstimateDetail />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/project-planning/:id" element={<ProjectPlanning />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/gantt" element={<GanttPage />} />
         <Route path="/settings" element={<Settings />} />
