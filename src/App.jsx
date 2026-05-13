@@ -14,6 +14,8 @@ import EstimateDetail from '@/pages/EstimateDetail';
 import Projects from '@/pages/Projects';
 import CalendarPage from '@/pages/CalendarPage';
 import GanttPage from '@/pages/GanttPage';
+import Settings from '@/pages/Settings';
+import { ThemeProvider } from '@/lib/ThemeContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +47,7 @@ const AuthenticatedApp = () => {
         <Route path="/projects" element={<Projects />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/gantt" element={<GanttPage />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -55,10 +58,12 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
+        <ThemeProvider>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </ThemeProvider>
       </QueryClientProvider>
     </AuthProvider>
   )
