@@ -19,20 +19,23 @@ const STATUS_STYLES = {
   completed: 'bg-muted text-muted-foreground border-border',
 };
 
+const toNum = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+
 const calcTask = (t) => {
-  const qty = parseFloat(t.quantity) || 0;
-  const cost = parseFloat(t.cost) || 0;
-  const markup = parseFloat(t.markup) || 0;
-  const taxPct = parseFloat(t.tax_pct) || 0;
+  const qty = toNum(t.quantity);
+  const cost = toNum(t.cost);
+  const markup = toNum(t.markup);
+  const taxPct = toNum(t.tax_pct);
   const subtotal = qty * cost * (1 + markup / 100);
   const taxAmount = subtotal * (taxPct / 100);
   const total = subtotal + taxAmount;
   return {
     ...t,
-    quantity: qty,
-    cost,
-    markup,
-    tax_pct: taxPct,
+    // preserve raw input strings so inputs don't fight the user while typing
+    quantity: t.quantity,
+    cost: t.cost,
+    markup: t.markup,
+    tax_pct: t.tax_pct,
     subtotal,
     tax_amount: taxAmount,
     total,
@@ -164,13 +167,13 @@ export default function ProjectPlanning() {
       name: t.name,
       type: t.type || null,
       done: !!t.done,
-      quantity: t.quantity != null && t.quantity !== '' ? parseFloat(t.quantity) : 0,
-      cost: t.cost != null && t.cost !== '' ? parseFloat(t.cost) : 0,
-      markup: t.markup != null && t.markup !== '' ? parseFloat(t.markup) : 0,
-      tax_pct: t.tax_pct != null && t.tax_pct !== '' ? parseFloat(t.tax_pct) : 0,
-      subtotal: t.subtotal || 0,
-      tax_amount: t.tax_amount || 0,
-      total: t.total || 0,
+      quantity: toNum(t.quantity),
+      cost: toNum(t.cost),
+      markup: toNum(t.markup),
+      tax_pct: toNum(t.tax_pct),
+      subtotal: toNum(t.subtotal),
+      tax_amount: toNum(t.tax_amount),
+      total: toNum(t.total),
     }));
     updateMutation.mutate({
       ...form,
@@ -198,10 +201,10 @@ export default function ProjectPlanning() {
       name: newTaskName.trim(),
       type: newTaskType || null,
       done: false,
-      quantity: newQty !== '' ? parseFloat(newQty) : null,
-      cost: newCost !== '' ? parseFloat(newCost) : null,
-      markup: newMarkup !== '' ? parseFloat(newMarkup) : null,
-      tax_pct: newTaxPct !== '' ? parseFloat(newTaxPct) : null,
+      quantity: newQty,
+      cost: newCost,
+      markup: newMarkup,
+      tax_pct: newTaxPct,
     };
     setTaskList(prev => [...prev, calcTask(raw)]);
     resetNewForm();
@@ -235,12 +238,7 @@ export default function ProjectPlanning() {
   const progress = taskList.length > 0 ? Math.round((doneTasks / taskList.length) * 100) : form.progress;
 
   // New row computed values
-  const newRaw = {
-    quantity: newQty !== '' ? parseFloat(newQty) : 0,
-    cost: newCost !== '' ? parseFloat(newCost) : 0,
-    markup: newMarkup !== '' ? parseFloat(newMarkup) : 0,
-    tax_pct: newTaxPct !== '' ? parseFloat(newTaxPct) : 0,
-  };
+  const newRaw = { quantity: newQty, cost: newCost, markup: newMarkup, tax_pct: newTaxPct };
   const newCalc = calcTask(newRaw);
 
   const fmt = (n) => (n != null && !isNaN(n)) ? parseFloat(n).toFixed(2) : '—';
