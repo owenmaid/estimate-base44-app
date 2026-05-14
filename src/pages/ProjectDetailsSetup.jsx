@@ -314,7 +314,12 @@ export default function ProjectDetailsSetup() {
       {dates.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Schedule Spreadsheet</CardTitle>
+            <CardTitle className="text-base">
+              Schedule Spreadsheet
+              {selectedProjectId && projects.find(p => p.id === selectedProjectId) && (
+                <span className="text-primary ml-2">— {projects.find(p => p.id === selectedProjectId).name}</span>
+              )}
+            </CardTitle>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
