@@ -174,7 +174,7 @@ export default function ProjectDetailsSetup() {
   const canGoPrev = viewMonth && dates.length > 0 && viewMonth > dates[0];
   const canGoNext = viewMonth && dates.length > 0 && viewMonth < dates[dates.length - 1];
 
-  const sampleProjects = projects.filter(p => p.name?.startsWith('Sample') && p.name.toLowerCase().includes(search.toLowerCase()));
+  const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-6 space-y-6">
