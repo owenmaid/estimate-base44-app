@@ -408,7 +408,7 @@ export default function ProjectDetailsSetup() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[110px] text-center">
+              <span className="text-sm font-medium min-w-[200px] text-center">
                 {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
               </span>
               <Button
@@ -467,7 +467,7 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
                             >
                               <select
                                 value={grid[key] || ''}
@@ -495,7 +495,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <td
                           key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
                         >
                           {calculateDayTotal(dateStr)}
                         </td>
@@ -540,7 +540,7 @@ export default function ProjectDetailsSetup() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[110px] text-center">
+              <span className="text-sm font-medium min-w-[200px] text-center">
                 {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
               </span>
               <Button
@@ -566,7 +566,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <th
                           key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium w-[110px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                          className={`px-1.5 py-2.5 text-center font-medium w-[200px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
                         >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
@@ -599,7 +599,7 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
                             >
                               <select
                                 value={equipmentGrid[key] || ''}
@@ -627,7 +627,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <td
                           key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
                         >
                           {calculateEquipmentDayTotal(dateStr)}
                         </td>
