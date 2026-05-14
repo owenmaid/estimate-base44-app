@@ -16,14 +16,11 @@ export default function ProjectDetailsSetup() {
   const [viewMonth, setViewMonth] = useState(null);
   const [rows, setRows] = useState([{ id: 1, label: 'Row 1' }]);
 
-  const { data: inventory = [], isLoading: inventoryLoading } = useQuery({
+  const { data: inventory = [] } = useQuery({
     queryKey: ['inventory-manpower'],
     queryFn: async () => {
       const allItems = await base44.entities.InventoryItem.list();
-      console.log('All inventory items:', allItems);
-      const filtered = allItems.filter(item => item.category === 'manpower');
-      console.log('Filtered manpower items:', filtered);
-      return filtered;
+      return allItems.filter(item => item.category?.toLowerCase() === 'manpower');
     },
   });
 
@@ -114,10 +111,7 @@ export default function ProjectDetailsSetup() {
               {dates.length} days generated — {format(dates[0], 'MMM d, yyyy')} to {format(dates[dates.length - 1], 'MMM d, yyyy')}
             </p>
           )}
-          {inventoryLoading && (
-            <p className="text-xs text-muted-foreground mt-2">Loading inventory...</p>
-          )}
-          {!inventoryLoading && inventory.length === 0 && (
+          {inventory.length === 0 && (
             <p className="text-xs text-amber-400 mt-2">
               No manpower items found in Inventory. Add items with category "manpower" to populate the dropdown options.
             </p>
