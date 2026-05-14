@@ -1,0 +1,49 @@
+{
+  "name": "ProjectTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Template description"
+    },
+    "default_status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "active",
+        "on_hold",
+        "completed"
+      ],
+      "default": "planning",
+      "description": "Default status for projects created from this template"
+    },
+    "task_list": {
+      "type": "array",
+      "description": "Preset list of tasks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
