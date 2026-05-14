@@ -34,10 +34,34 @@ export default function ProjectPlanning() {
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskType, setNewTaskType] = useState('');
 
+  const [newTaskInventoryItem, setNewTaskInventoryItem] = useState('');
+
   const { data: taskTypes = [] } = useQuery({
     queryKey: ['taskTypes'],
     queryFn: () => base44.entities.TaskType.list('name'),
   });
+
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ['inventoryItems'],
+    queryFn: () => base44.entities.InventoryItem.list('name'),
+  });
+
+  // When type changes, reset the inventory item selection
+  const handleNewTaskTypeChange = (val) => {
+    setNewTaskType(val);
+    setNewTaskInventoryItem('');
+    setNewTaskName('');
+  };
+
+  // Inventory items filtered by selected type (matched against item category)
+  const filteredInventoryItems = newTaskType
+    ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
+    : inventoryItems;
+
+  const handleInventoryItemSelect = (itemName) => {
+    setNewTaskInventoryItem(itemName);
+    setNewTaskName(itemName);
+  };
 
   useEffect(() => {
     if (project) {
@@ -88,6 +112,7 @@ export default function ProjectPlanning() {
     setTaskList(prev => [...prev, { id: Date.now(), name: newTaskName.trim(), type: newTaskType || null, done: false }]);
     setNewTaskName('');
     setNewTaskType('');
+    setNewTaskInventoryItem('');
   };
 
   const toggleTask = (taskId) => {
@@ -219,8 +244,9 @@ export default function ProjectPlanning() {
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Add task */}
-            <div className="flex gap-2">
-              <Select value={newTaskType} onValueChange={setNewTaskType}>
+            <div className="flex gap-2 flex-wrap">
+              {/* Type dropdown */}
+              <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
                 <SelectTrigger className="w-36 flex-shrink-0">
                   <SelectValue placeholder="Type..." />
                 </SelectTrigger>
@@ -230,11 +256,36 @@ export default function ProjectPlanning() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Dependent inventory item dropdown */}
+              <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
+                <SelectTrigger className="w-48 flex-shrink-0">
+                  <SelectValue placeholder={newTaskType ? 'Select item...' : 'Select type first'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  {filteredInventoryItems.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                      No items for this type
+                    </div>
+                  ) : (
+                    filteredInventoryItems.map(item => (
+                      <SelectItem key={item.id} value={item.name}>
+                        <span>{item.name}</span>
+                        {item.quantity != null && (
+                          <span className="ml-2 text-xs text-muted-foreground">({item.quantity} {item.unit})</span>
+                        )}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+
               <Input
-                placeholder="Add a new task..."
+                placeholder="Or type a task name..."
                 value={newTaskName}
                 onChange={e => setNewTaskName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addTask()}
+                className="flex-1 min-w-32"
               />
               <Button size="sm" onClick={addTask}>
                 <Plus className="h-4 w-4" />
