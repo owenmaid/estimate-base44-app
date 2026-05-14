@@ -19,6 +19,7 @@ import Inventory from '@/pages/Inventory';
 import CalendarPage from '@/pages/CalendarPage';
 import GanttPage from '@/pages/GanttPage';
 import Settings from '@/pages/Settings';
+import ResourceAllocation from '@/pages/ResourceAllocation';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const AuthenticatedApp = () => {
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/gantt" element={<GanttPage />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/resources" element={<ResourceAllocation />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

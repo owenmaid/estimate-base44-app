@@ -71,6 +71,7 @@ export default function ProjectPlanning() {
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskType, setNewTaskType] = useState('');
   const [newTaskInventoryItem, setNewTaskInventoryItem] = useState('');
+  const [newAssignee, setNewAssignee] = useState('');
   const [newQty, setNewQty] = useState('');
   const [newCost, setNewCost] = useState('');
   const [newMarkup, setNewMarkup] = useState('');
@@ -167,6 +168,7 @@ export default function ProjectPlanning() {
       id: t.id,
       name: t.name,
       type: t.type || null,
+      assignee: t.assignee || null,
       done: !!t.done,
       quantity: toNum(t.quantity),
       cost: toNum(t.cost),
@@ -189,6 +191,7 @@ export default function ProjectPlanning() {
     setNewTaskName('');
     setNewTaskType('');
     setNewTaskInventoryItem('');
+    setNewAssignee('');
     setNewQty('');
     setNewCost('');
     setNewMarkup('');
@@ -201,6 +204,7 @@ export default function ProjectPlanning() {
       id: Date.now(),
       name: newTaskName.trim(),
       type: newTaskType || null,
+      assignee: newAssignee.trim() || null,
       done: false,
       quantity: newQty,
       cost: newCost,
@@ -222,6 +226,7 @@ export default function ProjectPlanning() {
       id: t.id,
       name: t.name,
       type: t.type || null,
+      assignee: t.assignee || null,
       done: !!t.done,
       quantity: toNum(t.quantity),
       cost: toNum(t.cost),
@@ -405,6 +410,7 @@ export default function ProjectPlanning() {
                     <th className="text-left pb-2 pr-2 w-28">Type</th>
                     <th className="text-left pb-2 pr-2 w-40">Item</th>
                     <th className="text-left pb-2 pr-2 flex-1">Description</th>
+                    <th className="text-left pb-2 pr-2 w-28">Assignee</th>
                     <th className="text-right pb-2 pr-1 w-16">Qty</th>
                     <th className="text-right pb-2 pr-1 w-20">Cost</th>
                     <th className="text-right pb-2 pr-1 w-16">Markup %</th>
@@ -456,6 +462,15 @@ export default function ProjectPlanning() {
                         onKeyDown={e => e.key === 'Enter' && addTask()}
                       />
                     </td>
+                    <td className="py-1 pr-2">
+                      <input
+                        className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5"
+                        placeholder="Assignee..."
+                        value={newAssignee}
+                        onChange={e => setNewAssignee(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && addTask()}
+                      />
+                    </td>
                     <td className="py-1 pr-1">{numInput(newQty, e => setNewQty(e.target.value))}</td>
                     <td className="py-1 pr-1">{numInput(newCost, e => setNewCost(e.target.value))}</td>
                     <td className="py-1 pr-1">{numInput(newMarkup, e => setNewMarkup(e.target.value))}</td>
@@ -499,6 +514,14 @@ export default function ProjectPlanning() {
                           className={`w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 ${task.done ? 'line-through text-muted-foreground' : ''}`}
                           value={task.name}
                           onChange={e => updateTaskField(task.id, 'name', e.target.value)}
+                        />
+                      </td>
+                      <td className="py-1 pr-2">
+                        <input
+                          className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 text-muted-foreground"
+                          placeholder="Assignee..."
+                          value={task.assignee || ''}
+                          onChange={e => updateTaskField(task.id, 'assignee', e.target.value)}
                         />
                       </td>
                       <td className="py-1 pr-1">

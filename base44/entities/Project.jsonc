@@ -65,6 +65,10 @@
           "type": {
             "type": "string"
           },
+          "assignee": {
+            "type": "string",
+            "description": "Team member assigned to this task"
+          },
           "done": {
             "type": "boolean"
           },
