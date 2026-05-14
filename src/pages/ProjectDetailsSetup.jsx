@@ -163,7 +163,8 @@ export default function ProjectDetailsSetup() {
       toast.error('Please load a project first');
       return;
     }
-    console.log('Saving schedule:', { manpowerGrid, manpowerRows, equipmentGrid, equipmentRows });
+    console.log('State at save time:', { manpowerGrid, manpowerRows, equipmentGrid, equipmentRows, selectedProjectId });
+    console.log('manpowerRows length:', manpowerRows.length, 'manpowerGrid keys:', Object.keys(manpowerGrid));
     updateProjectMutation.mutate({
       id: selectedProjectId,
       data: {
