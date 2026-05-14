@@ -20,6 +20,8 @@ export default function ProjectDetailsSetup() {
   const [rows, setRows] = useState([{ id: 1, label: 'Row 1' }]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [search, setSearch] = useState('');
+  const [editingName, setEditingName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const queryClient = useQueryClient();
   
@@ -56,6 +58,25 @@ export default function ProjectDetailsSetup() {
       toast.success('Project updated successfully');
     },
   });
+
+  const renameProjectMutation = useMutation({
+    mutationFn: async ({ id, name }) => {
+      return base44.entities.Project.update(id, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project renamed successfully');
+      setIsEditingName(false);
+    },
+  });
+
+  const handleRenameProject = () => {
+    if (!selectedProjectId || !editingName.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+    renameProjectMutation.mutate({ id: selectedProjectId, name: editingName });
+  };
 
   const handleLoadProject = async (projectId) => {
     const project = projects.find(p => p.id === projectId);
@@ -190,9 +211,38 @@ export default function ProjectDetailsSetup() {
             )}
           </div>
           {selectedProjectId && (
-            <Button onClick={handleSaveSchedule} variant="outline" size="sm">
-              Save Schedule
-            </Button>
+            <div className="flex items-center gap-2">
+              {isEditingName ? (
+                <>
+                  <Input
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    placeholder="Enter project name"
+                    className="w-40 h-9"
+                    autoFocus
+                  />
+                  <Button onClick={handleRenameProject} size="sm" variant="default">
+                    Save
+                  </Button>
+                  <Button onClick={() => setIsEditingName(false)} size="sm" variant="outline">
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button onClick={() => {
+                    const currentProject = projects.find(p => p.id === selectedProjectId);
+                    setEditingName(currentProject?.name || '');
+                    setIsEditingName(true);
+                  }} size="sm" variant="ghost">
+                    Rename
+                  </Button>
+                  <Button onClick={handleSaveSchedule} variant="outline" size="sm">
+                    Save Schedule
+                  </Button>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
