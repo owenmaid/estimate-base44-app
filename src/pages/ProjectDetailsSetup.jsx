@@ -115,6 +115,7 @@ export default function ProjectDetailsSetup() {
     setDates(allDates);
     setViewMonth(start);
     setGrid({});
+    setRows([]); // Reset rows to blank
 
     // Save as new project
     const projectName = getNextSampleNumber();
@@ -125,7 +126,7 @@ export default function ProjectDetailsSetup() {
       end_date: endDate,
       description: `Project setup created on ${format(new Date(), 'MMM d, yyyy')}`,
       schedule_grid: {},
-      schedule_rows: rows,
+      schedule_rows: [], // Save as empty rows
     };
     saveProjectMutation.mutate(projectData);
   };
