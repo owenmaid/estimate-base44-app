@@ -1,0 +1,62 @@
+{
+  "name": "InventoryItem",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Item name"
+    },
+    "sku": {
+      "type": "string",
+      "description": "Stock Keeping Unit code"
+    },
+    "category": {
+      "type": "string",
+      "description": "Item category"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Current quantity in stock"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit of measurement (e.g. pcs, kg, m)"
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Cost per unit"
+    },
+    "supplier": {
+      "type": "string",
+      "description": "Supplier name"
+    },
+    "location": {
+      "type": "string",
+      "description": "Storage location"
+    },
+    "min_stock": {
+      "type": "number",
+      "default": 0,
+      "description": "Minimum stock level before reorder alert"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_stock",
+        "low_stock",
+        "out_of_stock",
+        "discontinued"
+      ],
+      "default": "in_stock",
+      "description": "Item availability status"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

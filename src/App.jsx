@@ -15,6 +15,7 @@ import Projects from '@/pages/Projects';
 import ProjectPlanning from '@/pages/ProjectPlanning';
 import ProjectBoard from '@/pages/ProjectBoard';
 import ProjectTemplates from '@/pages/ProjectTemplates';
+import Inventory from '@/pages/Inventory';
 import CalendarPage from '@/pages/CalendarPage';
 import GanttPage from '@/pages/GanttPage';
 import Settings from '@/pages/Settings';
@@ -51,6 +52,7 @@ const AuthenticatedApp = () => {
         <Route path="/project-planning/:id" element={<ProjectPlanning />} />
         <Route path="/project-board" element={<ProjectBoard />} />
         <Route path="/project-templates" element={<ProjectTemplates />} />
+        <Route path="/inventory" element={<Inventory />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/gantt" element={<GanttPage />} />
         <Route path="/settings" element={<Settings />} />
