@@ -408,7 +408,7 @@ export default function ProjectDetailsSetup() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[200px] text-center">
+              <span className="text-sm font-medium min-w-[90px] text-center">
                 {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
               </span>
               <Button
@@ -448,7 +448,7 @@ export default function ProjectDetailsSetup() {
                     <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground truncate max-w-[80px]">{row.label}</span>
+                          <span className="font-medium text-foreground truncate max-w-[90px]">{row.label}</span>
                           {rows.length > 1 && (
                             <button
                               onClick={() => removeRow(row.id)}
