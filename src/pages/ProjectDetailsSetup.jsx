@@ -354,7 +354,7 @@ const addEquipmentRow = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[90px] text-center">
+              <span className="text-sm font-medium min-w-[100px] text-center">
                 {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
               </span>
               <Button
@@ -372,7 +372,7 @@ const addEquipmentRow = () => {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-secondary/60 border-b border-border">
-                    <th className="sticky left-0 z-10 bg-secondary/90 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[90px] border-r border-border">
+                    <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border">
                       Equipment
                     </th>
                     {visibleDates.map(d => {
@@ -380,7 +380,7 @@ const addEquipmentRow = () => {
                       return (
                         <th
                           key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                          className={`px-1.5 py-2.5 text-center font-medium w-[100px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
                         >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
@@ -394,7 +394,7 @@ const addEquipmentRow = () => {
                     <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground truncate max-w-[80px]">{row.label}</span>
+                          <span className="font-medium text-foreground truncate max-w-[100px]">{row.label}</span>
                           {equipmentRows.length > 0 && (
                             <button
                               onClick={() => removeEquipmentRow(row.id)}
