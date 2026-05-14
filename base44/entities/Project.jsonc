@@ -47,7 +47,7 @@
     },
     "task_list": {
       "type": "array",
-      "description": "List of tasks",
+      "description": "List of tasks/items",
       "items": {
         "type": "object",
         "properties": {
@@ -57,8 +57,32 @@
           "name": {
             "type": "string"
           },
+          "type": {
+            "type": "string"
+          },
           "done": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "markup": {
+            "type": "number"
+          },
+          "tax_pct": {
+            "type": "number"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "tax_amount": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
           }
         }
       }
