@@ -25,20 +25,20 @@ export default function ProjectDetailsSetup() {
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
 
   const queryClient = useQueryClient();
-
+  
 
 
   const { data: equipmentInventory = [] } = useQuery({
     queryKey: ['inventory-equipment'],
     queryFn: async () => {
       const allItems = await base44.entities.InventoryItem.list();
-      return allItems.filter((item) => item.category?.toLowerCase() === 'equipment');
-    }
+      return allItems.filter(item => item.category?.toLowerCase() === 'equipment');
+    },
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list(),
   });
 
   const saveProjectMutation = useMutation({
@@ -49,7 +49,7 @@ export default function ProjectDetailsSetup() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProjectId(newProject.id);
       toast.success('Project saved successfully');
-    }
+    },
   });
 
   const updateProjectMutation = useMutation({
@@ -67,7 +67,7 @@ export default function ProjectDetailsSetup() {
     onError: (error) => {
       console.error('onError callback fired:', error);
       toast.error('Failed to save schedule');
-    }
+    },
   });
 
   const renameProjectMutation = useMutation({
@@ -78,7 +78,7 @@ export default function ProjectDetailsSetup() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project renamed successfully');
       setIsEditingName(false);
-    }
+    },
   });
 
   const handleRenameProject = () => {
@@ -90,14 +90,14 @@ export default function ProjectDetailsSetup() {
   };
 
   const handleLoadProject = async (projectId) => {
-    const project = projects.find((p) => p.id === projectId);
+    const project = projects.find(p => p.id === projectId);
     if (!project) return;
-
+    
     setStartDate(project.start_date || '');
     setEndDate(project.end_date || '');
     setEquipmentGrid(project.equipment_grid || {});
     setEquipmentRows(project.equipment_rows || []);
-
+    
     const start = parseISO(project.start_date);
     const end = parseISO(project.end_date);
     const allDates = eachDayOfInterval({ start, end });
@@ -107,8 +107,8 @@ export default function ProjectDetailsSetup() {
   };
 
   const getNextSampleNumber = () => {
-    const sampleProjects = projects.filter((p) => p.name?.startsWith('Sample'));
-    const numbers = sampleProjects.map((p) => {
+    const sampleProjects = projects.filter(p => p.name?.startsWith('Sample'));
+    const numbers = sampleProjects.map(p => {
       const match = p.name.match(/Sample(\d+)/);
       return match ? parseInt(match[1]) : 0;
     });
@@ -136,7 +136,7 @@ export default function ProjectDetailsSetup() {
       end_date: endDate,
       description: `Project setup created on ${format(new Date(), 'MMM d, yyyy')}`,
       equipment_grid: {},
-      equipment_rows: []
+      equipment_rows: [],
     };
     saveProjectMutation.mutate(projectData);
   };
@@ -150,26 +150,26 @@ export default function ProjectDetailsSetup() {
       id: selectedProjectId,
       data: {
         equipment_grid: equipmentGrid,
-        equipment_rows: equipmentRows
-      }
+        equipment_rows: equipmentRows,
+      },
     });
   };
 
-  const visibleDates = viewMonth ?
-  dates.filter((d) => isSameMonth(d, viewMonth)) :
-  dates;
+  const visibleDates = viewMonth
+    ? dates.filter(d => isSameMonth(d, viewMonth))
+    : dates;
 
   const totalMonths = viewMonth ? Math.ceil(dates.length / 30) : 0;
 
-  const addEquipmentRow = () => {
+const addEquipmentRow = () => {
     if (!newEquipmentItemId) {
       toast.error('Please select an equipment item');
       return;
     }
-    const selectedItem = equipmentInventory.find((i) => i.id === newEquipmentItemId);
-    const newId = Math.max(...equipmentRows.map((r) => r.id), 0) + 1;
-    setEquipmentRows((prev) => [...prev, {
-      id: newId,
+    const selectedItem = equipmentInventory.find(i => i.id === newEquipmentItemId);
+    const newId = Math.max(...equipmentRows.map(r => r.id), 0) + 1;
+    setEquipmentRows(prev => [...prev, { 
+      id: newId, 
       label: selectedItem?.name || selectedItem?.sku || `Equipment ${newId}`,
       item_id: newEquipmentItemId
     }]);
@@ -177,10 +177,10 @@ export default function ProjectDetailsSetup() {
   };
 
   const removeEquipmentRow = (id) => {
-    setEquipmentRows((prev) => prev.filter((r) => r.id !== id));
-    setEquipmentGrid((prev) => {
+    setEquipmentRows(prev => prev.filter(r => r.id !== id));
+    setEquipmentGrid(prev => {
       const next = { ...prev };
-      Object.keys(next).forEach((k) => {
+      Object.keys(next).forEach(k => {
         if (k.startsWith(`${id}_`)) delete next[k];
       });
       return next;
@@ -188,9 +188,9 @@ export default function ProjectDetailsSetup() {
   };
 
   const handleEquipmentCellChange = (rowId, dateStr, value) => {
-    setEquipmentGrid((prev) => ({
+    setEquipmentGrid(prev => ({
       ...prev,
-      [`${rowId}_${dateStr}`]: value
+      [`${rowId}_${dateStr}`]: value,
     }));
   };
 
@@ -206,7 +206,7 @@ export default function ProjectDetailsSetup() {
   const canGoPrev = viewMonth && dates.length > 0 && viewMonth > dates[0];
   const canGoNext = viewMonth && dates.length > 0 && viewMonth < dates[dates.length - 1];
 
-  const sampleProjects = projects.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()));
+  const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-6 space-y-6">
@@ -222,60 +222,60 @@ export default function ProjectDetailsSetup() {
               type="text"
               placeholder="Search or select project..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm w-64" />
-            
-            {search && sampleProjects.length > 0 &&
-            <div className="absolute top-full mt-1 w-64 bg-card border border-border rounded-md shadow-lg z-10">
-                {sampleProjects.map((p) =>
-              <button
-                key={p.id}
-                onClick={() => {
-                  handleLoadProject(p.id);
-                  setSearch('');
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 text-sm">
-                
+              onChange={e => setSearch(e.target.value)}
+              className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm w-64"
+            />
+            {search && sampleProjects.length > 0 && (
+              <div className="absolute top-full mt-1 w-64 bg-card border border-border rounded-md shadow-lg z-10">
+                {sampleProjects.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      handleLoadProject(p.id);
+                      setSearch('');
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 text-sm"
+                  >
                     {p.name}
                   </button>
-              )}
+                ))}
               </div>
-            }
+            )}
           </div>
-          {selectedProjectId &&
-          <div className="flex items-center gap-2">
-              {isEditingName ?
-            <>
+          {selectedProjectId && (
+            <div className="flex items-center gap-2">
+              {isEditingName ? (
+                <>
                   <Input
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                placeholder="Enter project name"
-                className="w-40 h-9"
-                autoFocus />
-              
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    placeholder="Enter project name"
+                    className="w-40 h-9"
+                    autoFocus
+                  />
                   <Button onClick={handleRenameProject} size="sm" variant="default">
                     Save
                   </Button>
                   <Button onClick={() => setIsEditingName(false)} size="sm" variant="outline">
                     Cancel
                   </Button>
-                </> :
-
-            <>
+                </>
+              ) : (
+                <>
                   <Button onClick={() => {
-                const currentProject = projects.find((p) => p.id === selectedProjectId);
-                setEditingName(currentProject?.name || '');
-                setIsEditingName(true);
-              }} size="sm" variant="ghost">
+                    const currentProject = projects.find(p => p.id === selectedProjectId);
+                    setEditingName(currentProject?.name || '');
+                    setIsEditingName(true);
+                  }} size="sm" variant="ghost">
                     Rename
                   </Button>
                   <Button onClick={handleSaveSchedule} variant="outline" size="sm">
                     Save Schedule
                   </Button>
                 </>
-            }
+              )}
             </div>
-          }
+          )}
         </div>
       </div>
 
@@ -302,8 +302,8 @@ export default function ProjectDetailsSetup() {
                   <Calendar
                     mode="single"
                     selected={startDate ? parseISO(startDate) : undefined}
-                    onSelect={(date) => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')} />
-                  
+                    onSelect={date => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -320,8 +320,8 @@ export default function ProjectDetailsSetup() {
                   <Calendar
                     mode="single"
                     selected={endDate ? parseISO(endDate) : undefined}
-                    onSelect={(date) => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')} />
-                  
+                    onSelect={date => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -329,40 +329,40 @@ export default function ProjectDetailsSetup() {
               Create Dates
             </Button>
           </div>
-          {dates.length > 0 &&
-          <p className="text-xs text-muted-foreground mt-3">
+          {dates.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-3">
               {dates.length} days generated — {format(dates[0], 'MMM d, yyyy')} to {format(dates[dates.length - 1], 'MMM d, yyyy')}
             </p>
-          }
+          )}
 
         </CardContent>
       </Card>
 
 {/* Equipment Spreadsheet */}
-      {dates.length > 0 &&
-      <Card>
+      {dates.length > 0 && (
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">
               Equipment Schedule
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setViewMonth((m) => subMonths(m, 1))}
-              disabled={!canGoPrev}>
-              
+                variant="outline"
+                size="icon"
+                onClick={() => setViewMonth(m => subMonths(m, 1))}
+                disabled={!canGoPrev}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm font-medium min-w-[90px] text-center">
                 {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
               </span>
               <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setViewMonth((m) => addMonths(m, 1))}
-              disabled={!canGoNext}>
-              
+                variant="outline"
+                size="icon"
+                onClick={() => setViewMonth(m => addMonths(m, 1))}
+                disabled={!canGoNext}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -372,93 +372,93 @@ export default function ProjectDetailsSetup() {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-secondary/60 border-b border-border">
-                    <th className="sticky left-0 z-10 bg-secondary/80 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[90px] border-r border-border">
+                    <th className="sticky left-0 z-10 bg-secondary/90 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[90px] border-r border-border">
                       Equipment
                     </th>
-                    {visibleDates.map((d) => {
-                    const weekend = isWeekend(d);
-                    return (
-                      <th
-                        key={d.toISOString()}
-                        className={`px-1.5 py-2.5 text-center font-medium w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}>
-                        
+                    {visibleDates.map(d => {
+                      const weekend = isWeekend(d);
+                      return (
+                        <th
+                          key={d.toISOString()}
+                          className={`px-1.5 py-2.5 text-center font-medium w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                        >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
-                        </th>);
-
-                  })}
+                        </th>
+                        );
+                        })}
                         </tr>
                         </thead>
                         <tbody>
-                        {equipmentRows.map((row, rIdx) =>
-                <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                        {equipmentRows.map((row, rIdx) => (
+                    <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground truncate max-w-[80px]">{row.label}</span>
-                          {equipmentRows.length > 0 &&
-                      <button
-                        onClick={() => removeEquipmentRow(row.id)}
-                        className="text-muted-foreground hover:text-destructive transition-colors text-xs ml-auto"
-                        title="Remove row">
-                        
+                          {equipmentRows.length > 0 && (
+                            <button
+                              onClick={() => removeEquipmentRow(row.id)}
+                              className="text-muted-foreground hover:text-destructive transition-colors text-xs ml-auto"
+                              title="Remove row"
+                            >
                               ×
                             </button>
-                      }
+                          )}
                         </div>
                       </td>
-                      {visibleDates.map((d) => {
-                    const dateStr = format(d, 'yyyy-MM-dd');
-                    const key = `${row.id}_${dateStr}`;
-                    const weekend = isWeekend(d);
-                    return (
-                      <td
-                        key={dateStr}
-                        className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}>
-                        
+                      {visibleDates.map(d => {
+                        const dateStr = format(d, 'yyyy-MM-dd');
+                        const key = `${row.id}_${dateStr}`;
+                        const weekend = isWeekend(d);
+                        return (
+                          <td
+                            key={dateStr}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            >
                               <input
-                          type="number"
-                          min="0"
-                          max="30"
-                          value={equipmentGrid[key] || ''}
-                          onChange={(e) => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
-                          className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded py-1 text-xs text-foreground outline-none cursor-pointer transition-all px-2"
-                          placeholder="—" />
-                        
-                          </td>);
-
-                  })}
+                                 type="number"
+                                 min="0"
+                                 max="30"
+                                 value={equipmentGrid[key] || ''}
+                                 onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
+                                 className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
+                                 placeholder="—"
+                               />
+                          </td>
+                        );
+                      })}
                     </tr>
-                )}
+                  ))}
                   <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
                     <td className="sticky left-0 z-10 bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground">
                       Daily Total
                     </td>
-                    {visibleDates.map((d) => {
-                    const dateStr = format(d, 'yyyy-MM-dd');
-                    const weekend = isWeekend(d);
-                    return (
-                      <td
-                        key={dateStr}
-                        className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}>
-                        
+                    {visibleDates.map(d => {
+                      const dateStr = format(d, 'yyyy-MM-dd');
+                      const weekend = isWeekend(d);
+                      return (
+                        <td
+                          key={dateStr}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
+                        >
                           {calculateEquipmentDayTotal(dateStr)}
-                        </td>);
-
-                  })}
+                        </td>
+                      );
+                    })}
                   </tr>
                 </tbody>
               </table>
             </div>
             <div className="px-4 py-3 border-t border-border flex items-center gap-2">
               <select
-              value={newEquipmentItemId}
-              onChange={(e) => setNewEquipmentItemId(e.target.value)}
-              className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm">
-              
+                value={newEquipmentItemId}
+                onChange={e => setNewEquipmentItemId(e.target.value)}
+                className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
+              >
                 <option value="">Select equipment...</option>
-                {equipmentInventory.map((item) =>
-              <option key={item.id} value={item.id}>{item.name || item.sku}</option>
-              )}
+                {equipmentInventory.map(item => (
+                  <option key={item.id} value={item.id}>{item.name || item.sku}</option>
+                ))}
               </select>
               <Button variant="outline" size="sm" onClick={addEquipmentRow} disabled={!newEquipmentItemId}>
                 + Add Equipment
@@ -466,7 +466,7 @@ export default function ProjectDetailsSetup() {
             </div>
           </CardContent>
         </Card>
-      }
-    </div>);
-
+      )}
+    </div>
+  );
 }
