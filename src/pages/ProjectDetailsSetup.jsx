@@ -16,6 +16,8 @@ export default function ProjectDetailsSetup() {
   const [grid, setGrid] = useState({}); // { "row_date": skuName }
   const [viewMonth, setViewMonth] = useState(null);
   const [rows, setRows] = useState([{ id: 1, label: 'Row 1' }]);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [search, setSearch] = useState('');
 
   const queryClient = useQueryClient();
   
@@ -41,6 +43,33 @@ export default function ProjectDetailsSetup() {
       toast.success('Project saved successfully');
     },
   });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      return base44.entities.Project.update(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project updated successfully');
+    },
+  });
+
+  const handleLoadProject = async (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    setStartDate(project.start_date || '');
+    setEndDate(project.end_date || '');
+    setGrid(project.schedule_grid || {});
+    setRows(project.schedule_rows || [{ id: 1, label: 'Row 1' }]);
+    
+    const start = parseISO(project.start_date);
+    const end = parseISO(project.end_date);
+    const allDates = eachDayOfInterval({ start, end });
+    setDates(allDates);
+    setViewMonth(start);
+    setSelectedProjectId(projectId);
+  };
 
   const getNextSampleNumber = () => {
     const sampleProjects = projects.filter(p => p.name?.startsWith('Sample'));
@@ -70,8 +99,25 @@ export default function ProjectDetailsSetup() {
       start_date: startDate,
       end_date: endDate,
       description: `Project setup created on ${format(new Date(), 'MMM d, yyyy')}`,
+      schedule_grid: {},
+      schedule_rows: rows,
     };
     saveProjectMutation.mutate(projectData);
+    setSelectedProjectId('');
+  };
+
+  const handleSaveSchedule = () => {
+    if (!selectedProjectId) {
+      toast.error('Please load a project first');
+      return;
+    }
+    updateProjectMutation.mutate({
+      id: selectedProjectId,
+      data: {
+        schedule_grid: grid,
+        schedule_rows: rows,
+      },
+    });
   };
 
   const visibleDates = viewMonth
@@ -105,12 +151,48 @@ export default function ProjectDetailsSetup() {
   const canGoPrev = viewMonth && dates.length > 0 && viewMonth > dates[0];
   const canGoNext = viewMonth && dates.length > 0 && viewMonth < dates[dates.length - 1];
 
+  const sampleProjects = projects.filter(p => p.name?.startsWith('Sample') && p.name.toLowerCase().includes(search.toLowerCase()));
+
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Project Details Setup</h1>
-        <p className="text-muted-foreground text-sm mt-1">Define your project timeline and assign manpower to each day.</p>
+      {/* Header with Load Project */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Project Details Setup</h1>
+          <p className="text-muted-foreground text-sm mt-1">Define your project timeline and assign manpower to each day.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search or select project..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm w-64"
+            />
+            {search && sampleProjects.length > 0 && (
+              <div className="absolute top-full mt-1 w-64 bg-card border border-border rounded-md shadow-lg z-10">
+                {sampleProjects.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      handleLoadProject(p.id);
+                      setSearch('');
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 text-sm"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {selectedProjectId && (
+            <Button onClick={handleSaveSchedule} variant="outline" size="sm">
+              Save Schedule
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Date Range Setup */}

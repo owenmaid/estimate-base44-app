@@ -95,6 +95,26 @@
           }
         }
       }
+    },
+    "schedule_grid": {
+      "type": "object",
+      "description": "Scheduled manpower assignments by date and row",
+      "additionalProperties": true
+    },
+    "schedule_rows": {
+      "type": "array",
+      "description": "Row configuration for schedule",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [
