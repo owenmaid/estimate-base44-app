@@ -89,57 +89,65 @@ export default function Projects() {
         ))}
       </div>
 
-      {/* Project cards */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <Card key={i} className="h-40 animate-pulse bg-muted" />)}
-        </div>
-      ) : projects.length === 0 ? (
-        <Card className="py-16 text-center">
-          <CardContent>
+      {/* Project list */}
+      <Card>
+        {isLoading ? (
+          <CardContent className="pt-6 space-y-3">
+            {[1,2,3].map(i => <div key={i} className="h-10 animate-pulse bg-muted rounded" />)}
+          </CardContent>
+        ) : projects.length === 0 ? (
+          <CardContent className="py-16 text-center">
             <FolderKanban className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">No projects yet. Create your first one!</p>
           </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {projects.map(project => (
-            <Card key={project.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{project.name}</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">{project.client}</p>
-                  </div>
-                  <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
-                    {STATUS_LABELS[project.status]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                    <span>Progress</span>
-                    <span>{project.progress || 0}%</span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${project.progress || 0}%` }} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{project.done || 0}/{project.tasks || 0} tasks done</span>
-                  <span>{project.due ? `Due ${project.due}` : 'No due date'}</span>
-                </div>
-                <Link to={`/project-planning/${project.id}`}>
-                  <Button variant="outline" size="sm" className="w-full mt-1">
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit in Planning
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs text-muted-foreground">
+                  <th className="text-left px-4 py-3 font-medium">Project Name</th>
+                  <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-left px-4 py-3 font-medium">Client</th>
+                  <th className="text-right px-4 py-3 font-medium">Subtotal</th>
+                  <th className="text-right px-4 py-3 font-medium">Tax Amount</th>
+                  <th className="text-right px-4 py-3 font-medium">Total</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {projects.map(project => {
+                  const tasks = project.task_list || [];
+                  const subtotal = tasks.reduce((s, t) => s + (t.subtotal || 0), 0);
+                  const taxAmount = tasks.reduce((s, t) => s + (t.tax_amount || 0), 0);
+                  const total = tasks.reduce((s, t) => s + (t.total || 0), 0);
+                  const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' });
+                  return (
+                    <tr key={project.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3 font-medium">{project.name}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
+                          {STATUS_LABELS[project.status]}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{project.client || '—'}</td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">{fmt(subtotal)}</td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">{fmt(taxAmount)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-primary">{fmt(total)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Link to={`/project-planning/${project.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Open
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {modalOpen && <ProjectModal onClose={() => setModalOpen(false)} onSave={(data) => createMutation.mutate(data)} />}
     </div>
