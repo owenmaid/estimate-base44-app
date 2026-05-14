@@ -15,27 +15,18 @@ export default function ProjectDetailsSetup() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [dates, setDates] = useState([]);
-  const [grid, setGrid] = useState({}); // { "row_date": skuName }
   const [viewMonth, setViewMonth] = useState(null);
-  const [rows, setRows] = useState([{ id: 1, label: 'Row 1' }]);
   const [equipmentRows, setEquipmentRows] = useState([]);
   const [equipmentGrid, setEquipmentGrid] = useState({});
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [search, setSearch] = useState('');
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
-  const [newRowItemId, setNewRowItemId] = useState('');
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
 
   const queryClient = useQueryClient();
   
-  const { data: inventory = [] } = useQuery({
-    queryKey: ['inventory-manpower'],
-    queryFn: async () => {
-      const allItems = await base44.entities.InventoryItem.list();
-      return allItems.filter(item => item.category?.toLowerCase() === 'manpower');
-    },
-  });
+
 
   const { data: equipmentInventory = [] } = useQuery({
     queryKey: ['inventory-equipment'],
@@ -96,8 +87,6 @@ export default function ProjectDetailsSetup() {
     
     setStartDate(project.start_date || '');
     setEndDate(project.end_date || '');
-    setGrid(project.schedule_grid || {});
-    setRows(project.schedule_rows || [{ id: 1, label: 'Row 1' }]);
     setEquipmentGrid(project.equipment_grid || {});
     setEquipmentRows(project.equipment_rows || []);
     
@@ -127,8 +116,6 @@ export default function ProjectDetailsSetup() {
     const allDates = eachDayOfInterval({ start, end });
     setDates(allDates);
     setViewMonth(start);
-    setGrid({});
-    setRows([]); // Reset rows to blank
     setEquipmentGrid({});
     setEquipmentRows([]);
 
@@ -140,8 +127,6 @@ export default function ProjectDetailsSetup() {
       start_date: startDate,
       end_date: endDate,
       description: `Project setup created on ${format(new Date(), 'MMM d, yyyy')}`,
-      schedule_grid: {},
-      schedule_rows: [], // Save as empty rows
       equipment_grid: {},
       equipment_rows: [],
     };
@@ -156,8 +141,6 @@ export default function ProjectDetailsSetup() {
     updateProjectMutation.mutate({
       id: selectedProjectId,
       data: {
-        schedule_grid: grid,
-        schedule_rows: rows,
         equipment_grid: equipmentGrid,
         equipment_rows: equipmentRows,
       },
@@ -170,38 +153,7 @@ export default function ProjectDetailsSetup() {
 
   const totalMonths = viewMonth ? Math.ceil(dates.length / 30) : 0;
 
-  const handleCellChange = (rowId, dateStr, value) => {
-    setGrid(prev => ({
-      ...prev,
-      [`${rowId}_${dateStr}`]: value,
-    }));
-  };
 
-  const addRow = () => {
-    if (!newRowItemId) {
-      toast.error('Please select a manpower item');
-      return;
-    }
-    const selectedItem = inventory.find(i => i.id === newRowItemId);
-    const newId = Math.max(...rows.map(r => r.id), 0) + 1;
-    setRows(prev => [...prev, { 
-      id: newId, 
-      label: selectedItem?.name || selectedItem?.sku || `Row ${newId}`,
-      item_id: newRowItemId
-    }]);
-    setNewRowItemId('');
-  };
-
-  const removeRow = (id) => {
-    setRows(prev => prev.filter(r => r.id !== id));
-    setGrid(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(k => {
-        if (k.startsWith(`${id}_`)) delete next[k];
-      });
-      return next;
-    });
-  };
 
   const addEquipmentRow = () => {
     if (!newEquipmentItemId) {
@@ -236,12 +188,7 @@ export default function ProjectDetailsSetup() {
     }));
   };
 
-  const calculateDayTotal = (dateStr) => {
-    return rows.reduce((sum, row) => {
-      const val = grid[`${row.id}_${dateStr}`];
-      return sum + (val ? parseInt(val) : 0);
-    }, 0);
-  };
+
 
   const calculateEquipmentDayTotal = (dateStr) => {
     return equipmentRows.reduce((sum, row) => {
@@ -381,148 +328,11 @@ export default function ProjectDetailsSetup() {
               {dates.length} days generated — {format(dates[0], 'MMM d, yyyy')} to {format(dates[dates.length - 1], 'MMM d, yyyy')}
             </p>
           )}
-          {inventory.length === 0 && (
-            <p className="text-xs text-amber-400 mt-2">
-              No manpower items found in Inventory. Add items with category "manpower" to populate the dropdown options.
-            </p>
-          )}
+
         </CardContent>
       </Card>
 
-      {/* Spreadsheet */}
-      {dates.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">
-              Manpower Schedule
-              {selectedProjectId && projects.find(p => p.id === selectedProjectId) && (
-                <span className="text-primary ml-2">— {projects.find(p => p.id === selectedProjectId).name}</span>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setViewMonth(m => subMonths(m, 1))}
-                disabled={!canGoPrev}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium min-w-[90px] text-center">
-                {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setViewMonth(m => addMonths(m, 1))}
-                disabled={!canGoNext}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="bg-secondary/60 border-b border-border">
-                    <th className="sticky left-0 z-10 bg-secondary/90 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[90px] border-r border-border">
-                      Row
-                    </th>
-                    {visibleDates.map(d => {
-                      const weekend = isWeekend(d);
-                      return (
-                        <th
-                          key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium min-w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
-                        >
-                          <div>{format(d, 'EEE')}</div>
-                          <div className="font-bold">{format(d, 'd')}</div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, rIdx) => (
-                    <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
-                      <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground truncate max-w-[90px]">{row.label}</span>
-                          {rows.length > 1 && (
-                            <button
-                              onClick={() => removeRow(row.id)}
-                              className="text-muted-foreground hover:text-destructive transition-colors text-xs ml-auto"
-                              title="Remove row"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      {visibleDates.map(d => {
-                        const dateStr = format(d, 'yyyy-MM-dd');
-                        const key = `${row.id}_${dateStr}`;
-                        const weekend = isWeekend(d);
-                        return (
-                          <td
-                            key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
-                            >
-                              <select
-                                value={grid[key] || ''}
-                                onChange={e => handleCellChange(row.id, dateStr, e.target.value)}
-                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all appearance-none bg-no-repeat"
-                              style={{ backgroundImage: 'none', paddingRight: '0.25rem' }}
-                            >
-                              <option value="">—</option>
-                              {Array.from({ length: 31 }, (_, i) => (
-                                <option key={i} value={i}>{i}</option>
-                              ))}
-                            </select>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                    <td className="sticky left-0 z-10 bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground">
-                      Daily Total
-                    </td>
-                    {visibleDates.map(d => {
-                      const dateStr = format(d, 'yyyy-MM-dd');
-                      const weekend = isWeekend(d);
-                      return (
-                        <td
-                          key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
-                        >
-                          {calculateDayTotal(dateStr)}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="px-4 py-3 border-t border-border flex items-center gap-2">
-              <select
-                value={newRowItemId}
-                onChange={e => setNewRowItemId(e.target.value)}
-                className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
-              >
-                <option value="">Select manpower...</option>
-                {inventory.map(item => (
-                  <option key={item.id} value={item.id}>{item.name || item.sku}</option>
-                ))}
-              </select>
-              <Button variant="outline" size="sm" onClick={addRow} disabled={!newRowItemId}>
-                + Add Row
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Equipment Spreadsheet */}
       {dates.length > 0 && (
