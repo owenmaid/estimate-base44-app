@@ -21,8 +21,6 @@ export default function ProjectDetailsSetup() {
     queryFn: () => base44.entities.InventoryItem.filter({ category: 'manpower' }),
   });
 
-  const skuOptions = inventory.map(item => item.name || item.sku).filter(Boolean);
-
   const handleCreateDates = () => {
     if (!startDate || !endDate) return;
     const start = parseISO(startDate);
@@ -200,8 +198,8 @@ export default function ProjectDetailsSetup() {
                               style={{ minWidth: '80px' }}
                             >
                               <option value="">—</option>
-                              {skuOptions.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
+                              {inventory.map(item => (
+                                <option key={item.id} value={item.id}>{item.name || item.sku}</option>
                               ))}
                             </select>
                           </td>
