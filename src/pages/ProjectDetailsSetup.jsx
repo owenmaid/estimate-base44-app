@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, eachDayOfInterval, parseISO, isWeekend, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function ProjectDetailsSetup() {
   const [startDate, setStartDate] = useState('');
@@ -16,6 +17,8 @@ export default function ProjectDetailsSetup() {
   const [viewMonth, setViewMonth] = useState(null);
   const [rows, setRows] = useState([{ id: 1, label: 'Row 1' }]);
 
+  const queryClient = useQueryClient();
+  
   const { data: inventory = [] } = useQuery({
     queryKey: ['inventory-manpower'],
     queryFn: async () => {
@@ -24,7 +27,32 @@ export default function ProjectDetailsSetup() {
     },
   });
 
-  const handleCreateDates = () => {
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
+  const saveProjectMutation = useMutation({
+    mutationFn: async (projectData) => {
+      return base44.entities.Project.create(projectData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project saved successfully');
+    },
+  });
+
+  const getNextSampleNumber = () => {
+    const sampleProjects = projects.filter(p => p.name?.startsWith('Sample'));
+    const numbers = sampleProjects.map(p => {
+      const match = p.name.match(/Sample(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    });
+    const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+    return `Sample${String(maxNum + 1).padStart(2, '0')}`;
+  };
+
+  const handleCreateDates = async () => {
     if (!startDate || !endDate) return;
     const start = parseISO(startDate);
     const end = parseISO(endDate);
@@ -33,6 +61,17 @@ export default function ProjectDetailsSetup() {
     setDates(allDates);
     setViewMonth(start);
     setGrid({});
+
+    // Save as new project
+    const projectName = getNextSampleNumber();
+    const projectData = {
+      name: projectName,
+      status: 'planning',
+      start_date: startDate,
+      end_date: endDate,
+      description: `Project setup created on ${format(new Date(), 'MMM d, yyyy')}`,
+    };
+    saveProjectMutation.mutate(projectData);
   };
 
   const visibleDates = viewMonth
