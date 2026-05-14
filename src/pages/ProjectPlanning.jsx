@@ -62,6 +62,7 @@ export default function ProjectPlanning() {
 
   const [form, setForm] = useState(null);
   const [taskList, setTaskList] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // New item form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -131,6 +132,16 @@ export default function ProjectPlanning() {
       navigate('/projects');
     },
   });
+
+  const handleLoad = async () => {
+    setIsLoadingData(true);
+    const fresh = await base44.entities.Project.get(id);
+    if (fresh) {
+      setTaskList((fresh.task_list || []).map(calcTask));
+      toast.success('Item list loaded from database');
+    }
+    setIsLoadingData(false);
+  };
 
   const handleSave = () => {
     const done = taskList.filter(t => t.done).length;
@@ -317,9 +328,23 @@ export default function ProjectPlanning() {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Item List</CardTitle>
-              <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
-                {doneTasks}/{taskList.length} done
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoad}
+                  disabled={isLoadingData}
+                >
+                  {isLoadingData ? (
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" /> Loading...</span>
+                  ) : (
+                    'Load from Database'
+                  )}
+                </Button>
+                <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
+                  {doneTasks}/{taskList.length} done
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
