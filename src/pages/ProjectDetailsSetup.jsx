@@ -467,7 +467,7 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
                             >
                               <select
                                 value={grid[key] || ''}
@@ -494,7 +494,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <td
                           key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
                         >
                           {calculateDayTotal(dateStr)}
                         </td>
@@ -565,7 +565,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <th
                           key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                          className={`px-1.5 py-2.5 text-center font-medium w-[110px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
                         >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
@@ -598,7 +598,7 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
                             >
                               <select
                                 value={equipmentGrid[key] || ''}
@@ -625,7 +625,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <td
                           key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[110px] ${weekend ? 'bg-secondary/30' : ''}`}
                         >
                           {calculateEquipmentDayTotal(dateStr)}
                         </td>
