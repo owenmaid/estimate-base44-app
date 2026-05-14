@@ -103,7 +103,27 @@
     },
     "schedule_rows": {
       "type": "array",
-      "description": "Row configuration for schedule",
+      "description": "Row configuration for manpower schedule",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "equipment_grid": {
+      "type": "object",
+      "description": "Scheduled equipment assignments by date and row",
+      "additionalProperties": true
+    },
+    "equipment_rows": {
+      "type": "array",
+      "description": "Row configuration for equipment schedule",
       "items": {
         "type": "object",
         "properties": {
