@@ -153,9 +153,9 @@ export default function ProjectPlanning() {
         const total = subtotal + taxAmount;
         return { ...t, quantity: qty, cost, markup, tax_pct: taxPct, subtotal, tax_amount: taxAmount, total };
       }));
-      toast.success('Item list loaded from database');
+      toast.success('Line items loaded from database');
     } else {
-      toast.info('No items found in database for this project');
+      toast.info('No line items found in database for this project');
     }
     setIsLoadingData(false);
   };
@@ -314,7 +314,7 @@ export default function ProjectPlanning() {
         <CardContent className="pt-5 pb-5 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="font-medium">Overall Progress</span>
-            <span className="text-muted-foreground">{doneTasks}/{taskList.length} tasks · {progress}%</span>
+            <span className="text-muted-foreground">{doneTasks}/{taskList.length} line items · {progress}%</span>
           </div>
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
@@ -358,7 +358,7 @@ export default function ProjectPlanning() {
               <Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} />
             </div>
             <div>
-              <Label>Manual Progress % (used when no tasks)</Label>
+              <Label>Manual Progress % (used when no line items)</Label>
               <Input
                 type="number" min="0" max="100"
                 value={form.progress}
@@ -396,7 +396,7 @@ export default function ProjectPlanning() {
                   )}
                 </Button>
                 <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
-                  {doneTasks}/{taskList.length} done
+                  {doneTasks}/{taskList.length} line items done
                 </Badge>
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function ProjectPlanning() {
                   {taskList.length === 0 && (
                     <tr>
                       <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
-                        No items yet. Fill in the row above and click +
+                        No line items yet. Fill in the row above and click +
                       </td>
                     </tr>
                   )}

@@ -26,8 +26,8 @@ function WorkloadBar({ used, capacity }) {
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-semibold w-20 text-right tabular-nums">
-        {used} / {capacity} tasks
+      <span className="text-xs font-semibold w-24 text-right tabular-nums">
+        {used} / {capacity} items
       </span>
     </div>
   );
@@ -72,7 +72,7 @@ function MemberRow({ member }) {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {member.projectCount} project{member.projectCount !== 1 ? 's' : ''} · {doneTasks}/{used} tasks done
+            {member.projectCount} project{member.projectCount !== 1 ? 's' : ''} · {doneTasks}/{used} line items done
             {member.inventoryItem && (
               <span className="ml-1">· capacity from inventory</span>
             )}
@@ -217,7 +217,7 @@ export default function ResourceAllocation() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Tasks Used / Capacity</p>
+            <p className="text-xs text-muted-foreground">Line Items Used / Capacity</p>
             <p className="text-2xl font-bold mt-1">{totalUsed} <span className="text-base text-muted-foreground font-normal">/ {totalCapacity}</span></p>
           </CardContent>
         </Card>
@@ -229,7 +229,7 @@ export default function ResourceAllocation() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Unassigned Tasks</p>
+            <p className="text-xs text-muted-foreground">Unassigned Line Items</p>
             <p className={`text-2xl font-bold mt-1 ${unassignedCount > 0 ? 'text-yellow-400' : ''}`}>{unassignedCount}</p>
           </CardContent>
         </Card>
@@ -239,7 +239,7 @@ export default function ResourceAllocation() {
       {manpowerCount === 0 && !loadingInventory && (
         <div className="flex items-center gap-2 text-sm text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-4 py-3">
           <Package className="h-4 w-4 shrink-0" />
-          <span>No <strong>Manpower</strong> category items found in Inventory. Add SKUs with category "manpower" to set per-person capacity. Showing default capacity of {DEFAULT_CAPACITY} tasks.</span>
+          <span>No <strong>Manpower</strong> category items found in Inventory. Add SKUs with category "manpower" to set per-person capacity. Showing default capacity of {DEFAULT_CAPACITY} line items.</span>
         </div>
       )}
 
@@ -256,7 +256,7 @@ export default function ResourceAllocation() {
 
       {/* Workload legend */}
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-green-500" /> Low (≤60% capacity)</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-green-500" /> Low (≤60% of capacity)</div>
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-yellow-500" /> Moderate (61–85%)</div>
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-destructive" /> Over Capacity (&gt;85%)</div>
       </div>
@@ -271,7 +271,7 @@ export default function ResourceAllocation() {
           <CardContent className="py-16 text-center space-y-3">
             <Users className="h-10 w-10 mx-auto text-muted-foreground" />
             <p className="text-muted-foreground text-sm font-medium">No assignees found</p>
-            <p className="text-muted-foreground text-xs">Add assignee names to tasks in Project Planning to track workload here.</p>
+            <p className="text-muted-foreground text-xs">Add assignee names to line items in Project Planning to track workload here.</p>
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
