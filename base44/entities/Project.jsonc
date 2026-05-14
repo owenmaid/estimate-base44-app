@@ -21,10 +21,15 @@
       "default": "planning",
       "description": "Current project status"
     },
-    "due": {
+    "start_date": {
       "type": "string",
       "format": "date",
-      "description": "Due date"
+      "description": "Project start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project end date"
     },
     "progress": {
       "type": "number",

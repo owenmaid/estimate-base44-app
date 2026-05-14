@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 
 export default function ProjectModal({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', client: '', status: 'planning', due: '' });
+  const [form, setForm] = useState({ name: '', client: '', status: 'planning', start_date: '', end_date: '' });
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
   const { data: templates = [] } = useQuery({
@@ -124,8 +124,12 @@ export default function ProjectModal({ onClose, onSave }) {
             </Select>
           </div>
           <div>
-            <Label>Due Date</Label>
-            <Input type="date" value={form.due} onChange={e => setForm(p => ({ ...p, due: e.target.value }))} />
+            <Label>Start Date</Label>
+            <Input type="date" value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} />
+          </div>
+          <div>
+            <Label>End Date</Label>
+            <Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

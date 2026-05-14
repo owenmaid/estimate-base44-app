@@ -111,7 +111,8 @@ export default function ProjectPlanning() {
         name: project.name || '',
         client: project.client || '',
         status: project.status || 'planning',
-        due: project.due || '',
+        start_date: project.start_date || project.due || '',
+        end_date: project.end_date || '',
         description: project.description || '',
         progress: project.progress || 0,
       });
@@ -344,8 +345,12 @@ export default function ProjectPlanning() {
               </Select>
             </div>
             <div>
-              <Label>Due Date</Label>
-              <Input type="date" value={form.due} onChange={e => setForm(p => ({ ...p, due: e.target.value }))} />
+              <Label>Start Date</Label>
+              <Input type="date" value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} />
+            </div>
+            <div>
+              <Label>End Date</Label>
+              <Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} />
             </div>
             <div>
               <Label>Manual Progress % (used when no tasks)</Label>

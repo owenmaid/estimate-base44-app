@@ -67,13 +67,13 @@ export default function Dashboard() {
   // Upcoming deadlines: projects with a due date in the next 60 days, not completed
   const today = new Date();
   const upcomingDeadlines = projects
-    .filter(p => p.due && p.status !== 'completed')
-    .map(p => ({ ...p, dueDate: parseISO(p.due) }))
+    .filter(p => p.end_date && p.status !== 'completed')
+    .map(p => ({ ...p, dueDate: parseISO(p.end_date) }))
     .filter(p => isAfter(p.dueDate, today) && isBefore(p.dueDate, addDays(today, 60)))
     .sort((a, b) => a.dueDate - b.dueDate)
     .slice(0, 8);
 
-  const overdue = projects.filter(p => p.due && p.status !== 'completed' && isBefore(parseISO(p.due), today));
+  const overdue = projects.filter(p => p.end_date && p.status !== 'completed' && isBefore(parseISO(p.end_date), today));
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
