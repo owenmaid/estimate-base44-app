@@ -71,6 +71,10 @@ export default function ProjectDetailsSetup() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project updated successfully');
     },
+    onError: (error) => {
+      console.error('Update failed:', error);
+      toast.error('Failed to save schedule');
+    },
   });
 
   const renameProjectMutation = useMutation({
