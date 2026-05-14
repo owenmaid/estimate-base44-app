@@ -102,7 +102,7 @@ export default function ProjectPlanning() {
   };
 
   useEffect(() => {
-    if (project) {
+    if (project && !form) {
       setForm({
         name: project.name || '',
         client: project.client || '',
@@ -119,7 +119,6 @@ export default function ProjectPlanning() {
     mutationFn: (data) => base44.entities.Project.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project', id] });
       toast.success('Project saved!');
     },
   });
