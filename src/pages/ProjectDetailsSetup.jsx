@@ -197,7 +197,7 @@ export default function ProjectDetailsSetup() {
                             <select
                               value={grid[key] || ''}
                               onChange={e => handleCellChange(row.id, dateStr, e.target.value)}
-                              className="w-full bg-transparent border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
+                              className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
                               style={{ minWidth: '80px' }}
                             >
                               <option value="">—</option>
