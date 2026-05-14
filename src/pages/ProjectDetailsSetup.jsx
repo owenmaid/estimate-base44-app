@@ -467,13 +467,12 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 ${weekend ? 'bg-secondary/30' : ''}`}
-                          >
-                            <select
-                              value={grid[key] || ''}
-                              onChange={e => handleCellChange(row.id, dateStr, e.target.value)}
-                              className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
-                              style={{ minWidth: '80px' }}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            >
+                              <select
+                                value={grid[key] || ''}
+                                onChange={e => handleCellChange(row.id, dateStr, e.target.value)}
+                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
                             >
                               <option value="">—</option>
                               {Array.from({ length: 31 }, (_, i) => (
@@ -495,7 +494,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <td
                           key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground ${weekend ? 'bg-secondary/30' : ''}`}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
                         >
                           {calculateDayTotal(dateStr)}
                         </td>
@@ -566,17 +565,17 @@ export default function ProjectDetailsSetup() {
                       return (
                         <th
                           key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium min-w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                          className={`px-1.5 py-2.5 text-center font-medium w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
                         >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
                         </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {equipmentRows.map((row, rIdx) => (
+                        );
+                        })}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {equipmentRows.map((row, rIdx) => (
                     <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
                         <div className="flex items-center gap-2">
@@ -599,13 +598,12 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 ${weekend ? 'bg-secondary/30' : ''}`}
-                          >
-                            <select
-                              value={equipmentGrid[key] || ''}
-                              onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
-                              className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
-                              style={{ minWidth: '80px' }}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            >
+                              <select
+                                value={equipmentGrid[key] || ''}
+                                onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
+                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
                             >
                               <option value="">—</option>
                               {Array.from({ length: 31 }, (_, i) => (
@@ -627,7 +625,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <td
                           key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground ${weekend ? 'bg-secondary/30' : ''}`}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
                         >
                           {calculateEquipmentDayTotal(dateStr)}
                         </td>
