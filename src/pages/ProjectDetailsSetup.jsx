@@ -22,6 +22,7 @@ export default function ProjectDetailsSetup() {
   const [search, setSearch] = useState('');
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
+  const [newRowItemId, setNewRowItemId] = useState('');
 
   const queryClient = useQueryClient();
   
@@ -157,7 +158,18 @@ export default function ProjectDetailsSetup() {
   };
 
   const addRow = () => {
-    setRows(prev => [...prev, { id: prev.length + 1, label: `Row ${prev.length + 1}` }]);
+    if (!newRowItemId) {
+      toast.error('Please select a manpower item');
+      return;
+    }
+    const selectedItem = inventory.find(i => i.id === newRowItemId);
+    const newId = Math.max(...rows.map(r => r.id), 0) + 1;
+    setRows(prev => [...prev, { 
+      id: newId, 
+      label: selectedItem?.name || selectedItem?.sku || `Row ${newId}`,
+      item_id: newRowItemId
+    }]);
+    setNewRowItemId('');
   };
 
   const removeRow = (id) => {
@@ -409,8 +421,18 @@ export default function ProjectDetailsSetup() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 py-3 border-t border-border">
-              <Button variant="outline" size="sm" onClick={addRow}>
+            <div className="px-4 py-3 border-t border-border flex items-center gap-2">
+              <select
+                value={newRowItemId}
+                onChange={e => setNewRowItemId(e.target.value)}
+                className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
+              >
+                <option value="">Select manpower...</option>
+                {inventory.map(item => (
+                  <option key={item.id} value={item.id}>{item.name || item.sku}</option>
+                ))}
+              </select>
+              <Button variant="outline" size="sm" onClick={addRow} disabled={!newRowItemId}>
                 + Add Row
               </Button>
             </div>
