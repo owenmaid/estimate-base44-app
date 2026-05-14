@@ -136,9 +136,21 @@ export default function ProjectPlanning() {
   const handleLoad = async () => {
     setIsLoadingData(true);
     const fresh = await base44.entities.Project.get(id);
-    if (fresh) {
-      setTaskList((fresh.task_list || []).map(calcTask));
+    console.log('Loaded from DB:', JSON.stringify(fresh?.task_list));
+    if (fresh && fresh.task_list?.length > 0) {
+      setTaskList(fresh.task_list.map(t => {
+        const qty = t.quantity != null ? parseFloat(t.quantity) : 0;
+        const cost = t.cost != null ? parseFloat(t.cost) : 0;
+        const markup = t.markup != null ? parseFloat(t.markup) : 0;
+        const taxPct = t.tax_pct != null ? parseFloat(t.tax_pct) : 0;
+        const subtotal = qty * cost * (1 + markup / 100);
+        const taxAmount = subtotal * (taxPct / 100);
+        const total = subtotal + taxAmount;
+        return { ...t, quantity: qty, cost, markup, tax_pct: taxPct, subtotal, tax_amount: taxAmount, total };
+      }));
       toast.success('Item list loaded from database');
+    } else {
+      toast.info('No items found in database for this project');
     }
     setIsLoadingData(false);
   };
@@ -152,10 +164,10 @@ export default function ProjectPlanning() {
       name: t.name,
       type: t.type || null,
       done: !!t.done,
-      quantity: parseFloat(t.quantity) || 0,
-      cost: parseFloat(t.cost) || 0,
-      markup: parseFloat(t.markup) || 0,
-      tax_pct: parseFloat(t.tax_pct) || 0,
+      quantity: t.quantity != null && t.quantity !== '' ? parseFloat(t.quantity) : 0,
+      cost: t.cost != null && t.cost !== '' ? parseFloat(t.cost) : 0,
+      markup: t.markup != null && t.markup !== '' ? parseFloat(t.markup) : 0,
+      tax_pct: t.tax_pct != null && t.tax_pct !== '' ? parseFloat(t.tax_pct) : 0,
       subtotal: t.subtotal || 0,
       tax_amount: t.tax_amount || 0,
       total: t.total || 0,
