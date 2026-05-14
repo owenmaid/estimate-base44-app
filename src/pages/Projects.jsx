@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban } from 'lucide-react';
+import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ const STATUS_LABELS = {
 
 export default function Projects() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
 
   const { data: projects = [], isLoading } = useQuery({
@@ -89,6 +91,17 @@ export default function Projects() {
         ))}
       </div>
 
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          className="pl-9"
+          placeholder="Search by name, client, or status..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+
       {/* Project list */}
       <Card>
         {isLoading ? (
@@ -115,7 +128,15 @@ export default function Projects() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map(project => {
+                {projects.filter(p => {
+                  const q = search.toLowerCase();
+                  if (!q) return true;
+                  return (
+                    p.name?.toLowerCase().includes(q) ||
+                    p.client?.toLowerCase().includes(q) ||
+                    STATUS_LABELS[p.status]?.toLowerCase().includes(q)
+                  );
+                }).map(project => {
                   const tasks = project.task_list || [];
                   const subtotal = tasks.reduce((s, t) => s + (t.subtotal || 0), 0);
                   const taxAmount = tasks.reduce((s, t) => s + (t.tax_amount || 0), 0);
