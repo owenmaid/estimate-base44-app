@@ -434,7 +434,7 @@ export default function ProjectDetailsSetup() {
                       return (
                         <th
                           key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium min-w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                          className={`px-1.5 py-2.5 text-center font-medium min-w-[200px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
                         >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
