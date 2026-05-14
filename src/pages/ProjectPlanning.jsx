@@ -177,9 +177,9 @@ export default function ProjectPlanning() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
         {/* Project Details */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-3">
           <CardHeader className="pb-4">
             <CardTitle className="text-base">Project Details</CardTitle>
           </CardHeader>
@@ -233,7 +233,7 @@ export default function ProjectPlanning() {
         </Card>
 
         {/* Item List */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-7">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Item List</CardTitle>
