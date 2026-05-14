@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, eachDayOfInterval, parseISO, isWeekend, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { toast } from 'sonner';
@@ -207,21 +209,39 @@ export default function ProjectDetailsSetup() {
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-44"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-44">
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    {startDate ? format(parseISO(startDate), 'MMM d, yyyy') : 'Pick date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate ? parseISO(startDate) : undefined}
+                    onSelect={date => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">End Date</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                className="w-44"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-44">
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    {endDate ? format(parseISO(endDate), 'MMM d, yyyy') : 'Pick date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate ? parseISO(endDate) : undefined}
+                    onSelect={date => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <Button onClick={handleCreateDates} disabled={!startDate || !endDate}>
               Create Dates
