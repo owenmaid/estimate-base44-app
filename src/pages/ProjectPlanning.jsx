@@ -102,7 +102,7 @@ export default function ProjectPlanning() {
         description: project.description || '',
         progress: project.progress || 0,
       });
-      setTaskList(project.task_list || []);
+      setTaskList((project.task_list || []).map(calcTask));
     }
   }, [project]);
 
