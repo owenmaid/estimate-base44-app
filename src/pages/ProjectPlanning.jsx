@@ -206,24 +206,58 @@ export default function ProjectPlanning() {
       markup: newMarkup,
       tax_pct: newTaxPct,
     };
-    setTaskList(prev => [...prev, calcTask(raw)]);
+    setTaskList(prev => {
+      const next = [...prev, calcTask(raw)];
+      saveTaskList(next);
+      return next;
+    });
     resetNewForm();
   };
 
+  const saveTaskList = (list) => {
+    const done = list.filter(t => t.done).length;
+    const autoProgress = list.length > 0 ? Math.round((done / list.length) * 100) : form.progress;
+    const cleanedTaskList = list.map(t => ({
+      id: t.id,
+      name: t.name,
+      type: t.type || null,
+      done: !!t.done,
+      quantity: toNum(t.quantity),
+      cost: toNum(t.cost),
+      markup: toNum(t.markup),
+      tax_pct: toNum(t.tax_pct),
+      subtotal: toNum(t.subtotal),
+      tax_amount: toNum(t.tax_amount),
+      total: toNum(t.total),
+    }));
+    updateMutation.mutate({ ...form, task_list: cleanedTaskList, tasks: cleanedTaskList.length, done, progress: autoProgress });
+  };
+
   const toggleTask = (taskId) => {
-    setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, done: !t.done } : t));
+    setTaskList(prev => {
+      const next = prev.map(t => t.id === taskId ? { ...t, done: !t.done } : t);
+      saveTaskList(next);
+      return next;
+    });
   };
 
   const removeTask = (taskId) => {
-    setTaskList(prev => prev.filter(t => t.id !== taskId));
+    setTaskList(prev => {
+      const next = prev.filter(t => t.id !== taskId);
+      saveTaskList(next);
+      return next;
+    });
   };
 
   const updateTaskField = (taskId, field, value) => {
-    setTaskList(prev => prev.map(t => {
-      if (t.id !== taskId) return t;
-      const updated = { ...t, [field]: value };
-      return calcTask(updated);
-    }));
+    setTaskList(prev => {
+      const next = prev.map(t => {
+        if (t.id !== taskId) return t;
+        return calcTask({ ...t, [field]: value });
+      });
+      saveTaskList(next);
+      return next;
+    });
   };
 
   if (isLoading || !form) {
