@@ -236,6 +236,20 @@ export default function ProjectDetailsSetup() {
     }));
   };
 
+  const calculateDayTotal = (dateStr) => {
+    return rows.reduce((sum, row) => {
+      const val = grid[`${row.id}_${dateStr}`];
+      return sum + (val ? parseInt(val) : 0);
+    }, 0);
+  };
+
+  const calculateEquipmentDayTotal = (dateStr) => {
+    return equipmentRows.reduce((sum, row) => {
+      const val = equipmentGrid[`${row.id}_${dateStr}`];
+      return sum + (val ? parseInt(val) : 0);
+    }, 0);
+  };
+
   const canGoPrev = viewMonth && dates.length > 0 && viewMonth > dates[0];
   const canGoNext = viewMonth && dates.length > 0 && viewMonth < dates[dates.length - 1];
 
@@ -471,6 +485,23 @@ export default function ProjectDetailsSetup() {
                       })}
                     </tr>
                   ))}
+                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
+                    <td className="sticky left-0 z-10 bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground">
+                      Daily Total
+                    </td>
+                    {visibleDates.map(d => {
+                      const dateStr = format(d, 'yyyy-MM-dd');
+                      const weekend = isWeekend(d);
+                      return (
+                        <td
+                          key={dateStr}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground ${weekend ? 'bg-secondary/30' : ''}`}
+                        >
+                          {calculateDayTotal(dateStr)}
+                        </td>
+                      );
+                    })}
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -586,6 +617,23 @@ export default function ProjectDetailsSetup() {
                       })}
                     </tr>
                   ))}
+                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
+                    <td className="sticky left-0 z-10 bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground">
+                      Daily Total
+                    </td>
+                    {visibleDates.map(d => {
+                      const dateStr = format(d, 'yyyy-MM-dd');
+                      const weekend = isWeekend(d);
+                      return (
+                        <td
+                          key={dateStr}
+                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground ${weekend ? 'bg-secondary/30' : ''}`}
+                        >
+                          {calculateEquipmentDayTotal(dateStr)}
+                        </td>
+                      );
+                    })}
+                  </tr>
                 </tbody>
               </table>
             </div>
