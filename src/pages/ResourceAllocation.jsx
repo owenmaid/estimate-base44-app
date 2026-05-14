@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
-import { Users, Search, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Users, Search, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight, Package } from 'lucide-react';
 
-const CAPACITY_THRESHOLDS = { low: 5, medium: 10, high: 15 };
+const DEFAULT_CAPACITY = 10; // fallback if no manpower SKU found
 
 const STATUS_STYLES = {
   active:    'bg-green-500/15 text-green-400 border-green-500/30',
@@ -17,37 +17,33 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
-function WorkloadBar({ total, open }) {
-  const pct = Math.min(100, (total / CAPACITY_THRESHOLDS.high) * 100);
-  const color = total <= CAPACITY_THRESHOLDS.low
-    ? 'bg-green-500'
-    : total <= CAPACITY_THRESHOLDS.medium
-    ? 'bg-yellow-500'
-    : 'bg-destructive';
+function WorkloadBar({ used, capacity }) {
+  const pct = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 100;
+  const color = pct <= 60 ? 'bg-green-500' : pct <= 85 ? 'bg-yellow-500' : 'bg-destructive';
 
   return (
-    <div className="flex items-center gap-3 min-w-[160px]">
+    <div className="flex items-center gap-3 min-w-[180px]">
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-semibold w-14 text-right">
-        {total} task{total !== 1 ? 's' : ''}
+      <span className="text-xs font-semibold w-20 text-right tabular-nums">
+        {used} / {capacity} tasks
       </span>
     </div>
   );
 }
 
-function MemberRow({ member, projects }) {
+function MemberRow({ member }) {
   const [expanded, setExpanded] = useState(false);
-  const totalTasks = member.tasks.length;
-  const doneTasks = member.tasks.filter(t => t.done).length;
+  const { used, capacity } = member;
+  const pct = capacity > 0 ? (used / capacity) * 100 : 100;
 
-  const burnoutRisk = totalTasks > CAPACITY_THRESHOLDS.high;
-  const elevated = totalTasks > CAPACITY_THRESHOLDS.medium;
+  const burnoutRisk = pct > 85;
+  const elevated = pct > 60;
+  const doneTasks = member.tasks.filter(t => t.done).length;
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
-      {/* Header row */}
       <button
         onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center gap-4 px-5 py-4 bg-card hover:bg-muted/30 transition-colors text-left"
@@ -55,8 +51,8 @@ function MemberRow({ member, projects }) {
         {/* Avatar */}
         <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
           burnoutRisk ? 'bg-destructive/20 text-destructive' :
-          elevated ? 'bg-yellow-500/20 text-yellow-400' :
-          'bg-primary/15 text-primary'
+          elevated    ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-primary/15 text-primary'
         }`}>
           {member.name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)}
         </div>
@@ -66,16 +62,24 @@ function MemberRow({ member, projects }) {
             <span className="font-semibold text-sm">{member.name}</span>
             {burnoutRisk && (
               <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] border flex items-center gap-1">
-                <AlertTriangle className="h-2.5 w-2.5" /> High Load
+                <AlertTriangle className="h-2.5 w-2.5" /> Over Capacity
+              </Badge>
+            )}
+            {member.inventoryItem && (
+              <Badge className="bg-muted text-muted-foreground border-border text-[10px] border">
+                {member.inventoryItem.sku || member.inventoryItem.name}
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {member.projectCount} project{member.projectCount !== 1 ? 's' : ''} · {doneTasks}/{totalTasks} tasks done
+            {member.projectCount} project{member.projectCount !== 1 ? 's' : ''} · {doneTasks}/{used} tasks done
+            {member.inventoryItem && (
+              <span className="ml-1">· capacity from inventory</span>
+            )}
           </p>
         </div>
 
-        <WorkloadBar total={totalTasks} />
+        <WorkloadBar used={used} capacity={capacity} />
 
         {expanded
           ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -83,7 +87,6 @@ function MemberRow({ member, projects }) {
         }
       </button>
 
-      {/* Expanded breakdown */}
       {expanded && (
         <div className="border-t border-border bg-muted/10 divide-y divide-border/50">
           {member.projectBreakdown.map(({ project, tasks }) => (
@@ -124,10 +127,27 @@ function MemberRow({ member, projects }) {
 export default function ResourceAllocation() {
   const [search, setSearch] = useState('');
 
-  const { data: projects = [], isLoading } = useQuery({
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
   });
+
+  const { data: inventoryItems = [], isLoading: loadingInventory } = useQuery({
+    queryKey: ['inventoryItems'],
+    queryFn: () => base44.entities.InventoryItem.list(),
+  });
+
+  // Build a lookup: lowercased name/sku → inventory item (manpower category only)
+  const manpowerLookup = useMemo(() => {
+    const map = {};
+    inventoryItems
+      .filter(i => i.category?.toLowerCase() === 'manpower')
+      .forEach(item => {
+        if (item.name) map[item.name.toLowerCase()] = item;
+        if (item.sku)  map[item.sku.toLowerCase()]  = item;
+      });
+    return map;
+  }, [inventoryItems]);
 
   // Aggregate tasks by assignee across all projects
   const memberMap = useMemo(() => {
@@ -147,12 +167,20 @@ export default function ResourceAllocation() {
         map[assignee].projectBreakdown[project.id].tasks.push(task);
       });
     });
-    // Convert projectBreakdown to array
-    return Object.values(map).map(m => ({
-      ...m,
-      projectBreakdown: Object.values(m.projectBreakdown),
-    })).sort((a, b) => b.tasks.length - a.tasks.length);
-  }, [projects]);
+
+    return Object.values(map).map(m => {
+      const key = m.name.toLowerCase();
+      const inventoryItem = manpowerLookup[key] || null;
+      const capacity = inventoryItem ? (inventoryItem.quantity || DEFAULT_CAPACITY) : DEFAULT_CAPACITY;
+      return {
+        ...m,
+        projectBreakdown: Object.values(m.projectBreakdown),
+        used: m.tasks.length,
+        capacity,
+        inventoryItem,
+      };
+    }).sort((a, b) => (b.used / b.capacity) - (a.used / a.capacity));
+  }, [projects, manpowerLookup]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return memberMap;
@@ -160,17 +188,23 @@ export default function ResourceAllocation() {
     return memberMap.filter(m => m.name.toLowerCase().includes(q));
   }, [memberMap, search]);
 
+  const isLoading = loadingProjects || loadingInventory;
+
   // Summary stats
-  const totalAssigned = memberMap.reduce((s, m) => s + m.tasks.length, 0);
-  const highLoadCount = memberMap.filter(m => m.tasks.length > CAPACITY_THRESHOLDS.high).length;
+  const totalUsed = memberMap.reduce((s, m) => s + m.used, 0);
+  const totalCapacity = memberMap.reduce((s, m) => s + m.capacity, 0);
+  const overCapacityCount = memberMap.filter(m => m.used > m.capacity).length;
   const unassignedCount = projects.reduce((s, p) => s + (p.task_list || []).filter(t => !t.assignee?.trim()).length, 0);
+  const manpowerCount = inventoryItems.filter(i => i.category?.toLowerCase() === 'manpower').length;
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Resource Allocation</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Team workload across all projects</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Team workload driven by manpower inventory capacity
+        </p>
       </div>
 
       {/* Summary cards */}
@@ -183,14 +217,14 @@ export default function ResourceAllocation() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Assigned Tasks</p>
-            <p className="text-2xl font-bold mt-1">{totalAssigned}</p>
+            <p className="text-xs text-muted-foreground">Tasks Used / Capacity</p>
+            <p className="text-2xl font-bold mt-1">{totalUsed} <span className="text-base text-muted-foreground font-normal">/ {totalCapacity}</span></p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">High Load Members</p>
-            <p className={`text-2xl font-bold mt-1 ${highLoadCount > 0 ? 'text-destructive' : ''}`}>{highLoadCount}</p>
+            <p className="text-xs text-muted-foreground">Over Capacity</p>
+            <p className={`text-2xl font-bold mt-1 ${overCapacityCount > 0 ? 'text-destructive' : ''}`}>{overCapacityCount}</p>
           </CardContent>
         </Card>
         <Card>
@@ -200,6 +234,14 @@ export default function ResourceAllocation() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Manpower inventory note */}
+      {manpowerCount === 0 && !loadingInventory && (
+        <div className="flex items-center gap-2 text-sm text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-4 py-3">
+          <Package className="h-4 w-4 shrink-0" />
+          <span>No <strong>Manpower</strong> category items found in Inventory. Add SKUs with category "manpower" to set per-person capacity. Showing default capacity of {DEFAULT_CAPACITY} tasks.</span>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative max-w-sm">
@@ -214,9 +256,9 @@ export default function ResourceAllocation() {
 
       {/* Workload legend */}
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-green-500" /> Low (≤{CAPACITY_THRESHOLDS.low} tasks)</div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-yellow-500" /> Moderate ({CAPACITY_THRESHOLDS.low + 1}–{CAPACITY_THRESHOLDS.medium} tasks)</div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-destructive" /> High ({CAPACITY_THRESHOLDS.medium + 1}+ tasks)</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-green-500" /> Low (≤60% capacity)</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-yellow-500" /> Moderate (61–85%)</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-destructive" /> Over Capacity (&gt;85%)</div>
       </div>
 
       {/* Member list */}
@@ -237,7 +279,7 @@ export default function ResourceAllocation() {
       ) : (
         <div className="space-y-3">
           {filtered.map(member => (
-            <MemberRow key={member.name} member={member} projects={projects} />
+            <MemberRow key={member.name} member={member} />
           ))}
         </div>
       )}
