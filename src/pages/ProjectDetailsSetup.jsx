@@ -467,7 +467,7 @@ export default function ProjectDetailsSetup() {
                         return (
                           <td
                             key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
+                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
                             >
                               <select
                                 value={grid[key] || ''}
