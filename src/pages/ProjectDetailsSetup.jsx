@@ -476,17 +476,15 @@ export default function ProjectDetailsSetup() {
                             key={dateStr}
                             className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
                           >
-                            <select
-                              value={manpowerGrid[key] || ''}
-                              onChange={e => handleManpowerCellChange(row.id, dateStr, e.target.value)}
-                              className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all appearance-none bg-no-repeat"
-                              style={{ backgroundImage: 'none', paddingRight: '0.25rem' }}
-                            >
-                              <option value="">—</option>
-                              {Array.from({ length: 31 }, (_, i) => (
-                                <option key={i} value={i}>{i}</option>
-                              ))}
-                            </select>
+                            <input
+                               type="number"
+                               min="0"
+                               max="30"
+                               value={manpowerGrid[key] || ''}
+                               onChange={e => handleManpowerCellChange(row.id, dateStr, e.target.value)}
+                               className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
+                               placeholder="—"
+                             />
                           </td>
                         );
                       })}
@@ -608,17 +606,15 @@ export default function ProjectDetailsSetup() {
                             key={dateStr}
                             className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
                             >
-                              <select
-                                value={equipmentGrid[key] || ''}
-                                onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
-                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all appearance-none bg-no-repeat"
-                              style={{ backgroundImage: 'none', paddingRight: '0.25rem' }}
-                            >
-                              <option value="">—</option>
-                              {Array.from({ length: 31 }, (_, i) => (
-                                <option key={i} value={i}>{i}</option>
-                              ))}
-                            </select>
+                              <input
+                                 type="number"
+                                 min="0"
+                                 max="30"
+                                 value={equipmentGrid[key] || ''}
+                                 onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
+                                 className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
+                                 placeholder="—"
+                               />
                           </td>
                         );
                       })}
