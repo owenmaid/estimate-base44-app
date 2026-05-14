@@ -27,7 +27,16 @@ const calcTask = (t) => {
   const subtotal = qty * cost * (1 + markup / 100);
   const taxAmount = subtotal * (taxPct / 100);
   const total = subtotal + taxAmount;
-  return { ...t, subtotal, tax_amount: taxAmount, total };
+  return {
+    ...t,
+    quantity: qty || t.quantity,
+    cost: cost || t.cost,
+    markup: markup || t.markup,
+    tax_pct: taxPct || t.tax_pct,
+    subtotal,
+    tax_amount: taxAmount,
+    total,
+  };
 };
 
 const numInput = (val, onChange) => (
@@ -198,7 +207,7 @@ export default function ProjectPlanning() {
   };
   const newCalc = calcTask(newRaw);
 
-  const fmt = (n) => (n != null && !isNaN(n) && n !== 0) ? n.toFixed(2) : '—';
+  const fmt = (n) => (n != null && !isNaN(n)) ? parseFloat(n).toFixed(2) : '—';
 
   return (
     <div className="p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
