@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, GripVertical } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STATUS_STYLES = {
@@ -18,6 +18,28 @@ const STATUS_STYLES = {
   on_hold: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
   completed: 'bg-muted text-muted-foreground border-border',
 };
+
+const calcTask = (t) => {
+  const qty = parseFloat(t.quantity) || 0;
+  const cost = parseFloat(t.cost) || 0;
+  const markup = parseFloat(t.markup) || 0;
+  const taxPct = parseFloat(t.tax_pct) || 0;
+  const subtotal = qty * cost * (1 + markup / 100);
+  const taxAmount = subtotal * (taxPct / 100);
+  const total = subtotal + taxAmount;
+  return { ...t, subtotal, tax_amount: taxAmount, total };
+};
+
+const numInput = (val, onChange) => (
+  <input
+    type="number"
+    className="w-full bg-transparent text-xs text-right outline-none border-b border-transparent focus:border-border px-0.5"
+    value={val ?? ''}
+    onChange={onChange}
+    min="0"
+    step="any"
+  />
+);
 
 export default function ProjectPlanning() {
   const { id } = useParams();
@@ -31,10 +53,15 @@ export default function ProjectPlanning() {
 
   const [form, setForm] = useState(null);
   const [taskList, setTaskList] = useState([]);
+
+  // New item form state
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskType, setNewTaskType] = useState('');
-
   const [newTaskInventoryItem, setNewTaskInventoryItem] = useState('');
+  const [newQty, setNewQty] = useState('');
+  const [newCost, setNewCost] = useState('');
+  const [newMarkup, setNewMarkup] = useState('');
+  const [newTaxPct, setNewTaxPct] = useState('');
 
   const { data: taskTypes = [] } = useQuery({
     queryKey: ['taskTypes'],
@@ -46,21 +73,23 @@ export default function ProjectPlanning() {
     queryFn: () => base44.entities.InventoryItem.list('name'),
   });
 
-  // When type changes, reset the inventory item selection
+  const filteredInventoryItems = newTaskType
+    ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
+    : inventoryItems;
+
   const handleNewTaskTypeChange = (val) => {
     setNewTaskType(val);
     setNewTaskInventoryItem('');
     setNewTaskName('');
   };
 
-  // Inventory items filtered by selected type (matched against item category)
-  const filteredInventoryItems = newTaskType
-    ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
-    : inventoryItems;
-
   const handleInventoryItemSelect = (itemName) => {
     setNewTaskInventoryItem(itemName);
     setNewTaskName(itemName);
+    const item = inventoryItems.find(i => i.name === itemName);
+    if (item) {
+      if (item.unit_cost != null) setNewCost(String(item.unit_cost));
+    }
   };
 
   useEffect(() => {
@@ -107,12 +136,30 @@ export default function ProjectPlanning() {
     });
   };
 
-  const addTask = () => {
-    if (!newTaskName.trim()) return;
-    setTaskList(prev => [...prev, { id: Date.now(), name: newTaskName.trim(), type: newTaskType || null, done: false }]);
+  const resetNewForm = () => {
     setNewTaskName('');
     setNewTaskType('');
     setNewTaskInventoryItem('');
+    setNewQty('');
+    setNewCost('');
+    setNewMarkup('');
+    setNewTaxPct('');
+  };
+
+  const addTask = () => {
+    if (!newTaskName.trim()) return;
+    const raw = {
+      id: Date.now(),
+      name: newTaskName.trim(),
+      type: newTaskType || null,
+      done: false,
+      quantity: newQty !== '' ? parseFloat(newQty) : null,
+      cost: newCost !== '' ? parseFloat(newCost) : null,
+      markup: newMarkup !== '' ? parseFloat(newMarkup) : null,
+      tax_pct: newTaxPct !== '' ? parseFloat(newTaxPct) : null,
+    };
+    setTaskList(prev => [...prev, calcTask(raw)]);
+    resetNewForm();
   };
 
   const toggleTask = (taskId) => {
@@ -123,8 +170,12 @@ export default function ProjectPlanning() {
     setTaskList(prev => prev.filter(t => t.id !== taskId));
   };
 
-  const updateTask = (taskId, name) => {
-    setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, name } : t));
+  const updateTaskField = (taskId, field, value) => {
+    setTaskList(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      const updated = { ...t, [field]: value };
+      return calcTask(updated);
+    }));
   };
 
   if (isLoading || !form) {
@@ -138,8 +189,19 @@ export default function ProjectPlanning() {
   const doneTasks = taskList.filter(t => t.done).length;
   const progress = taskList.length > 0 ? Math.round((doneTasks / taskList.length) * 100) : form.progress;
 
+  // New row computed values
+  const newRaw = {
+    quantity: newQty !== '' ? parseFloat(newQty) : 0,
+    cost: newCost !== '' ? parseFloat(newCost) : 0,
+    markup: newMarkup !== '' ? parseFloat(newMarkup) : 0,
+    tax_pct: newTaxPct !== '' ? parseFloat(newTaxPct) : 0,
+  };
+  const newCalc = calcTask(newRaw);
+
+  const fmt = (n) => (n != null && !isNaN(n) && n !== 0) ? n.toFixed(2) : '—';
+
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -195,9 +257,7 @@ export default function ProjectPlanning() {
             <div>
               <Label>Status</Label>
               <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="planning">Planning</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
@@ -213,9 +273,7 @@ export default function ProjectPlanning() {
             <div>
               <Label>Manual Progress % (used when no tasks)</Label>
               <Input
-                type="number"
-                min="0"
-                max="100"
+                type="number" min="0" max="100"
                 value={form.progress}
                 onChange={e => setForm(p => ({ ...p, progress: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) }))}
               />
@@ -243,84 +301,155 @@ export default function ProjectPlanning() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Add task */}
-            <div className="flex gap-2 flex-wrap">
-              {/* Type dropdown */}
-              <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
-                <SelectTrigger className="w-36 flex-shrink-0">
-                  <SelectValue placeholder="Type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {taskTypes.map(tt => (
-                    <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs min-w-[900px]">
+                <thead>
+                  <tr className="text-muted-foreground border-b border-border">
+                    <th className="w-6 pb-2"></th>
+                    <th className="text-left pb-2 pr-2 w-28">Type</th>
+                    <th className="text-left pb-2 pr-2 w-40">Item</th>
+                    <th className="text-left pb-2 pr-2 flex-1">Description</th>
+                    <th className="text-right pb-2 pr-1 w-16">Qty</th>
+                    <th className="text-right pb-2 pr-1 w-20">Cost</th>
+                    <th className="text-right pb-2 pr-1 w-16">Markup %</th>
+                    <th className="text-right pb-2 pr-1 w-16">Tax %</th>
+                    <th className="text-right pb-2 pr-1 w-20">Tax Amt</th>
+                    <th className="text-right pb-2 pr-1 w-20">Subtotal</th>
+                    <th className="text-right pb-2 w-20">Total</th>
+                    <th className="w-6 pb-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* New item input row */}
+                  <tr className="border-b border-border/50 bg-muted/20">
+                    <td className="py-2 pr-1">
+                      <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                    </td>
+                    <td className="py-1 pr-2">
+                      <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
+                        <SelectTrigger className="h-7 text-xs px-1.5">
+                          <SelectValue placeholder="Type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {taskTypes.map(tt => (
+                            <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-1 pr-2">
+                      <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
+                        <SelectTrigger className="h-7 text-xs px-1.5">
+                          <SelectValue placeholder={newTaskType ? 'Select item...' : '—'} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {filteredInventoryItems.length === 0 ? (
+                            <div className="px-3 py-3 text-xs text-muted-foreground text-center">No items</div>
+                          ) : filteredInventoryItems.map(item => (
+                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-1 pr-2">
+                      <input
+                        className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5"
+                        placeholder="Description..."
+                        value={newTaskName}
+                        onChange={e => setNewTaskName(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && addTask()}
+                      />
+                    </td>
+                    <td className="py-1 pr-1">{numInput(newQty, e => setNewQty(e.target.value))}</td>
+                    <td className="py-1 pr-1">{numInput(newCost, e => setNewCost(e.target.value))}</td>
+                    <td className="py-1 pr-1">{numInput(newMarkup, e => setNewMarkup(e.target.value))}</td>
+                    <td className="py-1 pr-1">{numInput(newTaxPct, e => setNewTaxPct(e.target.value))}</td>
+                    <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(newCalc.tax_amount)}</td>
+                    <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(newCalc.subtotal)}</td>
+                    <td className="py-1 text-right font-medium">{fmt(newCalc.total)}</td>
+                    <td className="py-1 pl-1">
+                      <Button size="icon" className="h-6 w-6" onClick={addTask}>
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </td>
+                  </tr>
 
-              {/* Dependent inventory item dropdown */}
-              <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
-                <SelectTrigger className="w-48 flex-shrink-0">
-                  <SelectValue placeholder={newTaskType ? 'Select item...' : 'Select type first'} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  {filteredInventoryItems.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-muted-foreground text-center">
-                      No items for this type
-                    </div>
-                  ) : (
-                    filteredInventoryItems.map(item => (
-                      <SelectItem key={item.id} value={item.name}>
-                        <span>{item.name}</span>
-                        {item.quantity != null && (
-                          <span className="ml-2 text-xs text-muted-foreground">({item.quantity} {item.unit})</span>
+                  {/* Existing items */}
+                  {taskList.length === 0 && (
+                    <tr>
+                      <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
+                        No items yet. Fill in the row above and click +
+                      </td>
+                    </tr>
+                  )}
+                  {taskList.map(task => (
+                    <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">
+                      <td className="py-2 pr-1">
+                        <button onClick={() => toggleTask(task.id)} className="flex-shrink-0">
+                          {task.done
+                            ? <CheckCircle2 className="h-4 w-4 text-primary" />
+                            : <Circle className="h-4 w-4 text-muted-foreground" />
+                          }
+                        </button>
+                      </td>
+                      <td className="py-1 pr-2">
+                        {task.type && (
+                          <span className="bg-muted px-1.5 py-0.5 rounded text-xs">{task.type}</span>
                         )}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                      </td>
+                      <td className="py-1 pr-2 text-xs text-muted-foreground">{task.name}</td>
+                      <td className="py-1 pr-2">
+                        <input
+                          className={`w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 ${task.done ? 'line-through text-muted-foreground' : ''}`}
+                          value={task.name}
+                          onChange={e => updateTaskField(task.id, 'name', e.target.value)}
+                        />
+                      </td>
+                      <td className="py-1 pr-1">
+                        {numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}
+                      </td>
+                      <td className="py-1 pr-1">
+                        {numInput(task.cost ?? '', e => updateTaskField(task.id, 'cost', e.target.value))}
+                      </td>
+                      <td className="py-1 pr-1">
+                        {numInput(task.markup ?? '', e => updateTaskField(task.id, 'markup', e.target.value))}
+                      </td>
+                      <td className="py-1 pr-1">
+                        {numInput(task.tax_pct ?? '', e => updateTaskField(task.id, 'tax_pct', e.target.value))}
+                      </td>
+                      <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.tax_amount)}</td>
+                      <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.subtotal)}</td>
+                      <td className="py-1 text-right font-medium">{fmt(task.total)}</td>
+                      <td className="py-1 pl-1">
+                        <button
+                          onClick={() => removeTask(task.id)}
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
 
-              <Input
-                placeholder="Or type a task name..."
-                value={newTaskName}
-                onChange={e => setNewTaskName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addTask()}
-                className="flex-1 min-w-32"
-              />
-              <Button size="sm" onClick={addTask}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Task items */}
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-              {taskList.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-6">No tasks yet. Add one above!</p>
-              )}
-              {taskList.map(task => (
-                <div key={task.id} className="flex items-center gap-2 group p-2 rounded-lg hover:bg-muted/40 transition-colors">
-                  <button onClick={() => toggleTask(task.id)} className="flex-shrink-0">
-                    {task.done
-                      ? <CheckCircle2 className="h-5 w-5 text-primary" />
-                      : <Circle className="h-5 w-5 text-muted-foreground" />
-                    }
-                  </button>
-                  <input
-                    className={`flex-1 bg-transparent text-sm outline-none ${task.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}
-                    value={task.name}
-                    onChange={e => updateTask(task.id, e.target.value)}
-                  />
-                  {task.type && (
-                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{task.type}</span>
-                  )}
-                  <button
-                    onClick={() => removeTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+                  {/* Totals row */}
+                  {taskList.length > 0 && (() => {
+                    const totals = taskList.reduce((acc, t) => ({
+                      subtotal: acc.subtotal + (t.subtotal || 0),
+                      tax_amount: acc.tax_amount + (t.tax_amount || 0),
+                      total: acc.total + (t.total || 0),
+                    }), { subtotal: 0, tax_amount: 0, total: 0 });
+                    return (
+                      <tr className="border-t-2 border-border font-semibold text-xs">
+                        <td colSpan={8} className="pt-3 pr-1 text-right text-muted-foreground">Totals</td>
+                        <td className="pt-3 pr-1 text-right">{totals.tax_amount.toFixed(2)}</td>
+                        <td className="pt-3 pr-1 text-right">{totals.subtotal.toFixed(2)}</td>
+                        <td className="pt-3 text-right text-primary">{totals.total.toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    );
+                  })()}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
