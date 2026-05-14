@@ -65,14 +65,18 @@ export default function ProjectDetailsSetup() {
 
   const updateProjectMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      return base44.entities.Project.update(id, data);
+      console.log('Mutation starting with id:', id, 'data:', data);
+      const result = await base44.entities.Project.update(id, data);
+      console.log('Mutation result:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('onSuccess callback fired:', data);
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project updated successfully');
     },
     onError: (error) => {
-      console.error('Update failed:', error);
+      console.error('onError callback fired:', error);
       toast.error('Failed to save schedule');
     },
   });
