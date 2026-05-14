@@ -232,11 +232,11 @@ export default function ProjectPlanning() {
           </CardContent>
         </Card>
 
-        {/* Task List */}
+        {/* Item List */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Task List</CardTitle>
+              <CardTitle className="text-base">Item List</CardTitle>
               <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
                 {doneTasks}/{taskList.length} done
               </Badge>
