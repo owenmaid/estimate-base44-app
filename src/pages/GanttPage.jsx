@@ -1,72 +1,205 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
+import { addDays, format, startOfWeek, differenceInDays, parseISO, isValid, isSameDay } from 'date-fns';
 
-const TASKS = [
-  { id: 1, project: 'Website Redesign', task: 'Wireframes', start: 1, duration: 5, color: 'bg-primary' },
-  { id: 2, project: 'Website Redesign', task: 'Design', start: 4, duration: 8, color: 'bg-primary' },
-  { id: 3, project: 'Website Redesign', task: 'Development', start: 10, duration: 10, color: 'bg-primary' },
-  { id: 4, project: 'Mobile App MVP', task: 'Requirements', start: 1, duration: 4, color: 'bg-blue-500' },
-  { id: 5, project: 'Mobile App MVP', task: 'Prototyping', start: 4, duration: 6, color: 'bg-blue-500' },
-  { id: 6, project: 'Mobile App MVP', task: 'Development', start: 9, duration: 14, color: 'bg-blue-500' },
-  { id: 7, project: 'Brand Identity', task: 'Research', start: 2, duration: 3, color: 'bg-yellow-500' },
-  { id: 8, project: 'Brand Identity', task: 'Concepts', start: 5, duration: 5, color: 'bg-yellow-500' },
-  { id: 9, project: 'E-commerce Platform', task: 'Planning', start: 1, duration: 3, color: 'bg-muted-foreground' },
-  { id: 10, project: 'E-commerce Platform', task: 'Backend', start: 3, duration: 8, color: 'bg-muted-foreground' },
-  { id: 11, project: 'E-commerce Platform', task: 'Frontend', start: 7, duration: 9, color: 'bg-muted-foreground' },
-];
+const STATUS_COLORS = {
+  active:    'bg-green-500',
+  planning:  'bg-primary',
+  on_hold:   'bg-yellow-500',
+  completed: 'bg-muted-foreground',
+};
 
-const TOTAL_WEEKS = 24;
-const weeks = Array.from({ length: TOTAL_WEEKS }, (_, i) => `W${i + 1}`);
+const STATUS_STYLES = {
+  active:    'bg-green-500/15 text-green-400 border-green-500/30',
+  planning:  'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  on_hold:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+  completed: 'bg-muted text-muted-foreground border-border',
+};
+
+const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
+
+const TOTAL_WEEKS = 16;
 
 export default function GanttPage() {
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date'),
+  });
+
+  // Anchor: start of current week + offset
+  const anchorDate = useMemo(() => {
+    const base = startOfWeek(new Date(), { weekStartsOn: 1 });
+    return addDays(base, weekOffset * 7);
+  }, [weekOffset]);
+
+  // Build array of week-start dates
+  const weeks = useMemo(() =>
+    Array.from({ length: TOTAL_WEEKS }, (_, i) => addDays(anchorDate, i * 7)),
+    [anchorDate]
+  );
+
+  // Filter projects that have at least a start_date or end_date, and are active/planning/on_hold
+  const visibleProjects = useMemo(() => {
+    return projects.filter(p => p.start_date || p.end_date);
+  }, [projects]);
+
+  const today = new Date();
+
+  // Today's column index (0-based week)
+  const todayColIndex = useMemo(() => {
+    return weeks.findIndex((w, i) => {
+      const next = weeks[i + 1] ? weeks[i + 1] : addDays(w, 7);
+      return today >= w && today < next;
+    });
+  }, [weeks, today]);
+
+  const getBar = (project) => {
+    const start = project.start_date ? parseISO(project.start_date) : null;
+    const end = project.end_date ? parseISO(project.end_date) : null;
+    if (!start && !end) return null;
+
+    const rangeStart = addDays(anchorDate, 0);
+    const rangeEnd = addDays(anchorDate, TOTAL_WEEKS * 7 - 1);
+
+    const effectiveStart = start || end;
+    const effectiveEnd = end || start;
+
+    // No overlap with visible range
+    if (effectiveEnd < rangeStart || effectiveStart > rangeEnd) return null;
+
+    const clampedStart = effectiveStart < rangeStart ? rangeStart : effectiveStart;
+    const clampedEnd = effectiveEnd > rangeEnd ? rangeEnd : effectiveEnd;
+
+    // Convert to column positions (each col = 7 days = 1 week)
+    const startOffset = differenceInDays(clampedStart, anchorDate);
+    const endOffset = differenceInDays(clampedEnd, anchorDate);
+
+    const startCol = Math.floor(startOffset / 7);
+    const endCol = Math.floor(endOffset / 7);
+
+    return { startCol, endCol, clipped: effectiveStart < rangeStart || effectiveEnd > rangeEnd };
+  };
+
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Gantt Chart</h1>
-        <Badge variant="outline" className="text-xs">24-week view</Badge>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Gantt Chart</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Project timelines by start & end date</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setWeekOffset(0)}>Today</Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset(o => o - TOTAL_WEEKS)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm text-muted-foreground min-w-max">
+            {format(weeks[0], 'MMM d')} – {format(addDays(weeks[TOTAL_WEEKS - 1], 6), 'MMM d, yyyy')}
+          </span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset(o => o + TOTAL_WEEKS)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-muted-foreground">Project Timeline</CardTitle>
-        </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-xs min-w-[900px]">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-4 py-2 w-48 text-muted-foreground font-medium sticky left-0 bg-card z-10">Task</th>
-                {weeks.map(w => (
-                  <th key={w} className="text-center py-2 px-0.5 text-muted-foreground font-medium w-8">{w}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {TASKS.map((task, i) => (
-                <tr key={task.id} className={`border-b border-border ${i % 2 === 0 ? 'bg-card' : 'bg-muted/20'}`}>
-                  <td className="px-4 py-2 sticky left-0 bg-inherit z-10">
-                    <div className="font-medium text-foreground truncate">{task.task}</div>
-                    <div className="text-muted-foreground truncate">{task.project}</div>
-                  </td>
-                  {weeks.map((_, wi) => {
-                    const weekNum = wi + 1;
-                    const isStart = weekNum === task.start;
-                    const isInBar = weekNum >= task.start && weekNum < task.start + task.duration;
-                    const isEnd = weekNum === task.start + task.duration - 1;
-                    return (
-                      <td key={wi} className="py-2 px-0.5">
-                        {isInBar && (
-                          <div className={`h-5 ${task.color} ${isStart ? 'rounded-l-md' : ''} ${isEnd ? 'rounded-r-md' : ''} opacity-85`} />
+          {isLoading ? (
+            <div className="p-8 space-y-3">
+              {[1,2,3,4].map(i => <div key={i} className="h-10 animate-pulse bg-muted rounded" />)}
+            </div>
+          ) : visibleProjects.length === 0 ? (
+            <div className="py-20 text-center space-y-3">
+              <FolderKanban className="h-10 w-10 mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground text-sm">No projects with start/end dates found.</p>
+              <p className="text-muted-foreground text-xs">Add start and end dates to your projects in Project Planning.</p>
+            </div>
+          ) : (
+            <table className="w-full text-xs" style={{ minWidth: `${200 + TOTAL_WEEKS * 52}px` }}>
+              <thead>
+                <tr className="border-b border-border bg-muted/20">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground sticky left-0 bg-card z-10 w-52">Project</th>
+                  {weeks.map((w, i) => (
+                    <th
+                      key={i}
+                      className={`text-center py-3 px-0.5 font-medium w-[52px] ${i === todayColIndex ? 'text-primary' : 'text-muted-foreground'}`}
+                    >
+                      <div>{format(w, 'MMM d')}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleProjects.map((project, ri) => {
+                  const bar = getBar(project);
+                  return (
+                    <tr key={project.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
+                      {/* Project label */}
+                      <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10">
+                        <div className="flex items-center gap-2">
+                          <Link to={`/project-planning/${project.id}`} className="font-medium truncate hover:text-primary transition-colors max-w-[130px]">
+                            {project.name}
+                          </Link>
+                          <Badge className={`text-[10px] border shrink-0 ${STATUS_STYLES[project.status]}`}>
+                            {STATUS_LABELS[project.status]}
+                          </Badge>
+                        </div>
+                        {project.client && (
+                          <div className="text-muted-foreground truncate mt-0.5">{project.client}</div>
                         )}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+                      {/* Week cells */}
+                      {weeks.map((w, ci) => {
+                        const isToday = ci === todayColIndex;
+                        const inBar = bar && ci >= bar.startCol && ci <= bar.endCol;
+                        const isBarStart = bar && ci === bar.startCol;
+                        const isBarEnd = bar && ci === bar.endCol;
+                        const color = STATUS_COLORS[project.status] || 'bg-primary';
+
+                        return (
+                          <td key={ci} className={`py-2.5 px-0.5 relative ${isToday ? 'bg-primary/5' : ''}`}>
+                            {isToday && (
+                              <div className="absolute top-0 bottom-0 left-1/2 -translate-x-px w-0.5 bg-primary/40 z-0" />
+                            )}
+                            {inBar && (
+                              <div
+                                className={`relative z-10 h-6 ${color} opacity-85 ${isBarStart ? 'rounded-l-full ml-1' : ''} ${isBarEnd ? 'rounded-r-full mr-1' : ''}`}
+                              />
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </CardContent>
       </Card>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+        {Object.entries(STATUS_LABELS).map(([key, label]) => (
+          <div key={key} className="flex items-center gap-1.5">
+            <div className={`w-3 h-3 rounded-sm ${STATUS_COLORS[key]} opacity-85`} />
+            {label}
+          </div>
+        ))}
+        <div className="flex items-center gap-1.5">
+          <div className="w-0.5 h-3 bg-primary/60" />
+          Today
+        </div>
+      </div>
     </div>
   );
 }
