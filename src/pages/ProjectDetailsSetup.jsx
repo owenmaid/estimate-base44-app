@@ -409,8 +409,8 @@ export default function ProjectDetailsSetup() {
                               style={{ minWidth: '80px' }}
                             >
                               <option value="">—</option>
-                              {inventory.map(item => (
-                                <option key={item.id} value={item.id}>{item.name || item.sku}</option>
+                              {Array.from({ length: 31 }, (_, i) => (
+                                <option key={i} value={i}>{i}</option>
                               ))}
                             </select>
                           </td>
