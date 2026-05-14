@@ -426,7 +426,7 @@ export default function ProjectDetailsSetup() {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-secondary/60 border-b border-border">
-                    <th className="sticky left-0 z-10 bg-secondary/80 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[120px] border-r border-border">
+                    <th className="sticky left-0 z-10 bg-secondary/90 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[90px] border-r border-border">
                       Row
                     </th>
                     {visibleDates.map(d => {
