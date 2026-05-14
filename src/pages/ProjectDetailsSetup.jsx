@@ -40,8 +40,9 @@ export default function ProjectDetailsSetup() {
     mutationFn: async (projectData) => {
       return base44.entities.Project.create(projectData);
     },
-    onSuccess: () => {
+    onSuccess: (newProject) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setSelectedProjectId(newProject.id);
       toast.success('Project saved successfully');
     },
   });
@@ -105,7 +106,6 @@ export default function ProjectDetailsSetup() {
       schedule_rows: rows,
     };
     saveProjectMutation.mutate(projectData);
-    setSelectedProjectId('');
   };
 
   const handleSaveSchedule = () => {
