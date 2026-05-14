@@ -18,7 +18,10 @@ export default function ProjectDetailsSetup() {
 
   const { data: inventory = [] } = useQuery({
     queryKey: ['inventory-manpower'],
-    queryFn: () => base44.entities.InventoryItem.filter({ category: 'manpower' }),
+    queryFn: async () => {
+      const allItems = await base44.entities.InventoryItem.list();
+      return allItems.filter(item => item.category === 'manpower');
+    },
   });
 
   const handleCreateDates = () => {
