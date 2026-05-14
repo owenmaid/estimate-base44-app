@@ -472,7 +472,8 @@ export default function ProjectDetailsSetup() {
                               <select
                                 value={grid[key] || ''}
                                 onChange={e => handleCellChange(row.id, dateStr, e.target.value)}
-                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
+                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all appearance-none bg-no-repeat"
+                              style={{ backgroundImage: 'none', paddingRight: '0.25rem' }}
                             >
                               <option value="">—</option>
                               {Array.from({ length: 31 }, (_, i) => (
@@ -603,7 +604,8 @@ export default function ProjectDetailsSetup() {
                               <select
                                 value={equipmentGrid[key] || ''}
                                 onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
-                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
+                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all appearance-none bg-no-repeat"
+                              style={{ backgroundImage: 'none', paddingRight: '0.25rem' }}
                             >
                               <option value="">—</option>
                               {Array.from({ length: 31 }, (_, i) => (
