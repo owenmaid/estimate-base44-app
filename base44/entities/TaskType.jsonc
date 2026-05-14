@@ -1,0 +1,13 @@
+{
+  "name": "TaskType",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Task type name"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

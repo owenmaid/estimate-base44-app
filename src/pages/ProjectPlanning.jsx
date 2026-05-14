@@ -32,6 +32,12 @@ export default function ProjectPlanning() {
   const [form, setForm] = useState(null);
   const [taskList, setTaskList] = useState([]);
   const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskType, setNewTaskType] = useState('');
+
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ['taskTypes'],
+    queryFn: () => base44.entities.TaskType.list('name'),
+  });
 
   useEffect(() => {
     if (project) {
@@ -79,8 +85,9 @@ export default function ProjectPlanning() {
 
   const addTask = () => {
     if (!newTaskName.trim()) return;
-    setTaskList(prev => [...prev, { id: Date.now(), name: newTaskName.trim(), done: false }]);
+    setTaskList(prev => [...prev, { id: Date.now(), name: newTaskName.trim(), type: newTaskType || null, done: false }]);
     setNewTaskName('');
+    setNewTaskType('');
   };
 
   const toggleTask = (taskId) => {
@@ -213,6 +220,16 @@ export default function ProjectPlanning() {
           <CardContent className="space-y-3">
             {/* Add task */}
             <div className="flex gap-2">
+              <Select value={newTaskType} onValueChange={setNewTaskType}>
+                <SelectTrigger className="w-36 flex-shrink-0">
+                  <SelectValue placeholder="Type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {taskTypes.map(tt => (
+                    <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Input
                 placeholder="Add a new task..."
                 value={newTaskName}
@@ -242,6 +259,9 @@ export default function ProjectPlanning() {
                     value={task.name}
                     onChange={e => updateTask(task.id, e.target.value)}
                   />
+                  {task.type && (
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{task.type}</span>
+                  )}
                   <button
                     onClick={() => removeTask(task.id)}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
