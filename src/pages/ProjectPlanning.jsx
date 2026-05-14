@@ -29,10 +29,10 @@ const calcTask = (t) => {
   const total = subtotal + taxAmount;
   return {
     ...t,
-    quantity: qty || t.quantity,
-    cost: cost || t.cost,
-    markup: markup || t.markup,
-    tax_pct: taxPct || t.tax_pct,
+    quantity: qty,
+    cost,
+    markup,
+    tax_pct: taxPct,
     subtotal,
     tax_amount: taxAmount,
     total,
@@ -135,10 +135,24 @@ export default function ProjectPlanning() {
   const handleSave = () => {
     const done = taskList.filter(t => t.done).length;
     const autoProgress = taskList.length > 0 ? Math.round((done / taskList.length) * 100) : form.progress;
+    // Clean task list: ensure all numeric fields are proper numbers before saving
+    const cleanedTaskList = taskList.map(t => ({
+      id: t.id,
+      name: t.name,
+      type: t.type || null,
+      done: !!t.done,
+      quantity: parseFloat(t.quantity) || 0,
+      cost: parseFloat(t.cost) || 0,
+      markup: parseFloat(t.markup) || 0,
+      tax_pct: parseFloat(t.tax_pct) || 0,
+      subtotal: t.subtotal || 0,
+      tax_amount: t.tax_amount || 0,
+      total: t.total || 0,
+    }));
     updateMutation.mutate({
       ...form,
-      task_list: taskList,
-      tasks: taskList.length,
+      task_list: cleanedTaskList,
+      tasks: cleanedTaskList.length,
       done,
       progress: autoProgress,
     });
