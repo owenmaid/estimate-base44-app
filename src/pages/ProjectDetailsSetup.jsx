@@ -565,8 +565,8 @@ export default function ProjectDetailsSetup() {
                       const weekend = isWeekend(d);
                       return (
                         <th
-                          key={d.toISOString()}
-                          className={`px-1.5 py-2.5 text-center font-medium w-[200px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
+                           key={d.toISOString()}
+                           className={`px-1.5 py-2.5 text-center font-medium w-[90px] border-r border-border last:border-r-0 ${weekend ? 'text-muted-foreground/50' : 'text-foreground'}`}
                         >
                           <div>{format(d, 'EEE')}</div>
                           <div className="font-bold">{format(d, 'd')}</div>
@@ -598,11 +598,11 @@ export default function ProjectDetailsSetup() {
                         const weekend = isWeekend(d);
                         return (
                           <td
-                            key={dateStr}
-                            className={`px-1 py-1 border-r border-border last:border-r-0 w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
-                            >
-                              <select
-                                value={equipmentGrid[key] || ''}
+                             key={dateStr}
+                             className={`px-1 py-1 border-r border-border last:border-r-0 w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                             >
+                               <select
+                                 value={equipmentGrid[key] || ''}
                                 onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
                                 className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all appearance-none bg-no-repeat"
                               style={{ backgroundImage: 'none', paddingRight: '0.25rem' }}
@@ -626,10 +626,10 @@ export default function ProjectDetailsSetup() {
                       const weekend = isWeekend(d);
                       return (
                         <td
-                          key={dateStr}
-                          className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[200px] ${weekend ? 'bg-secondary/30' : ''}`}
-                        >
-                          {calculateEquipmentDayTotal(dateStr)}
+                           key={dateStr}
+                           className={`px-1.5 py-2 text-center border-r border-border last:border-r-0 text-foreground w-[90px] ${weekend ? 'bg-secondary/30' : ''}`}
+                         >
+                           {calculateEquipmentDayTotal(dateStr)}
                         </td>
                       );
                     })}
