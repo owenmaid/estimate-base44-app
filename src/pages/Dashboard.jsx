@@ -1,52 +1,200 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { FilePlus, FileText, DollarSign, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import EstimateTable from '@/components/estimates/EstimateTable';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
+
+const STATUS_STYLES = {
+  active:    'bg-green-500/15 text-green-400 border-green-500/30',
+  planning:  'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  on_hold:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+  completed: 'bg-muted text-muted-foreground border-border',
+};
+const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
 export default function Dashboard() {
-  const { data: estimates = [], isLoading } = useQuery({
+  const { data: estimates = [], isLoading: loadingEstimates } = useQuery({
     queryKey: ['estimates'],
     queryFn: () => base44.entities.Estimate.list('-created_date'),
   });
 
-  const stats = {
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date'),
+  });
+
+  // Estimate stats
+  const estimateStats = {
     total: estimates.length,
     totalValue: estimates.reduce((s, e) => s + (e.total || 0), 0),
     accepted: estimates.filter(e => e.status === 'accepted').length,
     pending: estimates.filter(e => e.status === 'draft' || e.status === 'sent').length,
   };
 
+  // Project stats
+  const projectStats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    onHold: projects.filter(p => p.status === 'on_hold').length,
+    completed: projects.filter(p => p.status === 'completed').length,
+    totalRevenue: projects.reduce((s, p) => s + (p.task_list || []).reduce((a, t) => a + (t.total || 0), 0), 0),
+  };
+
+  // Revenue per month from project task totals — grouped by project created_date month
+  const revenueByMonth = useMemo(() => {
+    const map = {};
+    projects.forEach(p => {
+      if (!p.created_date) return;
+      const month = format(new Date(p.created_date), 'MMM yyyy');
+      const rev = (p.task_list || []).reduce((s, t) => s + (t.total || 0), 0);
+      map[month] = (map[month] || 0) + rev;
+    });
+    // Sort chronologically
+    const sorted = Object.entries(map)
+      .map(([month, revenue]) => ({ month, revenue }))
+      .sort((a, b) => new Date(a.month) - new Date(b.month))
+      .slice(-12); // last 12 months
+    return sorted;
+  }, [projects]);
+
+  // Upcoming deadlines: projects with a due date in the next 60 days, not completed
+  const today = new Date();
+  const upcomingDeadlines = projects
+    .filter(p => p.due && p.status !== 'completed')
+    .map(p => ({ ...p, dueDate: parseISO(p.due) }))
+    .filter(p => isAfter(p.dueDate, today) && isBefore(p.dueDate, addDays(today, 60)))
+    .sort((a, b) => a.dueDate - b.dueDate)
+    .slice(0, 8);
+
+  const overdue = projects.filter(p => p.due && p.status !== 'completed' && isBefore(parseISO(p.due), today));
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Overview of your estimates</p>
+          <h1 className="text-2xl font-bold tracking-tight">Executive Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-1">Full business overview</p>
         </div>
-        <Link to="/estimates/new">
-          <Button className="gap-2">
-            <FilePlus className="h-4 w-4" /> New Estimate
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/projects"><FolderKanban className="h-4 w-4 mr-1.5" /> Projects</Link>
           </Button>
-        </Link>
+          <Button size="sm" asChild>
+            <Link to="/estimates/new"><FilePlus className="h-4 w-4 mr-1.5" /> New Estimate</Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Estimates" value={stats.total} icon={FileText} accent="bg-primary" />
-        <StatCard title="Total Value" value={`$${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={DollarSign} accent="bg-green-500" />
-        <StatCard title="Accepted" value={stats.accepted} icon={CheckCircle} accent="bg-emerald-500" />
-        <StatCard title="Pending" value={stats.pending} icon={Clock} accent="bg-amber-500" />
+      {/* Project KPIs */}
+      <div>
+        <h2 className="text-base font-semibold mb-3 text-muted-foreground uppercase tracking-wider text-xs">Projects</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatCard title="Total Projects" value={projectStats.total} icon={FolderKanban} accent="bg-primary" />
+          <StatCard title="Active" value={projectStats.active} icon={TrendingUp} accent="bg-green-500" />
+          <StatCard title="On Hold" value={projectStats.onHold} icon={AlertCircle} accent="bg-yellow-500" />
+          <StatCard title="Completed" value={projectStats.completed} icon={CheckCircle} accent="bg-emerald-500" />
+          <StatCard title="Total Revenue" value={`$${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`} icon={DollarSign} accent="bg-primary" />
+        </div>
       </div>
 
+      {/* Chart + Deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Revenue Chart */}
+        <Card className="lg:col-span-3">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Revenue by Month</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {revenueByMonth.length === 0 ? (
+              <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+                No revenue data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={revenueByMonth} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Revenue']}
+                  />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Deadlines */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-primary" /> Upcoming Deadlines
+            </CardTitle>
+            {overdue.length > 0 && (
+              <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs border">
+                {overdue.length} overdue
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {upcomingDeadlines.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No upcoming deadlines in the next 60 days</p>
+            ) : upcomingDeadlines.map(p => {
+              const daysLeft = Math.ceil((p.dueDate - today) / (1000 * 60 * 60 * 24));
+              const urgent = daysLeft <= 7;
+              return (
+                <Link to={`/project-planning/${p.id}`} key={p.id}>
+                  <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{p.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.client || 'No client'}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 ml-3 flex-shrink-0">
+                      <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
+                      <span className={`text-xs font-medium ${urgent ? 'text-red-400' : 'text-muted-foreground'}`}>
+                        {daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d left`}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+            <div className="pt-1">
+              <Link to="/projects" className="text-xs text-primary hover:underline">View all projects →</Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Estimate KPIs */}
+      <div>
+        <h2 className="text-base font-semibold mb-3 text-muted-foreground uppercase tracking-wider text-xs">Estimates</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Estimates" value={estimateStats.total} icon={FileText} accent="bg-primary" />
+          <StatCard title="Total Value" value={`$${estimateStats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={DollarSign} accent="bg-green-500" />
+          <StatCard title="Accepted" value={estimateStats.accepted} icon={CheckCircle} accent="bg-emerald-500" />
+          <StatCard title="Pending" value={estimateStats.pending} icon={Clock} accent="bg-amber-500" />
+        </div>
+      </div>
+
+      {/* Recent Estimates */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Recent Estimates</h2>
           <Link to="/estimates" className="text-sm text-primary hover:underline font-medium">View all</Link>
         </div>
-        <EstimateTable estimates={estimates.slice(0, 5)} isLoading={isLoading} />
+        <EstimateTable estimates={estimates.slice(0, 5)} isLoading={loadingEstimates} />
       </div>
     </div>
   );
