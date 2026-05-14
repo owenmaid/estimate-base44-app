@@ -380,7 +380,7 @@ export default function ProjectDetailsSetup() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">
-              Schedule Spreadsheet
+              Manpower Schedule
               {selectedProjectId && projects.find(p => p.id === selectedProjectId) && (
                 <span className="text-primary ml-2">— {projects.find(p => p.id === selectedProjectId).name}</span>
               )}
