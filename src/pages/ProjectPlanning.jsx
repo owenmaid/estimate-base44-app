@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 const STATUS_STYLES = {
@@ -380,6 +381,30 @@ export default function ProjectPlanning() {
                 className="min-h-[100px]"
               />
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full" disabled={deleteMutation.isPending}>
+                  <Trash2 className="h-4 w-4 mr-1.5" /> Delete Project
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete <strong>{form.name}</strong>? This action cannot be undone and all project data will be permanently removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => deleteMutation.mutate()}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
 
