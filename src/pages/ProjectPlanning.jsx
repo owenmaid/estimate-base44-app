@@ -285,6 +285,16 @@ export default function ProjectPlanning() {
   const doneTasks = taskList.filter(t => t.done).length;
   const progress = taskList.length > 0 ? Math.round((doneTasks / taskList.length) * 100) : form.progress;
 
+  // Summary widgets
+  const grandSubtotal = taskList.reduce((s, t) => s + (t.subtotal || 0), 0);
+  const grandTotal = taskList.reduce((s, t) => s + (t.total || 0), 0);
+  const assigneeCounts = taskList.reduce((acc, t) => {
+    if (t.assignee?.trim()) {
+      acc[t.assignee.trim()] = (acc[t.assignee.trim()] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
   // New row computed values
   const newRaw = { quantity: newQty, cost: newCost, markup: newMarkup, tax_pct: newTaxPct };
   const newCalc = calcTask(newRaw);
@@ -332,6 +342,58 @@ export default function ProjectPlanning() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Summary Widgets */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Assignees Widget */}
+        <Card>
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Assignees</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            {Object.keys(assigneeCounts).length === 0 ? (
+              <p className="text-xs text-muted-foreground">No assignees yet</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {Object.entries(assigneeCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => (
+                  <li key={name} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{name}</span>
+                    <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full font-medium shrink-0">{count} item{count !== 1 ? 's' : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Subtotal Before Tax Widget */}
+        <Card>
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Subtotal (Before Tax)</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <p className="text-3xl font-bold tabular-nums">
+              {grandSubtotal.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' })}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">{taskList.length} line item{taskList.length !== 1 ? 's' : ''}</p>
+          </CardContent>
+        </Card>
+
+        {/* Grand Total After Tax Widget */}
+        <Card>
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Grand Total (After Tax)</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <p className="text-3xl font-bold text-primary tabular-nums">
+              {grandTotal.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' })}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Tax: {(grandTotal - grandSubtotal).toLocaleString('en-CA', { style: 'currency', currency: 'CAD' })}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
         {/* Project Details */}
