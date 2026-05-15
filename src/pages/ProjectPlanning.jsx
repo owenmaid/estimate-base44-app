@@ -638,9 +638,9 @@ export default function ProjectPlanning() {
               <thead>
                 <tr className="text-muted-foreground border-b border-border">
                   <th className="w-6 pb-2"></th>
-                  <th className="text-left pb-2 pr-2 w-28">Type</th>
-                  <th className="text-left pb-2 pr-2 w-40">Item</th>
-                  <th className="text-left pb-2 pr-2 flex-1">Description</th>
+                  <th className="text-left pb-2 pr-2 min-w-[140px] whitespace-nowrap">Type</th>
+                  <th className="text-left pb-2 pr-2 min-w-[200px] whitespace-nowrap">Item</th>
+                  <th className="text-left pb-2 pr-2 min-w-[260px] whitespace-nowrap">Description</th>
                   <th className="text-left pb-2 pr-2 w-28">Assignee</th>
                   <th className="text-right pb-2 pr-1 w-16">Qty</th>
                   <th className="text-right pb-2 pr-1 w-20">Cost</th>
@@ -656,7 +656,7 @@ export default function ProjectPlanning() {
                 {/* New item input row */}
                 <tr className="border-b border-border/50 bg-muted/20">
                   <td className="py-2 pr-1"><Plus className="h-3.5 w-3.5 text-muted-foreground" /></td>
-                  <td className="py-1 pr-2">
+                  <td className="py-1 pr-2 whitespace-nowrap">
                     <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
                       <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Type..." /></SelectTrigger>
                       <SelectContent>
@@ -666,7 +666,7 @@ export default function ProjectPlanning() {
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="py-1 pr-2">
+                  <td className="py-1 pr-2 whitespace-nowrap">
                     <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
                       <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder={newTaskType ? 'Select item...' : '—'} /></SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
@@ -678,7 +678,7 @@ export default function ProjectPlanning() {
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="py-1 pr-2">
+                  <td className="py-1 pr-2 whitespace-nowrap">
                     <input
                       className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5"
                       placeholder="Description..."
@@ -723,11 +723,11 @@ export default function ProjectPlanning() {
                         {task.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
                       </button>
                     </td>
-                    <td className="py-1 pr-2">
+                    <td className="py-1 pr-2 whitespace-nowrap">
                       {task.type && <span className="bg-muted px-1.5 py-0.5 rounded text-xs">{task.type}</span>}
                     </td>
-                    <td className="py-1 pr-2 text-xs text-muted-foreground">{task.name}</td>
-                    <td className="py-1 pr-2">
+                    <td className="py-1 pr-2 text-xs text-muted-foreground whitespace-nowrap">{task.name}</td>
+                    <td className="py-1 pr-2 whitespace-nowrap">
                       <input
                         className={`w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 ${task.done ? 'line-through text-muted-foreground' : ''}`}
                         value={task.name}
