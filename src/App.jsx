@@ -21,6 +21,7 @@ import GanttPage from '@/pages/GanttPage';
 import Settings from '@/pages/Settings';
 import ResourceAllocation from '@/pages/ResourceAllocation';
 import ProjectDetailsSetup from '@/pages/ProjectDetailsSetup';
+import CalculationRouting from '@/pages/CalculationRouting';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const AuthenticatedApp = () => {
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/resources" element={<ResourceAllocation />} />
         <Route path="/project-details-setup" element={<ProjectDetailsSetup />} />
+        <Route path="/calculation-routing" element={<CalculationRouting />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
