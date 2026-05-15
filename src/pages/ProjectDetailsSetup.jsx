@@ -96,8 +96,19 @@ export default function ProjectDetailsSetup() {
     setEquipmentRows([]);
     setEquipmentGrid({});
     setEditingName('');
+    localStorage.removeItem('activeProjectId');
     toast.success('Project closed');
   };
+
+  useEffect(() => {
+    const activeProjectId = localStorage.getItem('activeProjectId');
+    if (activeProjectId && projects.length > 0) {
+      const project = projects.find(p => p.id === activeProjectId);
+      if (project) {
+        handleLoadProject(activeProjectId);
+      }
+    }
+  }, [projects.length]);
 
   const handleLoadProject = async (projectId) => {
     const project = projects.find(p => p.id === projectId);
@@ -115,6 +126,7 @@ export default function ProjectDetailsSetup() {
     setViewMonth(start);
     setDateOffset(0);
     setSelectedProjectId(projectId);
+    localStorage.setItem('activeProjectId', projectId);
   };
 
   const getNextSampleNumber = () => {
