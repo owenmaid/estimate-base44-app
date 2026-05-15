@@ -601,10 +601,10 @@ export default function ProjectPlanning() {
                     }), { subtotal: 0, tax_amount: 0, total: 0 });
                     return (
                       <tr className="border-t-2 border-border font-semibold text-xs">
-                        <td colSpan={8} className="pt-3 pr-1 text-right text-muted-foreground">Totals</td>
+                        <td colSpan={9} className="pt-3 pr-1 text-right text-muted-foreground">Totals</td>
                         <td className="pt-3 pr-1 text-right">{totals.tax_amount.toFixed(2)}</td>
                         <td className="pt-3 pr-1 text-right">{totals.subtotal.toFixed(2)}</td>
-                        <td className="pt-3 text-right text-primary">{totals.total.toFixed(2)}</td>
+                        <td className="pt-3 text-right font-bold text-primary text-sm">{totals.total.toFixed(2)}</td>
                         <td></td>
                       </tr>
                     );
@@ -767,10 +767,10 @@ export default function ProjectPlanning() {
                   }), { subtotal: 0, tax_amount: 0, total: 0 });
                   return (
                     <tr className="border-t-2 border-border font-semibold text-xs">
-                      <td colSpan={8} className="pt-3 pr-1 text-right text-muted-foreground">Totals</td>
+                      <td colSpan={9} className="pt-3 pr-1 text-right text-muted-foreground">Totals</td>
                       <td className="pt-3 pr-1 text-right">{totals.tax_amount.toFixed(2)}</td>
                       <td className="pt-3 pr-1 text-right">{totals.subtotal.toFixed(2)}</td>
-                      <td className="pt-3 text-right text-primary">{totals.total.toFixed(2)}</td>
+                      <td className="pt-3 text-right font-bold text-primary text-sm">{totals.total.toFixed(2)}</td>
                       <td></td>
                     </tr>
                   );
