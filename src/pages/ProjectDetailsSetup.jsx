@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarDays, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { format, eachDayOfInterval, parseISO, isWeekend, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
+import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function ProjectDetailsSetup() {
@@ -17,6 +17,7 @@ export default function ProjectDetailsSetup() {
   const [endDate, setEndDate] = useState('');
   const [dates, setDates] = useState([]);
   const [viewMonth, setViewMonth] = useState(null);
+  const [dateOffset, setDateOffset] = useState(0);
   const [equipmentRows, setEquipmentRows] = useState([]);
   const [equipmentGrid, setEquipmentGrid] = useState({});
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -101,6 +102,7 @@ export default function ProjectDetailsSetup() {
     const allDates = eachDayOfInterval({ start, end });
     setDates(allDates);
     setViewMonth(start);
+    setDateOffset(0);
     setSelectedProjectId(projectId);
   };
 
@@ -122,6 +124,7 @@ export default function ProjectDetailsSetup() {
     const allDates = eachDayOfInterval({ start, end });
     setDates(allDates);
     setViewMonth(start);
+    setDateOffset(0);
     setEquipmentGrid({});
     setEquipmentRows([]);
 
@@ -153,11 +156,10 @@ export default function ProjectDetailsSetup() {
     });
   };
 
-  const visibleDates = viewMonth
-    ? dates.filter(d => isSameMonth(d, viewMonth)).slice(0, 20)
-    : dates.slice(0, 20);
-
-  const totalMonths = viewMonth ? Math.ceil(dates.length / 30) : 0;
+  const PAGE_SIZE = 15;
+  const visibleDates = dates.slice(dateOffset, dateOffset + PAGE_SIZE);
+  const canGoPrevPage = dateOffset > 0;
+  const canGoNextPage = dateOffset + PAGE_SIZE < dates.length;
 
 const addEquipmentRow = () => {
     if (!newEquipmentItemId) {
@@ -209,8 +211,7 @@ const addEquipmentRow = () => {
     setEquipmentRows(reordered);
   };
 
-  const canGoPrev = viewMonth && dates.length > 0 && viewMonth > dates[0];
-  const canGoNext = viewMonth && dates.length > 0 && viewMonth < dates[dates.length - 1];
+
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
@@ -348,31 +349,34 @@ const addEquipmentRow = () => {
       {dates.length > 0 && (
         <div className="flex gap-4 items-start">
         <Card className="flex-1 min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">
-              Equipment Schedule
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setViewMonth(m => subMonths(m, 1))}
-                disabled={!canGoPrev}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium min-w-[100px] text-center">
-                {viewMonth ? format(viewMonth, 'MMMM yyyy') : ''}
+          <CardHeader className="pb-2">
+            <div className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Equipment Schedule</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                {dates.length > 0 && visibleDates.length > 0
+                  ? `${format(visibleDates[0], 'MMM d')} – ${format(visibleDates[visibleDates.length - 1], 'MMM d, yyyy')}`
+                  : ''}
               </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setViewMonth(m => addMonths(m, 1))}
-                disabled={!canGoNext}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
             </div>
+            {dates.length > PAGE_SIZE && (
+              <div className="flex items-center gap-2 mt-2">
+                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setDateOffset(o => Math.max(0, o - PAGE_SIZE))} disabled={!canGoPrevPage}>
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(0, dates.length - PAGE_SIZE)}
+                  step={1}
+                  value={dateOffset}
+                  onChange={e => setDateOffset(Number(e.target.value))}
+                  className="flex-1 accent-primary h-1.5 cursor-pointer"
+                />
+                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setDateOffset(o => Math.min(dates.length - PAGE_SIZE, o + PAGE_SIZE))} disabled={!canGoNextPage}>
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
