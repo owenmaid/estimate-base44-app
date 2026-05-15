@@ -60,6 +60,7 @@ export default function InventoryModal({ item, onClose, onSave }) {
                   <SelectItem value="VENTILATION LABOUR">Ventilation Labour</SelectItem>
                   <SelectItem value="VENTILATION EQUIPMENT LOG">Ventilation Equipment Log</SelectItem>
                   <SelectItem value="VENTILATION EQUIPMENT">Ventilation Equipment</SelectItem>
+                  <SelectItem value="CONNECTIVITY">Connectivity</SelectItem>
                 </SelectContent>
               </Select>
             </div>
