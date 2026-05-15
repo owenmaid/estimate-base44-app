@@ -541,7 +541,7 @@ const addEquipmentRow = () => {
                  </tr>
                </thead>
                <tbody>
-                 <tr style={{ height: '40px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
+                 <tr style={{ height: '44px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
                    <td className="px-4 py-2"></td>
                  </tr>
                  {equipmentRows.map((row, idx) => {
@@ -551,7 +551,7 @@ const addEquipmentRow = () => {
                    return (
                      <React.Fragment key={row.id}>
                        {idx === 7 && (
-                         <tr style={{ height: '40px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
+                         <tr style={{ height: '44px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
                            <td className="px-4 py-2"></td>
                          </tr>
                        )}
