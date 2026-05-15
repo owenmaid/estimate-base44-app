@@ -91,6 +91,8 @@ export default function ProjectPlanning() {
     i.category?.toUpperCase() === 'DIRECT LABOUR' || i.category?.toUpperCase() === 'INDIRECT LABOUR'
   );
 
+  const inventoryCategories = [...new Set(inventoryItems.map(i => i.category).filter(Boolean))].sort();
+
   const filteredInventoryItems = newTaskType
     ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
     : inventoryItems;
@@ -437,8 +439,8 @@ export default function ProjectPlanning() {
                           <SelectValue placeholder="Type..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {taskTypes.map(tt => (
-                            <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                          {inventoryCategories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
