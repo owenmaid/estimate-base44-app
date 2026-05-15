@@ -537,7 +537,6 @@ const addEquipmentRow = () => {
              <table className="w-full text-xs border-collapse">
                <thead>
                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
-                   <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Item</th>
                    <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Total</th>
                  </tr>
                </thead>
@@ -548,13 +547,11 @@ const addEquipmentRow = () => {
                    }, 0);
                    return (
                      <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
-                       <td className="px-4 py-2 text-foreground font-medium">{row.label}</td>
                        <td className="px-4 py-2 text-right text-foreground font-semibold">{rowTotal}</td>
                      </tr>
                    );
                  })}
                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                   <td className="px-4 py-2 text-muted-foreground">Total</td>
                    <td className="px-4 py-2 text-right text-foreground">
                      {Object.values(equipmentGrid).reduce((sum, val) => sum + (parseInt(val) || 0), 0)}
                    </td>
