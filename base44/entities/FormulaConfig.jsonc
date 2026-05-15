@@ -1,0 +1,61 @@
+{
+  "name": "FormulaConfig",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Formula name"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this formula does"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this formula is applied in Manpower Estimation"
+    },
+    "variables": {
+      "type": "array",
+      "description": "List of named multiplier variables",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "formula_expression": {
+      "type": "string",
+      "description": "The formula string using variable names, e.g. base_cost * complexity * risk"
+    },
+    "applies_to": {
+      "type": "string",
+      "enum": [
+        "subtotal",
+        "reg_cost",
+        "ot_cost",
+        "total"
+      ],
+      "default": "subtotal",
+      "description": "Which cost component this formula multiplies"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

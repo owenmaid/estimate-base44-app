@@ -5,7 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Calculator, Package } from 'lucide-react';
+import { Plus, Trash2, Calculator, Package, Zap } from 'lucide-react';
+
+// Safely evaluate a formula expression with given variable scope
+function evalFormula(expression, variables) {
+  try {
+    let expr = expression;
+    variables.forEach(v => {
+      expr = expr.replace(new RegExp(`\\b${v.name}\\b`, 'g'), v.value);
+    });
+    const result = Function(`"use strict"; return (${expr})`)();
+    return typeof result === 'number' && isFinite(result) ? result : 1;
+  } catch {
+    return 1;
+  }
+}
 
 export default function EquipmentCalculator() {
   const [lineItems, setLineItems] = useState([]);
@@ -18,13 +32,19 @@ export default function EquipmentCalculator() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
+  const { data: formulas = [] } = useQuery({
+    queryKey: ['formula-configs'],
+    queryFn: () => base44.entities.FormulaConfig.list(),
+  });
+
+  const activeFormulas = formulas.filter(f => f.is_active && f.formula_expression);
+
   const availableItems = inventory.filter(i => i.status !== 'discontinued');
 
   const addLineItem = () => {
     if (!selectedItemId) return;
     const item = inventory.find(i => i.id === selectedItemId);
     if (!item) return;
-    // Avoid duplicates
     if (lineItems.find(l => l.item_id === selectedItemId)) return;
     setLineItems(prev => [...prev, {
       item_id: item.id,
@@ -50,24 +70,54 @@ export default function EquipmentCalculator() {
     setLineItems(prev => prev.filter(l => l.item_id !== itemId));
   };
 
+  // Compute the multiplier for a given cost type from active formulas
+  const getMultiplier = (costType) => {
+    const relevant = activeFormulas.filter(f => f.applies_to === costType);
+    return relevant.reduce((acc, f) => {
+      const m = evalFormula(f.formula_expression, f.variables || []);
+      return acc * m;
+    }, 1);
+  };
+
   const results = useMemo(() => {
+    const subtotalMult = getMultiplier('subtotal');
+    const regMult = getMultiplier('reg_cost');
+    const otMult = getMultiplier('ot_cost');
+
     const rows = lineItems.map(l => {
-      const regCost = l.quantity * l.unit_cost * projectDays;
-      const otCost = l.quantity * l.ot_value * l.ot_hours;
-      const subtotal = regCost + otCost;
+      const regCost = l.quantity * l.unit_cost * projectDays * regMult;
+      const otCost = l.quantity * l.ot_value * l.ot_hours * otMult;
+      const subtotal = (regCost + otCost) * subtotalMult;
       return { ...l, regCost, otCost, subtotal };
     });
     const subtotal = rows.reduce((s, r) => s + r.subtotal, 0);
-    const taxAmount = subtotal * (taxRate / 100);
-    const total = subtotal + taxAmount;
+    const totalMult = getMultiplier('total');
+    const adjustedSubtotal = subtotal * totalMult;
+    const taxAmount = adjustedSubtotal * (taxRate / 100);
+    const total = adjustedSubtotal + taxAmount;
     const totalUnits = rows.reduce((s, r) => s + r.quantity, 0);
-    return { rows, subtotal, taxAmount, total, totalUnits };
-  }, [lineItems, projectDays, taxRate]);
+    return { rows, subtotal: adjustedSubtotal, taxAmount, total, totalUnits };
+  }, [lineItems, projectDays, taxRate, formulas]);
 
   const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
   return (
     <div className="space-y-6">
+      {/* Active Formula Badge */}
+      {activeFormulas.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg text-xs">
+          <Zap className="h-3.5 w-3.5 text-primary shrink-0" />
+          <span className="text-muted-foreground">
+            Active formulas from Calculation Engine:
+          </span>
+          {activeFormulas.map(f => (
+            <Badge key={f.id} variant="outline" className="text-xs border-primary/40 text-primary">
+              {f.name} → {f.applies_to}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       {/* Parameters */}
       <Card>
         <CardHeader className="pb-3">
@@ -219,10 +269,17 @@ export default function EquipmentCalculator() {
                 <div className="text-xl font-bold text-primary">{fmt(results.total)}</div>
               </div>
             </div>
-            {taxRate > 0 && (
-              <div className="flex justify-end gap-6 text-sm text-muted-foreground border-t border-border pt-3">
+            {(taxRate > 0 || activeFormulas.length > 0) && (
+              <div className="flex flex-wrap justify-end gap-6 text-sm text-muted-foreground border-t border-border pt-3">
                 <span>Subtotal: <span className="text-foreground font-medium">{fmt(results.subtotal)}</span></span>
-                <span>Tax ({taxRate}%): <span className="text-foreground font-medium">{fmt(results.taxAmount)}</span></span>
+                {taxRate > 0 && (
+                  <span>Tax ({taxRate}%): <span className="text-foreground font-medium">{fmt(results.taxAmount)}</span></span>
+                )}
+                {activeFormulas.length > 0 && (
+                  <span className="text-primary text-xs flex items-center gap-1">
+                    <Zap className="h-3 w-3" /> {activeFormulas.length} formula{activeFormulas.length !== 1 ? 's' : ''} applied
+                  </span>
+                )}
                 <span className="font-semibold text-foreground">Total: {fmt(results.total)}</span>
               </div>
             )}
