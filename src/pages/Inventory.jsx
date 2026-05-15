@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Pencil, Trash2, Package, AlertTriangle, XCircle, Archive } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Package, AlertTriangle, XCircle, Archive, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import InventoryModal from '@/components/inventory/InventoryModal';
 
@@ -20,6 +20,40 @@ export default function Inventory() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [modalItem, setModalItem] = useState(null); // null = closed, false = new, object = edit
+  const csvInputRef = useRef(null);
+
+  const bulkCreateMutation = useMutation({
+    mutationFn: (rows) => base44.entities.InventoryItem.bulkCreate(rows),
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
+      toast.success(`${created.length} items imported successfully!`);
+    },
+    onError: () => toast.error('CSV import failed. Check the file format.'),
+  });
+
+  const handleCsvUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) { toast.error('CSV must have a header row and at least one data row.'); return; }
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+      const rows = lines.slice(1).map(line => {
+        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const obj = {};
+        headers.forEach((h, i) => { if (vals[i] !== undefined && vals[i] !== '') obj[h] = vals[i]; });
+        // coerce numeric fields
+        ['quantity', 'unit_cost', 'min_stock'].forEach(f => { if (obj[f] !== undefined) obj[f] = Number(obj[f]) || 0; });
+        return obj;
+      }).filter(r => r.name);
+      if (rows.length === 0) { toast.error('No valid rows found. Make sure CSV has a "name" column.'); return; }
+      bulkCreateMutation.mutate(rows);
+    };
+    reader.readAsText(file);
+  };
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['inventoryItems'],
@@ -73,9 +107,16 @@ export default function Inventory() {
           <h1 className="text-2xl font-bold">Inventory</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage your stock and materials</p>
         </div>
-        <Button size="sm" onClick={() => setModalItem(false)}>
-          <Plus className="h-4 w-4 mr-1.5" /> Add Item
-        </Button>
+        <div className="flex items-center gap-2">
+          <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
+          <Button size="sm" variant="outline" onClick={() => csvInputRef.current?.click()} disabled={bulkCreateMutation.isPending}>
+            <Upload className="h-4 w-4 mr-1.5" />
+            {bulkCreateMutation.isPending ? 'Importing...' : 'Import CSV'}
+          </Button>
+          <Button size="sm" onClick={() => setModalItem(false)}>
+            <Plus className="h-4 w-4 mr-1.5" /> Add Item
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
