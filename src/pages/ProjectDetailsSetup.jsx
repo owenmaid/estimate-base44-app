@@ -306,6 +306,9 @@ const addEquipmentRow = () => {
           <CardTitle className="text-base flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-primary" />
             Set Project Dates
+            {selectedProjectId && (
+              <span className="text-primary font-bold">— {projects.find(p => p.id === selectedProjectId)?.name}</span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
