@@ -496,23 +496,30 @@ const addEquipmentRow = () => {
         </Card>
 
         {/* Equipment Calculations Panel */}
-        <Card className="w-72 shrink-0">
+        <Card className="w-72 shrink-0 self-start">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Equipment Calculations</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {equipmentRows.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Add equipment rows to see calculations here.</p>
-              ) : (
-                equipmentRows.map(row => (
-                  <div key={row.id} className="border border-border rounded-md p-3 space-y-1">
-                    <p className="text-xs font-semibold text-foreground truncate">{row.label}</p>
-                    {/* Calculation rows will go here */}
-                  </div>
-                ))
-              )}
-            </div>
+          <CardContent className="p-0">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-secondary/60 border-b border-border">
+                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground h-[42px]">Calculation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentRows.map(row => (
+                  <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                    <td className="px-4 py-2 text-foreground h-[37px]">
+                      {/* Calculations for {row.label} */}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
+                  <td className="px-4 py-2 text-muted-foreground h-[37px]">Total</td>
+                </tr>
+              </tbody>
+            </table>
           </CardContent>
         </Card>
         </div>
