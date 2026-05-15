@@ -529,35 +529,40 @@ const addEquipmentRow = () => {
         </Card>
 
         {/* Equipment Calculations Panel */}
-        <Card className="w-72 shrink-0 self-start">
-          <CardHeader className="pb-2">
-            <CardTitle style={{ fontSize: '20.5px' }}>Equipment Calculations</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
-                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Calculation</th>
-                </tr>
-                <tr className="border-b border-border" style={{ height: '46px', backgroundColor: 'rgba(249, 115, 22, 0.15)' }}>
-                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {equipmentRows.map(row => (
-                  <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
-                    <td className="px-4 py-2 text-foreground">
-                      {/* Calculations for {row.label} */}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                  <td className="px-4 py-2 text-muted-foreground h-[37px]">Total</td>
-                </tr>
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+         <Card className="w-72 shrink-0 self-start">
+           <CardHeader className="pb-2">
+             <CardTitle style={{ fontSize: '20.5px' }}>Equipment Calculations</CardTitle>
+           </CardHeader>
+           <CardContent className="p-0">
+             <table className="w-full text-xs border-collapse">
+               <thead>
+                 <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
+                   <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Item</th>
+                   <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Total</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {equipmentRows.map(row => {
+                   const rowTotal = Object.entries(equipmentGrid).reduce((sum, [key, value]) => {
+                     return key.startsWith(`${row.id}_`) ? sum + (parseInt(value) || 0) : sum;
+                   }, 0);
+                   return (
+                     <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
+                       <td className="px-4 py-2 text-foreground font-medium">{row.label}</td>
+                       <td className="px-4 py-2 text-right text-foreground font-semibold">{rowTotal}</td>
+                     </tr>
+                   );
+                 })}
+                 <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
+                   <td className="px-4 py-2 text-muted-foreground">Total</td>
+                   <td className="px-4 py-2 text-right text-foreground">
+                     {Object.values(equipmentGrid).reduce((sum, val) => sum + (parseInt(val) || 0), 0)}
+                   </td>
+                 </tr>
+               </tbody>
+             </table>
+           </CardContent>
+         </Card>
         </div>
       )}
     </div>
