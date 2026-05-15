@@ -537,7 +537,7 @@ const addEquipmentRow = () => {
              <table className="w-full text-xs border-collapse">
                <thead>
                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
-                   <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Total</th>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground">Total</th>
                  </tr>
                </thead>
                <tbody>
@@ -556,7 +556,7 @@ const addEquipmentRow = () => {
                          </tr>
                        )}
                        <tr className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
-                         <td className="px-4 py-2 text-right text-foreground font-semibold">{rowTotal}</td>
+                         <td className="px-4 py-2 text-foreground font-semibold">{rowTotal}</td>
                        </tr>
                      </React.Fragment>
                    );
