@@ -30,10 +30,7 @@ export default function ProjectDetailsSetup() {
 
   const { data: equipmentInventory = [] } = useQuery({
     queryKey: ['inventory-equipment'],
-    queryFn: async () => {
-      const allItems = await base44.entities.InventoryItem.list();
-      return allItems.filter(item => item.category?.toLowerCase() === 'equipment');
-    },
+    queryFn: () => base44.entities.InventoryItem.list(),
   });
 
   const { data: projects = [] } = useQuery({
@@ -457,7 +454,7 @@ const addEquipmentRow = () => {
               >
                 <option value="">Select equipment...</option>
                 {equipmentInventory.map(item => (
-                  <option key={item.id} value={item.id}>{item.name || item.sku}</option>
+                  <option key={item.id} value={item.id}>{item.sku || item.name}</option>
                 ))}
               </select>
               <Button variant="outline" size="sm" onClick={addEquipmentRow} disabled={!newEquipmentItemId}>
