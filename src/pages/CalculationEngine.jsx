@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FlaskConical, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, FlaskConical, Zap, Calendar } from 'lucide-react';
 import FormulaEditor from '@/components/calculation/FormulaEditor';
 import { nanoid } from '@/lib/nanoid';
 import { toast } from 'sonner';
@@ -21,10 +22,31 @@ export default function CalculationEngine() {
   const [showNew, setShowNew] = useState(false);
   const queryClient = useQueryClient();
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
   const { data: formulas = [], isLoading } = useQuery({
     queryKey: ['formula-configs'],
     queryFn: () => base44.entities.FormulaConfig.list(),
   });
+
+  // Find the KEYERA FT SASK project
+  const activeProject = useMemo(() => projects.find(p => p.name === 'KEYERA FT SASK'), [projects]);
+
+  // Calculate total mandays from first equipment row
+  const totalMandays = useMemo(() => {
+    if (!activeProject?.equipment_grid || !activeProject?.equipment_rows?.length) return 0;
+    const firstRowId = activeProject.equipment_rows[0].id;
+    let sum = 0;
+    Object.entries(activeProject.equipment_grid).forEach(([key, value]) => {
+      if (key.startsWith(`${firstRowId}_`) && typeof value === 'number' && value > 0) {
+        sum += value;
+      }
+    });
+    return sum;
+  }, [activeProject]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
@@ -84,6 +106,26 @@ export default function CalculationEngine() {
           <Plus className="h-4 w-4 mr-1.5" /> New Formula
         </Button>
       </div>
+
+      {/* Project Data Summary */}
+      {activeProject && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              {activeProject.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Total Mandays</div>
+                <div className="text-3xl font-bold text-primary">{totalMandays}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Banner */}
       {formulas.length > 0 && (
