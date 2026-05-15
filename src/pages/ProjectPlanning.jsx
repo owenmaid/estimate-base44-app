@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, Maximize2, X } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
@@ -67,6 +67,7 @@ export default function ProjectPlanning() {
   const [form, setForm] = useState(null);
   const [taskList, setTaskList] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // New item form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -306,6 +307,9 @@ export default function ProjectPlanning() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
+            <Maximize2 className="h-4 w-4 mr-1.5" /> Expand Items
+          </Button>
           <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
             <Trash2 className="h-4 w-4 mr-1.5" /> Delete
           </Button>
@@ -611,6 +615,171 @@ export default function ProjectPlanning() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Expanded Item List Modal */}
+      {isExpanded && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div>
+              <h2 className="text-xl font-bold">Item List</h2>
+              <p className="text-sm text-muted-foreground">{form.name}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
+                {doneTasks}/{taskList.length} line items done
+              </Badge>
+              <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-6">
+            <table className="w-full text-xs min-w-[900px]">
+              <thead>
+                <tr className="text-muted-foreground border-b border-border">
+                  <th className="w-6 pb-2"></th>
+                  <th className="text-left pb-2 pr-2 w-28">Type</th>
+                  <th className="text-left pb-2 pr-2 w-40">Item</th>
+                  <th className="text-left pb-2 pr-2 flex-1">Description</th>
+                  <th className="text-left pb-2 pr-2 w-28">Assignee</th>
+                  <th className="text-right pb-2 pr-1 w-16">Qty</th>
+                  <th className="text-right pb-2 pr-1 w-20">Cost</th>
+                  <th className="text-right pb-2 pr-1 w-16">Markup %</th>
+                  <th className="text-right pb-2 pr-1 w-16">Tax %</th>
+                  <th className="text-right pb-2 pr-1 w-20">Tax Amt</th>
+                  <th className="text-right pb-2 pr-1 w-20">Subtotal</th>
+                  <th className="text-right pb-2 w-20">Total</th>
+                  <th className="w-6 pb-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* New item input row */}
+                <tr className="border-b border-border/50 bg-muted/20">
+                  <td className="py-2 pr-1"><Plus className="h-3.5 w-3.5 text-muted-foreground" /></td>
+                  <td className="py-1 pr-2">
+                    <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
+                      <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Type..." /></SelectTrigger>
+                      <SelectContent>
+                        {inventoryCategories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-1 pr-2">
+                    <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
+                      <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder={newTaskType ? 'Select item...' : '—'} /></SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {filteredInventoryItems.length === 0 ? (
+                          <div className="px-3 py-3 text-xs text-muted-foreground text-center">No items</div>
+                        ) : filteredInventoryItems.map(item => (
+                          <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-1 pr-2">
+                    <input
+                      className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5"
+                      placeholder="Description..."
+                      value={newTaskName}
+                      onChange={e => setNewTaskName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addTask()}
+                    />
+                  </td>
+                  <td className="py-1 pr-2">
+                    <Select value={newAssignee} onValueChange={setNewAssignee}>
+                      <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assignee..." /></SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {labourItems.map(item => (
+                          <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-1 pr-1">{numInput(newQty, e => setNewQty(e.target.value))}</td>
+                  <td className="py-1 pr-1">{numInput(newCost, e => setNewCost(e.target.value))}</td>
+                  <td className="py-1 pr-1">{numInput(newMarkup, e => setNewMarkup(e.target.value))}</td>
+                  <td className="py-1 pr-1">{numInput(newTaxPct, e => setNewTaxPct(e.target.value))}</td>
+                  <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(newCalc.tax_amount)}</td>
+                  <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(newCalc.subtotal)}</td>
+                  <td className="py-1 text-right font-medium">{fmt(newCalc.total)}</td>
+                  <td className="py-1 pl-1">
+                    <Button size="icon" className="h-6 w-6" onClick={addTask}><Plus className="h-3 w-3" /></Button>
+                  </td>
+                </tr>
+
+                {taskList.length === 0 && (
+                  <tr>
+                    <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
+                      No line items yet. Fill in the row above and click +
+                    </td>
+                  </tr>
+                )}
+                {taskList.map(task => (
+                  <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">
+                    <td className="py-2 pr-1">
+                      <button onClick={() => toggleTask(task.id)} className="flex-shrink-0">
+                        {task.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </td>
+                    <td className="py-1 pr-2">
+                      {task.type && <span className="bg-muted px-1.5 py-0.5 rounded text-xs">{task.type}</span>}
+                    </td>
+                    <td className="py-1 pr-2 text-xs text-muted-foreground">{task.name}</td>
+                    <td className="py-1 pr-2">
+                      <input
+                        className={`w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 ${task.done ? 'line-through text-muted-foreground' : ''}`}
+                        value={task.name}
+                        onChange={e => updateTaskField(task.id, 'name', e.target.value)}
+                      />
+                    </td>
+                    <td className="py-1 pr-2">
+                      <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
+                        <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assignee..." /></SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {labourItems.map(item => (
+                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-1 pr-1">{numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}</td>
+                    <td className="py-1 pr-1">{numInput(task.cost ?? '', e => updateTaskField(task.id, 'cost', e.target.value))}</td>
+                    <td className="py-1 pr-1">{numInput(task.markup ?? '', e => updateTaskField(task.id, 'markup', e.target.value))}</td>
+                    <td className="py-1 pr-1">{numInput(task.tax_pct ?? '', e => updateTaskField(task.id, 'tax_pct', e.target.value))}</td>
+                    <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.tax_amount)}</td>
+                    <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.subtotal)}</td>
+                    <td className="py-1 text-right font-medium">{fmt(task.total)}</td>
+                    <td className="py-1 pl-1">
+                      <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {taskList.length > 0 && (() => {
+                  const totals = taskList.reduce((acc, t) => ({
+                    subtotal: acc.subtotal + (t.subtotal || 0),
+                    tax_amount: acc.tax_amount + (t.tax_amount || 0),
+                    total: acc.total + (t.total || 0),
+                  }), { subtotal: 0, tax_amount: 0, total: 0 });
+                  return (
+                    <tr className="border-t-2 border-border font-semibold text-xs">
+                      <td colSpan={8} className="pt-3 pr-1 text-right text-muted-foreground">Totals</td>
+                      <td className="pt-3 pr-1 text-right">{totals.tax_amount.toFixed(2)}</td>
+                      <td className="pt-3 pr-1 text-right">{totals.subtotal.toFixed(2)}</td>
+                      <td className="pt-3 text-right text-primary">{totals.total.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
