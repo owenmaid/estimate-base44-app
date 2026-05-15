@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
@@ -86,6 +86,17 @@ export default function ProjectDetailsSetup() {
       return;
     }
     renameProjectMutation.mutate({ id: selectedProjectId, name: editingName });
+  };
+
+  const handleCloseProject = () => {
+    setSelectedProjectId('');
+    setStartDate('');
+    setEndDate('');
+    setDates([]);
+    setEquipmentRows([]);
+    setEquipmentGrid({});
+    setEditingName('');
+    toast.success('Project closed');
   };
 
   const handleLoadProject = async (projectId) => {
@@ -268,7 +279,7 @@ const addEquipmentRow = () => {
                   </Button>
                 </>
               ) : (
-                <>
+               <>
                   <Button onClick={() => {
                     const currentProject = projects.find(p => p.id === selectedProjectId);
                     setEditingName(currentProject?.name || '');
@@ -276,10 +287,13 @@ const addEquipmentRow = () => {
                   }} size="sm" variant="ghost">
                     Rename
                   </Button>
+                  <Button onClick={handleCloseProject} size="sm" variant="ghost">
+                    <X className="h-4 w-4" /> Close
+                  </Button>
                   <Button onClick={handleSaveSchedule} variant="outline" size="sm">
                     Save Schedule
                   </Button>
-                </>
+               </>
               )}
             </div>
           )}
