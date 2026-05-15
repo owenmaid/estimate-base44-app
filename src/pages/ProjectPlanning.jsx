@@ -87,6 +87,10 @@ export default function ProjectPlanning() {
     queryFn: () => base44.entities.InventoryItem.list('name'),
   });
 
+  const labourItems = inventoryItems.filter(i =>
+    i.category?.toUpperCase() === 'DIRECT LABOUR' || i.category?.toUpperCase() === 'INDIRECT LABOUR'
+  );
+
   const filteredInventoryItems = newTaskType
     ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
     : inventoryItems;
@@ -463,13 +467,16 @@ export default function ProjectPlanning() {
                       />
                     </td>
                     <td className="py-1 pr-2">
-                      <input
-                        className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5"
-                        placeholder="Assignee..."
-                        value={newAssignee}
-                        onChange={e => setNewAssignee(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && addTask()}
-                      />
+                      <Select value={newAssignee} onValueChange={setNewAssignee}>
+                        <SelectTrigger className="h-7 text-xs px-1.5">
+                          <SelectValue placeholder="Assignee..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {labourItems.map(item => (
+                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="py-1 pr-1">{numInput(newQty, e => setNewQty(e.target.value))}</td>
                     <td className="py-1 pr-1">{numInput(newCost, e => setNewCost(e.target.value))}</td>
@@ -517,12 +524,16 @@ export default function ProjectPlanning() {
                         />
                       </td>
                       <td className="py-1 pr-2">
-                        <input
-                          className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 text-muted-foreground"
-                          placeholder="Assignee..."
-                          value={task.assignee || ''}
-                          onChange={e => updateTaskField(task.id, 'assignee', e.target.value)}
-                        />
+                        <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
+                          <SelectTrigger className="h-7 text-xs px-1.5">
+                            <SelectValue placeholder="Assignee..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60 overflow-y-auto">
+                            {labourItems.map(item => (
+                              <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="py-1 pr-1">
                         {numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}
