@@ -510,7 +510,7 @@ const addEquipmentRow = () => {
                 <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
                   <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Calculation</th>
                 </tr>
-                <tr className="border-b border-border" style={{ height: '40px', backgroundColor: 'rgba(249, 115, 22, 0.15)' }}>
+                <tr className="border-b border-border" style={{ height: '44px', backgroundColor: 'rgba(249, 115, 22, 0.15)' }}>
                   <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground"></th>
                 </tr>
               </thead>
