@@ -562,7 +562,7 @@ const addEquipmentRow = () => {
                    );
                  })}
                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                   <td className="px-4 py-2 text-right text-foreground">
+                   <td className="px-4 py-2 text-foreground">
                      {Object.values(equipmentGrid).reduce((sum, val) => sum + (parseInt(val) || 0), 0)}
                    </td>
                  </tr>
