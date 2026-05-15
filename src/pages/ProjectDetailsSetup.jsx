@@ -502,7 +502,7 @@ const addEquipmentRow = () => {
         {/* Equipment Calculations Panel */}
         <Card className="w-72 shrink-0 self-start">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Equipment<br />Calculations</CardTitle>
+            <CardTitle style={{ fontSize: '20.5px' }}>Equipment<br />Calculations</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <table className="w-full text-xs border-collapse">
