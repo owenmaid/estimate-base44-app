@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -200,6 +201,14 @@ const addEquipmentRow = () => {
     }, 0);
   };
 
+  const handleEquipmentDragEnd = (result) => {
+    if (!result.destination) return;
+    const reordered = Array.from(equipmentRows);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setEquipmentRows(reordered);
+  };
+
   const canGoPrev = viewMonth && dates.length > 0 && viewMonth > dates[0];
   const canGoNext = viewMonth && dates.length > 0 && viewMonth < dates[dates.length - 1];
 
@@ -386,12 +395,25 @@ const addEquipmentRow = () => {
                         })}
                         </tr>
                         </thead>
-                        <tbody>
+                        <DragDropContext onDragEnd={handleEquipmentDragEnd}>
+                        <Droppable droppableId="equipment-rows">
+                          {(provided) => (
+                            <tbody ref={provided.innerRef} {...provided.droppableProps}>
                         {equipmentRows.map((row, rIdx) => (
-                    <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
+                    <Draggable key={String(row.id)} draggableId={String(row.id)} index={rIdx}>
+                      {(dragProvided, dragSnapshot) => (
+                      <tr
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        className={`border-b border-border hover:bg-secondary/20 transition-colors ${dragSnapshot.isDragging ? 'bg-secondary/40' : ''}`}
+                        style={dragProvided.draggableProps.style}
+                      >
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground truncate max-w-[100px]">{row.label}</span>
+                        <div className="flex items-center gap-1">
+                          <span {...dragProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
+                            <GripVertical className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="font-medium text-foreground truncate max-w-[80px]">{row.label}</span>
                           {equipmentRows.length > 0 && (
                             <button
                               onClick={() => removeEquipmentRow(row.id)}
@@ -425,7 +447,15 @@ const addEquipmentRow = () => {
                         );
                       })}
                     </tr>
+                      )}
+                    </Draggable>
                   ))}
+                  {provided.placeholder}
+                  </tbody>
+                  )}
+                  </Droppable>
+                  </DragDropContext>
+                  <tbody>
                   <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
                     <td className="sticky left-0 z-10 bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground">
                       Daily Total
@@ -443,7 +473,7 @@ const addEquipmentRow = () => {
                       );
                     })}
                   </tr>
-                </tbody>
+                  </tbody>
               </table>
             </div>
             <div className="px-4 py-3 border-t border-border flex items-center gap-2">
