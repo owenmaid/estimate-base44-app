@@ -18,7 +18,7 @@ const bottomItems = [
   { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
   { label: 'Resources', path: '/resources', icon: Users },
   { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
-  { label: 'Calculation Routing', path: '/calculation-routing', icon: GitBranch },
+  { label: 'Manpower Estimation', path: '/calculation-routing', icon: GitBranch },
   { label: 'Settings', path: '/settings', icon: Settings },
   { label: 'Help', path: '/help', icon: HelpCircle },
 ];
