@@ -159,7 +159,7 @@ export default function Inventory() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                {['Name', 'SKU', 'Category', 'Qty', 'Unit Cost', 'Supplier', 'Location', 'Status', ''].map(h => (
+                {['Name', 'SKU', 'Category', 'Qty', 'Unit Cost', 'Reg Value', 'OT Value', 'Supplier', 'Location', 'Status', ''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -178,6 +178,8 @@ export default function Inventory() {
                     <td className="px-4 py-3 text-muted-foreground">{item.category || '—'}</td>
                     <td className="px-4 py-3 font-medium">{item.quantity} <span className="text-muted-foreground text-xs">{item.unit}</span></td>
                     <td className="px-4 py-3">{item.unit_cost != null && item.unit_cost !== '' ? `$${Number(item.unit_cost).toFixed(2)}` : '—'}</td>
+                    <td className="px-4 py-3">{item.reg_value != null && item.reg_value !== '' ? `$${Number(item.reg_value).toFixed(2)}` : '—'}</td>
+                    <td className="px-4 py-3">{item.ot_value != null && item.ot_value !== '' ? `$${Number(item.ot_value).toFixed(2)}` : '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{item.supplier || '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{item.location || '—'}</td>
                     <td className="px-4 py-3">

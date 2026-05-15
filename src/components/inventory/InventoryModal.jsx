@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const EMPTY_FORM = {
   name: '', sku: '', category: '', quantity: 0, unit: 'pcs',
-  unit_cost: '', supplier: '', location: '', min_stock: 0, notes: '', status: 'in_stock',
+  unit_cost: '', reg_value: '', ot_value: '', supplier: '', location: '', min_stock: 0, notes: '', status: 'in_stock',
 };
 
 export default function InventoryModal({ item, onClose, onSave }) {
@@ -74,6 +74,14 @@ export default function InventoryModal({ item, onClose, onSave }) {
             <div>
               <Label>Unit Cost ($)</Label>
               <Input type="number" min="0" step="0.01" value={form.unit_cost} onChange={e => set('unit_cost', parseFloat(e.target.value) || '')} placeholder="0.00" />
+            </div>
+            <div>
+              <Label>Reg Value ($)</Label>
+              <Input type="number" min="0" step="0.01" value={form.reg_value} onChange={e => set('reg_value', parseFloat(e.target.value) || '')} placeholder="0.00" />
+            </div>
+            <div>
+              <Label>OT Value ($)</Label>
+              <Input type="number" min="0" step="0.01" value={form.ot_value} onChange={e => set('ot_value', parseFloat(e.target.value) || '')} placeholder="0.00" />
             </div>
             <div>
               <Label>Min Stock Level</Label>

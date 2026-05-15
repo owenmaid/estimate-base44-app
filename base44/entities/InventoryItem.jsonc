@@ -27,6 +27,14 @@
       "type": "number",
       "description": "Cost per unit"
     },
+    "reg_value": {
+      "type": "number",
+      "description": "Regular rate value"
+    },
+    "ot_value": {
+      "type": "number",
+      "description": "Overtime rate value"
+    },
     "supplier": {
       "type": "string",
       "description": "Supplier name"
