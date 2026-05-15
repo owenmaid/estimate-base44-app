@@ -46,7 +46,7 @@ export default function Inventory() {
         const obj = {};
         headers.forEach((h, i) => { if (vals[i] !== undefined && vals[i] !== '') obj[h] = vals[i]; });
         // coerce numeric fields
-        ['quantity', 'unit_cost', 'min_stock'].forEach(f => { if (obj[f] !== undefined) obj[f] = Number(obj[f]) || 0; });
+        ['quantity', 'unit_cost', 'reg_value', 'ot_value', 'min_stock'].forEach(f => { if (obj[f] !== undefined) obj[f] = Number(obj[f]) || 0; });
         return obj;
       }).filter(r => r.name);
       if (rows.length === 0) { toast.error('No valid rows found. Make sure CSV has a "name" column.'); return; }
