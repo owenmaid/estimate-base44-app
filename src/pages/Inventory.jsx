@@ -40,7 +40,17 @@ export default function Inventory() {
       const text = ev.target.result;
       const lines = text.trim().split('\n');
       if (lines.length < 2) { toast.error('CSV must have a header row and at least one data row.'); return; }
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+      // Alias map: normalize common column name variants to entity field names
+      const HEADER_ALIASES = {
+        reg_cost: 'reg_value', reg_rate: 'reg_value', regular_value: 'reg_value', regular_cost: 'reg_value',
+        ot_cost: 'ot_value', ot_rate: 'ot_value', overtime_value: 'ot_value', overtime_cost: 'ot_value',
+        storage_location: 'location', warehouse: 'location',
+        unit_price: 'unit_cost', cost: 'unit_cost',
+      };
+      const headers = lines[0].split(',').map(h => {
+        const normalized = h.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        return HEADER_ALIASES[normalized] || normalized;
+      });
       const rows = lines.slice(1).map(line => {
         const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
         const obj = {};
