@@ -344,9 +344,10 @@ const addEquipmentRow = () => {
         </CardContent>
       </Card>
 
-{/* Equipment Spreadsheet */}
+{/* Equipment Spreadsheet + Calculations */}
       {dates.length > 0 && (
-        <Card>
+        <div className="flex gap-4 items-start">
+        <Card className="flex-1 min-w-0">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">
               Equipment Schedule
@@ -493,6 +494,28 @@ const addEquipmentRow = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Equipment Calculations Panel */}
+        <Card className="w-72 shrink-0">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Equipment Calculations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {equipmentRows.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Add equipment rows to see calculations here.</p>
+              ) : (
+                equipmentRows.map(row => (
+                  <div key={row.id} className="border border-border rounded-md p-3 space-y-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{row.label}</p>
+                    {/* Calculation rows will go here */}
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        </div>
       )}
     </div>
   );
