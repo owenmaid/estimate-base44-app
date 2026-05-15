@@ -513,7 +513,7 @@ const addEquipmentRow = () => {
               </thead>
               <tbody>
                 {equipmentRows.map(row => (
-                  <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '38px' }}>
+                  <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
                     <td className="px-4 py-2 text-foreground">
                       {/* Calculations for {row.label} */}
                     </td>
