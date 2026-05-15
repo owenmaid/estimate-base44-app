@@ -36,17 +36,20 @@ export default function CalculationEngine() {
   const activeProject = useMemo(() => projects.find(p => p.name === 'KEYERA FT SASK'), [projects]);
 
   // Calculate total mandays from first equipment row
-  const totalMandays = useMemo(() => {
-    if (!activeProject?.equipment_grid || !activeProject?.equipment_rows?.length) return 0;
-    const firstRowId = activeProject.equipment_rows[0].id;
-    let sum = 0;
-    Object.entries(activeProject.equipment_grid).forEach(([key, value]) => {
-      if (key.startsWith(`${firstRowId}_`) && typeof value === 'number' && value > 0) {
-        sum += value;
-      }
-    });
-    return sum;
-  }, [activeProject]);
+   const totalMandays = useMemo(() => {
+     if (!activeProject?.equipment_grid || !activeProject?.equipment_rows?.length) return 0;
+     const firstRowId = activeProject.equipment_rows[0].id;
+     let sum = 0;
+     Object.entries(activeProject.equipment_grid).forEach(([key, value]) => {
+       if (key.startsWith(`${firstRowId}_`)) {
+         const num = parseInt(value, 10);
+         if (!isNaN(num) && num > 0) {
+           sum += num;
+         }
+       }
+     });
+     return sum;
+   }, [activeProject]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
