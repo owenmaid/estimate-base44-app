@@ -154,8 +154,8 @@ export default function ProjectDetailsSetup() {
   };
 
   const visibleDates = viewMonth
-    ? dates.filter(d => isSameMonth(d, viewMonth))
-    : dates;
+    ? dates.filter(d => isSameMonth(d, viewMonth)).slice(0, 30)
+    : dates.slice(0, 30);
 
   const totalMonths = viewMonth ? Math.ceil(dates.length / 30) : 0;
 
