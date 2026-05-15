@@ -119,6 +119,8 @@ export default function Projects() {
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className="text-left px-4 py-3 font-medium">Project Name</th>
+                  <th className="text-left px-4 py-3 font-medium">Start Date</th>
+                  <th className="text-left px-4 py-3 font-medium">End Date</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-left px-4 py-3 font-medium">Client</th>
                   <th className="text-right px-4 py-3 font-medium">Subtotal</th>
@@ -145,6 +147,8 @@ export default function Projects() {
                   return (
                     <tr key={project.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3 font-medium">{project.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{project.start_date || '—'}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{project.end_date || '—'}</td>
                       <td className="px-4 py-3">
                         <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
                           {STATUS_LABELS[project.status]}
