@@ -137,11 +137,12 @@ export default function ResourceAllocation() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
-  // Build a lookup: lowercased name/sku → inventory item (manpower category only)
+  // Build a lookup: lowercased name/sku → inventory item (direct & indirect labour categories)
   const manpowerLookup = useMemo(() => {
     const map = {};
+    const labourCategories = ['direct labour', 'indirect labour'];
     inventoryItems
-      .filter(i => i.category?.toLowerCase() === 'manpower')
+      .filter(i => labourCategories.includes(i.category?.toLowerCase()))
       .forEach(item => {
         if (item.name) map[item.name.toLowerCase()] = item;
         if (item.sku)  map[item.sku.toLowerCase()]  = item;
@@ -195,7 +196,7 @@ export default function ResourceAllocation() {
   const totalCapacity = memberMap.reduce((s, m) => s + m.capacity, 0);
   const overCapacityCount = memberMap.filter(m => m.used > m.capacity).length;
   const unassignedCount = projects.reduce((s, p) => s + (p.task_list || []).filter(t => !t.assignee?.trim()).length, 0);
-  const manpowerCount = inventoryItems.filter(i => i.category?.toLowerCase() === 'manpower').length;
+  const manpowerCount = inventoryItems.filter(i => ['direct labour', 'indirect labour'].includes(i.category?.toLowerCase())).length;
 
   return (
     <div className="p-6 space-y-6">
@@ -203,7 +204,7 @@ export default function ResourceAllocation() {
       <div>
         <h1 className="text-2xl font-bold">Resource Allocation</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Team workload driven by manpower inventory capacity
+          Team workload driven by Direct & Indirect Labour inventory capacity
         </p>
       </div>
 
@@ -239,7 +240,7 @@ export default function ResourceAllocation() {
       {manpowerCount === 0 && !loadingInventory && (
         <div className="flex items-center gap-2 text-sm text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-4 py-3">
           <Package className="h-4 w-4 shrink-0" />
-          <span>No <strong>Manpower</strong> category items found in Inventory. Add SKUs with category "manpower" to set per-person capacity. Showing default capacity of {DEFAULT_CAPACITY} line items.</span>
+          <span>No <strong>Direct Labour</strong> or <strong>Indirect Labour</strong> category items found in Inventory. Add items with those categories to set per-person capacity. Showing default capacity of {DEFAULT_CAPACITY} line items.</span>
         </div>
       )}
 
