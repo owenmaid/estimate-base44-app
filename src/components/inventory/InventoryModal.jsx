@@ -49,7 +49,19 @@ export default function InventoryModal({ item, onClose, onSave }) {
             </div>
             <div>
               <Label>Category</Label>
-              <Input value={form.category} onChange={e => set('category', e.target.value)} placeholder="e.g. Materials" />
+              <Select value={form.category} onValueChange={v => set('category', v)}>
+                <SelectTrigger><SelectValue placeholder="Select category..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INDIRECT LABOUR">Indirect Labour</SelectItem>
+                  <SelectItem value="DIRECT LABOUR">Direct Labour</SelectItem>
+                  <SelectItem value="LOGISTICS">Logistics</SelectItem>
+                  <SelectItem value="DIGITAL MONITORING EQUIPMENT">Digital Monitoring Equipment</SelectItem>
+                  <SelectItem value="CONSUMABLES">Consumables</SelectItem>
+                  <SelectItem value="VENTILATION LABOUR">Ventilation Labour</SelectItem>
+                  <SelectItem value="VENTILATION EQUIPMENT LOG">Ventilation Equipment Log</SelectItem>
+                  <SelectItem value="VENTILATION EQUIPMENT">Ventilation Equipment</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Quantity</Label>
