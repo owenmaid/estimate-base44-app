@@ -382,7 +382,7 @@ const addEquipmentRow = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '52px' }}>
+                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
                     <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border">
                       Equipment
                     </th>
@@ -507,7 +507,7 @@ const addEquipmentRow = () => {
           <CardContent className="p-0">
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="bg-secondary/60 border-b border-border" style={{ height: '52px' }}>
+                <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
                   <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Calculation</th>
                 </tr>
               </thead>
