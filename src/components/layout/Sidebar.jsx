@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
@@ -18,6 +18,7 @@ const bottomItems = [
   { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
   { label: 'Resources', path: '/resources', icon: Users },
   { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
+  { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
   { label: 'Manpower Estimation', path: '/calculation-routing', icon: GitBranch },
   { label: 'Settings', path: '/settings', icon: Settings },
   { label: 'Help', path: '/help', icon: HelpCircle },
