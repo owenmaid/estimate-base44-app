@@ -404,10 +404,10 @@ const addEquipmentRow = () => {
                     <Draggable key={String(row.id)} draggableId={String(row.id)} index={rIdx}>
                       {(dragProvided, dragSnapshot) => (
                       <tr
-                        ref={dragProvided.innerRef}
-                        {...dragProvided.draggableProps}
-                        className={`border-b border-border hover:bg-secondary/20 transition-colors ${dragSnapshot.isDragging ? 'bg-secondary/40' : ''}`}
-                        style={dragProvided.draggableProps.style}
+                       ref={dragProvided.innerRef}
+                       {...dragProvided.draggableProps}
+                       className={`border-b border-border hover:bg-secondary/20 transition-colors ${dragSnapshot.isDragging ? 'bg-secondary/40' : ''}`}
+                       style={{ ...dragProvided.draggableProps.style, height: '38px' }}
                       >
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border">
                         <div className="flex items-center gap-1">
@@ -509,8 +509,8 @@ const addEquipmentRow = () => {
               </thead>
               <tbody>
                 {equipmentRows.map(row => (
-                  <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
-                    <td className="px-4 py-2 text-foreground h-[37px]">
+                  <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '38px' }}>
+                    <td className="px-4 py-2 text-foreground">
                       {/* Calculations for {row.label} */}
                     </td>
                   </tr>
