@@ -1,10 +1,16 @@
 import React from 'react';
+import EquipmentCalculator from '@/components/calculation/EquipmentCalculator';
 
 export default function CalculationRouting() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-foreground">Calculation Routing</h1>
-      <p className="text-muted-foreground text-sm mt-1">Configure and route calculations across projects.</p>
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Calculation Routing</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Configure project parameters and auto-compute total costs from inventory equipment data.
+        </p>
+      </div>
+      <EquipmentCalculator />
     </div>
   );
 }
