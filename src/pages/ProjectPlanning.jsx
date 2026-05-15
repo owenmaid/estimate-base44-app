@@ -416,7 +416,7 @@ export default function ProjectPlanning() {
         <Card className="lg:col-span-8">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Item List</CardTitle>
+              <CardTitle className="text-base">Project List</CardTitle>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -621,7 +621,7 @@ export default function ProjectPlanning() {
         <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div>
-              <h2 className="text-xl font-bold">Item List</h2>
+              <h2 className="text-xl font-bold">Project List</h2>
               <p className="text-sm text-muted-foreground">{form.name}</p>
             </div>
             <div className="flex items-center gap-3">
