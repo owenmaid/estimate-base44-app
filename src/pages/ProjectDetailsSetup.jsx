@@ -827,24 +827,14 @@ const addEquipmentRow = () => {
                    }, 0);
                    const costs = calculateRowCosts[row.id] || {};
                    return (
-                     <React.Fragment key={row.id}>
-                       {idx === 7 && (
-                         <tr style={{ height: '82px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
-                            <td className="px-4 py-2"></td>
-                            <td className="px-4 py-2"></td>
-                            <td className="px-4 py-2"></td>
-                            <td className="px-4 py-2"></td>
-                          </tr>
-                       )}
-                       <tr className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
+                     <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
                          <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.regCost != null && costs.regCost > 0 ? costs.regCost.toFixed(2) : '—'}</td>
                          <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.otCost != null && costs.otCost > 0 ? costs.otCost.toFixed(2) : '—'}</td>
                          <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.specialCost != null && costs.specialCost > 0 ? costs.specialCost.toFixed(2) : '—'}</td>
                          <td className="px-4 py-2 text-foreground font-semibold text-right">{(costs.regCost || 0) + (costs.otCost || 0) + (costs.specialCost || 0) > 0 ? ((costs.regCost || 0) + (costs.otCost || 0) + (costs.specialCost || 0)).toFixed(2) : '—'}</td>
-                       </tr>
-                     </React.Fragment>
-                   );
-                 })}
+                         </tr>
+                         );
+                         })}
                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
                    <td className="px-4 py-2 text-foreground border-r border-border text-right">
                      {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0).toFixed(2)}
