@@ -126,7 +126,7 @@ export default function ProjectDetailsSetup() {
     const end = parseISO(project.end_date);
     const allDates = eachDayOfInterval({ start, end });
     setDates(allDates);
-    const mergedTypeGrid = buildTypeGridFromDates(allDates, project.type_grid || {});
+    const mergedTypeGrid = buildTypeGridFromDates(allDates, project.type_grid || {}, statHolidays);
     setTypeGrid(mergedTypeGrid);
     setViewMonth(start);
     setDateOffset(0);
@@ -145,14 +145,16 @@ export default function ProjectDetailsSetup() {
     return `Sample${String(maxNum + 1).padStart(2, '0')}`;
   };
 
-  const buildTypeGridFromDates = (allDates, existingTypeGrid = {}) => {
+  const buildTypeGridFromDates = (allDates, existingTypeGrid = {}, holidays = []) => {
+    const holidayDates = new Set(holidays.map(h => h.date));
     const grid = { ...existingTypeGrid };
     allDates.forEach(d => {
       const dateStr = format(d, 'yyyy-MM-dd');
       const day = d.getDay();
-      if (day === 6) grid[dateStr] = 'Sa';
+      if (holidayDates.has(dateStr)) grid[dateStr] = 'St';
+      else if (day === 6) grid[dateStr] = 'Sa';
       else if (day === 0) grid[dateStr] = 'Su';
-      else if (grid[dateStr] === undefined) grid[dateStr] = 'N';
+      else grid[dateStr] = 'N';
     });
     return grid;
   };
@@ -168,7 +170,7 @@ export default function ProjectDetailsSetup() {
     setDateOffset(0);
     setEquipmentGrid({});
     setEquipmentRows([]);
-    const newTypeGrid = buildTypeGridFromDates(allDates);
+    const newTypeGrid = buildTypeGridFromDates(allDates, {}, statHolidays);
     setTypeGrid(newTypeGrid);
 
     // Save as new project
@@ -288,8 +290,12 @@ const addEquipmentRow = () => {
     if (!startDate || !endDate) return;
     setLoadingHolidays(true);
     const res = await base44.functions.invoke('getCanadaStatHolidays', { startDate, endDate });
-    setStatHolidays(res.data?.holidays || []);
+    const holidays = res.data?.holidays || [];
+    setStatHolidays(holidays);
     setLoadingHolidays(false);
+    if (dates.length > 0) {
+      setTypeGrid(buildTypeGridFromDates(dates, {}, holidays));
+    }
   };
 
   // Load Sa_Su_St list from localStorage (managed on Control Page)
