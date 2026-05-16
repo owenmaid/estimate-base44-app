@@ -437,7 +437,7 @@ const addEquipmentRow = () => {
               <CalendarDays className="h-4 w-4 text-primary" />
               Canadian Stat Holidays
               <span className="text-xs text-muted-foreground font-normal ml-1">
-                {format(parseISO(startDate), 'MMM d, yyyy')} – {format(parseISO(endDate), 'MMM d, yyyy')}
+                {startDate && endDate ? `${format(parseISO(startDate), 'MMM d, yyyy')} – ${format(parseISO(endDate), 'MMM d, yyyy')}` : ''}
               </span>
               <Badge variant="secondary" className="ml-auto">{statHolidays.length} found</Badge>
             </CardTitle>
