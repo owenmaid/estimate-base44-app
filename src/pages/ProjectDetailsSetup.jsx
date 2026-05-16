@@ -153,10 +153,12 @@ export default function ProjectDetailsSetup() {
     allDates.forEach(d => {
       const dateStr = format(d, 'yyyy-MM-dd');
       const day = d.getDay();
+      // Always enforce Sa, Su, St — these override any saved value
       if (holidayDates.has(dateStr)) grid[dateStr] = 'St';
       else if (day === 6) grid[dateStr] = 'Sa';
       else if (day === 0) grid[dateStr] = 'Su';
-      else if (grid[dateStr] === undefined) grid[dateStr] = 'N';
+      // Only default to 'N' if nothing is saved yet for this weekday
+      else if (grid[dateStr] === undefined || grid[dateStr] === 'Sa' || grid[dateStr] === 'Su' || grid[dateStr] === 'St') grid[dateStr] = 'N';
     });
     return grid;
   };
