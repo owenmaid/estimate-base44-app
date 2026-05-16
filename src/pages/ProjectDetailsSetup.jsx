@@ -704,7 +704,8 @@ const addEquipmentRow = () => {
                         <th key={d.toISOString()} className="px-1 py-1 text-center border-r border-border last:border-r-0 w-[100px]">
                           <select
                             disabled
-                            className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 text-xs text-foreground outline-none cursor-pointer"
+                            className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 text-xs text-foreground outline-none cursor-pointer appearance-none"
+                            style={{ backgroundImage: 'none' }}
                             value={typeVal}
                             onChange={e => setTypeGrid(prev => ({ ...prev, [dateStr]: e.target.value }))}
                           >
