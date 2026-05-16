@@ -626,7 +626,42 @@ const addEquipmentRow = () => {
         <Card className="flex-1 min-w-0">
           <CardHeader className="pb-2">
             <div className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Equipment Schedule</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">Equipment Schedule</CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    const newTypeGrid = { ...typeGrid };
+                    dates.forEach(d => {
+                      const dateStr = format(d, 'yyyy-MM-dd');
+                      const dayOfWeek = d.getDay();
+                      let type = 'N'; // default to weekday
+                      
+                      if (dayOfWeek === 6) {
+                        type = 'Sa'; // Saturday
+                      } else if (dayOfWeek === 0) {
+                        type = 'Su'; // Sunday
+                      } else {
+                        // Check if it's a stat holiday
+                        const isHoliday = statHolidays.some(h => {
+                          try {
+                            const hDate = format(parseISO(h.date), 'yyyy-MM-dd');
+                            return hDate === dateStr;
+                          } catch {
+                            return false;
+                          }
+                        });
+                        if (isHoliday) type = 'St';
+                      }
+                      newTypeGrid[dateStr] = type;
+                    });
+                    setTypeGrid(newTypeGrid);
+                  }}
+                >
+                  Auto-fill Types
+                </Button>
+              </div>
               <span className="text-xs text-muted-foreground">
                 {dates.length > 0 && visibleDates.length > 0
                   ? `${format(visibleDates[0], 'MMM d')} – ${format(visibleDates[visibleDates.length - 1], 'MMM d, yyyy')}`
