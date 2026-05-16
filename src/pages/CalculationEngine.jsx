@@ -81,6 +81,27 @@ export default function CalculationEngine() {
     return hours;
   }, [equipmentRows, rowSums]);
 
+  // Col 4: sum of (equipment values on 'N' days × 8) + (equipment values on 'Sa' days × 4)
+  const typeGrid = activeProject?.type_grid || {};
+  const rowCol4 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      let nSum = 0;
+      let saSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        const type = typeGrid[dateStr];
+        if (type === 'N') nSum += num;
+        else if (type === 'Sa') saSum += num;
+      });
+      result[row.id] = (nSum * 8) + (saSum * 4);
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
     onSuccess: () => {
@@ -160,8 +181,8 @@ export default function CalculationEngine() {
                     Equipment
                   </th>
                   {COL_HEADERS.map((col, i) => (
-                    <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : col}
+                    <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : col}
                     </th>
                   ))}
                 </tr>
@@ -183,8 +204,10 @@ export default function CalculationEngine() {
                         const key = `${row.id}_col${colIdx}`;
                         const isCol1 = colIdx === 0;
                         const isCol2 = colIdx === 1;
+                        const isCol4 = colIdx === 3;
                         const col1Value = rowSums[row.id] || 0;
                         const col2Value = rowHours[row.id] || 0;
+                        const col4Value = rowCol4[row.id] || 0;
                         const label = (row.label || '').toLowerCase();
                         const isSpecial = label.includes('(pre-work)') || label.includes('(post-work)');
                         return (
@@ -196,6 +219,10 @@ export default function CalculationEngine() {
                             ) : isCol2 ? (
                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title={`${col1Value} × ${isSpecial ? 10 : 12}h`}>
                                 {col2Value > 0 ? col2Value : '—'}
+                              </div>
+                            ) : isCol4 ? (
+                              <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="(N days × 8) + (Sa days × 4)">
+                                {col4Value > 0 ? col4Value : '—'}
                               </div>
                             ) : (
                               <input
