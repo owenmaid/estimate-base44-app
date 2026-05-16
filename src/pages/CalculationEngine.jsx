@@ -184,6 +184,15 @@ export default function CalculationEngine() {
     return result;
   }, [equipmentRows, equipmentGrid, typeGrid]);
 
+  // Col 3: Total Hrs = Col4 + Col5 + Col6 + Col7 + Col8
+  const rowCol3 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      result[row.id] = (rowCol4[row.id] || 0) + (rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0) + (rowCol8[row.id] || 0);
+    });
+    return result;
+  }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
     onSuccess: () => {
@@ -266,8 +275,8 @@ export default function CalculationEngine() {
                       Shift Hrs
                     </th>
                     {COL_HEADERS.map((col, i) => (
-                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 || i === 4 || i === 5 || i === 6 || i === 7 ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : col}
+                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 2 || i === 3 || i === 4 || i === 5 || i === 6 || i === 7 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : col}
                       </th>
                     ))}
                 </tr>
@@ -297,10 +306,12 @@ export default function CalculationEngine() {
                         const isCol4 = colIdx === 3;
                         const isCol5 = colIdx === 4;
                         const isCol6 = colIdx === 5;
+                        const isCol3 = colIdx === 2;
                         const isCol7 = colIdx === 6;
                         const isCol8 = colIdx === 7;
                         const col1Value = rowSums[row.id] || 0;
                         const col2Value = rowHours[row.id] || 0;
+                        const col3Value = rowCol3[row.id] || 0;
                         const col4Value = rowCol4[row.id] || 0;
                         const col5Value = rowCol5[row.id] || 0;
                         const col6Value = rowCol6[row.id] || 0;
@@ -318,6 +329,10 @@ export default function CalculationEngine() {
                             ) : isCol2 ? (
                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title={`${col1Value} × ${isSpecial ? 10 : 12}h`}>
                                 {col2Value > 0 ? col2Value : '—'}
+                              </div>
+                            ) : isCol3 ? (
+                              <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="Col4 + Col5 + Col6 + Col7 + Col8">
+                                {col3Value > 0 ? col3Value : '—'}
                               </div>
                             ) : isCol4 ? (
                                <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="(N days × 8) + (Sa days × 4)">
