@@ -41,14 +41,14 @@ export default function CalculationEngine() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
-  // Map by id, name, and sku for flexible lookup
-  const inventoryRegValueMap = useMemo(() => {
+  // Map by id, name, and sku for flexible lookup (reg and OT values)
+  const inventoryValueMap = useMemo(() => {
     const byId = {};
     const byName = {};
     inventoryItems.forEach(item => {
-      if (item.id) byId[item.id] = item.reg_value;
-      if (item.name) byName[item.name.toLowerCase()] = item.reg_value;
-      if (item.sku) byName[item.sku.toLowerCase()] = item.reg_value;
+      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value };
+      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
+      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
     });
     return { byId, byName };
   }, [inventoryItems]);
@@ -292,8 +292,8 @@ export default function CalculationEngine() {
                       Shift Hrs
                     </th>
                     {COL_HEADERS.map((col, i) => (
-                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 2 || i === 3 || i === 4 || i === 5 || i === 6 || i === 7 || i === 8 ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : i === 8 ? 'Col 9 (Reg Rate)' : col}
+                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i <= 9 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : i === 8 ? 'Col 9 (Reg Rate)' : i === 9 ? 'Col 10 (OT Rate)' : col}
                       </th>
                     ))}
                 </tr>
@@ -327,6 +327,7 @@ export default function CalculationEngine() {
                         const isCol7 = colIdx === 6;
                         const isCol8 = colIdx === 7;
                         const isCol9 = colIdx === 8;
+                        const isCol10 = colIdx === 9;
                         const col1Value = rowSums[row.id] || 0;
                         const col2Value = rowHours[row.id] || 0;
                         const col3Value = rowCol3[row.id] || 0;
@@ -336,9 +337,11 @@ export default function CalculationEngine() {
                         const col7Value = rowCol7[row.id] || 0;
                         const col8Value = rowCol8[row.id] || 0;
                         // Look up by item_id first, then by label text matching inventory name/sku
-                        const col9Value = inventoryRegValueMap.byId[row.item_id] 
-                          ?? inventoryRegValueMap.byName[row.label?.toLowerCase()] 
+                        const inventoryEntry = inventoryValueMap.byId[row.item_id] 
+                          ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
                           ?? null;
+                        const col9Value = inventoryEntry?.reg ?? null;
+                        const col10Value = inventoryEntry?.ot ?? null;
                         const label = (row.label || '').toLowerCase();
                         const isSpecial = label.includes('pre-work') || label.includes('post-work');
                         const shiftHrs = isSpecial ? 10 : 12;
@@ -377,8 +380,12 @@ export default function CalculationEngine() {
                                  {col8Value > 0 ? col8Value : '—'}
                                </div>
                              ) : isCol9 ? (
-                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="Reg Value from Inventory">
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="Reg Rate from Inventory">
                                  {col9Value != null ? col9Value : '—'}
+                               </div>
+                             ) : isCol10 ? (
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="OT Rate from Inventory">
+                                 {col10Value != null ? col10Value : '—'}
                                </div>
                              ) : (
                               <input
