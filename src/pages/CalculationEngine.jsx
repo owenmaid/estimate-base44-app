@@ -69,6 +69,18 @@ export default function CalculationEngine() {
     return sums;
   }, [equipmentRows, equipmentGrid]);
 
+  // Col 2: if row label contains "(pre-work)" or "(post-work)" → Col1 × 10, else → Col1 × 12
+  const rowHours = useMemo(() => {
+    const hours = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const isSpecial = label.includes('(pre-work)') || label.includes('(post-work)');
+      const multiplier = isSpecial ? 10 : 12;
+      hours[row.id] = (rowSums[row.id] || 0) * multiplier;
+    });
+    return hours;
+  }, [equipmentRows, rowSums]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
     onSuccess: () => {
@@ -148,8 +160,8 @@ export default function CalculationEngine() {
                     Equipment
                   </th>
                   {COL_HEADERS.map((col, i) => (
-                    <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {i === 0 ? 'Col 1 (Σ)' : col}
+                    <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : col}
                     </th>
                   ))}
                 </tr>
@@ -169,13 +181,21 @@ export default function CalculationEngine() {
                       </td>
                       {COL_HEADERS.map((_, colIdx) => {
                         const key = `${row.id}_col${colIdx}`;
-                        const isAutoCol = colIdx === 0;
-                        const autoValue = rowSums[row.id] || 0;
+                        const isCol1 = colIdx === 0;
+                        const isCol2 = colIdx === 1;
+                        const col1Value = rowSums[row.id] || 0;
+                        const col2Value = rowHours[row.id] || 0;
+                        const label = (row.label || '').toLowerCase();
+                        const isSpecial = label.includes('(pre-work)') || label.includes('(post-work)');
                         return (
                           <td key={colIdx} className="px-1 py-1 border-r border-border last:border-r-0">
-                            {isAutoCol ? (
+                            {isCol1 ? (
                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]">
-                                {autoValue > 0 ? autoValue : '—'}
+                                {col1Value > 0 ? col1Value : '—'}
+                              </div>
+                            ) : isCol2 ? (
+                              <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title={`${col1Value} × ${isSpecial ? 10 : 12}h`}>
+                                {col2Value > 0 ? col2Value : '—'}
                               </div>
                             ) : (
                               <input
