@@ -447,7 +447,7 @@ const addEquipmentRow = () => {
                           <span {...dragProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
                             <GripVertical className="h-3.5 w-3.5" />
                           </span>
-                          <span className="font-medium text-foreground truncate max-w-[80px]">{row.label}</span>
+                          <span className="font-medium text-foreground truncate max-w-[80px]" title={row.label}>{row.label}</span>
                           {equipmentRows.length > 0 && (
                             <button
                               onClick={() => removeEquipmentRow(row.id)}
