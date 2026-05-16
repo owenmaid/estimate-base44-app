@@ -41,11 +41,16 @@ export default function CalculationEngine() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
-  // Map inventory item id → reg_value
+  // Map by id, name, and sku for flexible lookup
   const inventoryRegValueMap = useMemo(() => {
-    const map = {};
-    inventoryItems.forEach(item => { map[item.id] = item.reg_value; });
-    return map;
+    const byId = {};
+    const byName = {};
+    inventoryItems.forEach(item => {
+      if (item.id) byId[item.id] = item.reg_value;
+      if (item.name) byName[item.name.toLowerCase()] = item.reg_value;
+      if (item.sku) byName[item.sku.toLowerCase()] = item.reg_value;
+    });
+    return { byId, byName };
   }, [inventoryItems]);
 
   // Find the active project from localStorage (set by ProjectDetailsSetup)
@@ -330,7 +335,10 @@ export default function CalculationEngine() {
                         const col6Value = rowCol6[row.id] || 0;
                         const col7Value = rowCol7[row.id] || 0;
                         const col8Value = rowCol8[row.id] || 0;
-                        const col9Value = inventoryRegValueMap[row.item_id] ?? null;
+                        // Look up by item_id first, then by label text matching inventory name/sku
+                        const col9Value = inventoryRegValueMap.byId[row.item_id] 
+                          ?? inventoryRegValueMap.byName[row.label?.toLowerCase()] 
+                          ?? null;
                         const label = (row.label || '').toLowerCase();
                         const isSpecial = label.includes('pre-work') || label.includes('post-work');
                         const shiftHrs = isSpecial ? 10 : 12;
