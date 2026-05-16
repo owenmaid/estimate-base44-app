@@ -18,7 +18,7 @@ const blankFormula = () => ({
   formula_expression: '',
 });
 
-const NUM_COLS = 14;
+const NUM_COLS = 15;
 const COL_HEADERS = Array.from({ length: NUM_COLS }, (_, i) => `Col ${i + 1}`);
 
 export default function CalculationEngine() {
@@ -292,8 +292,8 @@ export default function CalculationEngine() {
                       Shift Hrs
                     </th>
                     {COL_HEADERS.map((col, i) => (
-                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i <= 9 ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : i === 8 ? 'Col 9 (Reg Rate)' : i === 9 ? 'Col 10 (OT Rate)' : col}
+                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i <= 10 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : i === 8 ? 'Col 9 (Reg Rate)' : i === 9 ? 'Col 10 (OT Rate)' : i === 10 ? 'Col 11 (Cost)' : col}
                       </th>
                     ))}
                 </tr>
@@ -317,34 +317,42 @@ export default function CalculationEngine() {
                          </div>
                        </td>
                        {COL_HEADERS.map((_, colIdx) => {
-                        const key = `${row.id}_col${colIdx}`;
-                        const isCol1 = colIdx === 0;
-                        const isCol2 = colIdx === 1;
-                        const isCol4 = colIdx === 3;
-                        const isCol5 = colIdx === 4;
-                        const isCol6 = colIdx === 5;
-                        const isCol3 = colIdx === 2;
-                        const isCol7 = colIdx === 6;
-                        const isCol8 = colIdx === 7;
-                        const isCol9 = colIdx === 8;
-                        const isCol10 = colIdx === 9;
-                        const col1Value = rowSums[row.id] || 0;
-                        const col2Value = rowHours[row.id] || 0;
-                        const col3Value = rowCol3[row.id] || 0;
-                        const col4Value = rowCol4[row.id] || 0;
-                        const col5Value = rowCol5[row.id] || 0;
-                        const col6Value = rowCol6[row.id] || 0;
-                        const col7Value = rowCol7[row.id] || 0;
-                        const col8Value = rowCol8[row.id] || 0;
-                        // Look up by item_id first, then by label text matching inventory name/sku
-                        const inventoryEntry = inventoryValueMap.byId[row.item_id] 
-                          ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
-                          ?? null;
-                        const col9Value = inventoryEntry?.reg ?? null;
-                        const col10Value = inventoryEntry?.ot ?? null;
-                        const label = (row.label || '').toLowerCase();
-                        const isSpecial = label.includes('pre-work') || label.includes('post-work');
-                        const shiftHrs = isSpecial ? 10 : 12;
+                         const key = `${row.id}_col${colIdx}`;
+                         const isCol1 = colIdx === 0;
+                         const isCol2 = colIdx === 1;
+                         const isCol4 = colIdx === 3;
+                         const isCol5 = colIdx === 4;
+                         const isCol6 = colIdx === 5;
+                         const isCol3 = colIdx === 2;
+                         const isCol7 = colIdx === 6;
+                         const isCol8 = colIdx === 7;
+                         const isCol9 = colIdx === 8;
+                         const isCol10 = colIdx === 9;
+                         const isCol11 = colIdx === 10;
+                         const col1Value = rowSums[row.id] || 0;
+                         const col2Value = rowHours[row.id] || 0;
+                         const col3Value = rowCol3[row.id] || 0;
+                         const col4Value = rowCol4[row.id] || 0;
+                         const col5Value = rowCol5[row.id] || 0;
+                         const col6Value = rowCol6[row.id] || 0;
+                         const col7Value = rowCol7[row.id] || 0;
+                         const col8Value = rowCol8[row.id] || 0;
+                         // Look up by item_id first, then by label text matching inventory name/sku
+                         const inventoryEntry = inventoryValueMap.byId[row.item_id] 
+                           ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
+                           ?? null;
+                         const col9Value = inventoryEntry?.reg ?? null;
+                         const col10Value = inventoryEntry?.ot ?? null;
+                         const label = (row.label || '').toLowerCase();
+                         const isSpecial = label.includes('pre-work') || label.includes('post-work');
+                         const shiftHrs = isSpecial ? 10 : 12;
+                         // Col 11: Col4*Col9 + SUM(Col5:Col7)*Col10 + (Col8*2*(4/(Shift Hrs*2)))*Col10 + (Col8*2*((Shift Hrs*2-4)/(Shift Hrs*2)))*Col10
+                         const col11Value = col9Value != null && col10Value != null
+                           ? (col4Value * col9Value) + 
+                             ((col5Value + col6Value + col7Value) * col10Value) + 
+                             ((col8Value * 2 * (4 / (shiftHrs * 2))) * col10Value) + 
+                             ((col8Value * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
+                           : null;
                         return (
                           <td key={colIdx} className="px-1 py-1 border-r border-border last:border-r-0">
                             {isCol1 ? (
@@ -386,6 +394,10 @@ export default function CalculationEngine() {
                              ) : isCol10 ? (
                                <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="OT Rate from Inventory">
                                  {col10Value != null ? col10Value : '—'}
+                               </div>
+                             ) : isCol11 ? (
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="Col4*Col9 + SUM(Col5:Col7)*Col10 + (Col8*2*(4/Shift²))*Col10 + (Col8*2*((Shift²-4)/Shift²))*Col10">
+                                 {col11Value != null && col11Value > 0 ? col11Value.toFixed(2) : '—'}
                                </div>
                              ) : (
                               <input
