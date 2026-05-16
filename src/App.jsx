@@ -23,6 +23,7 @@ import ResourceAllocation from '@/pages/ResourceAllocation';
 import ProjectDetailsSetup from '@/pages/ProjectDetailsSetup';
 import CalculationRouting from '@/pages/CalculationRouting';
 import CalculationEngine from '@/pages/CalculationEngine';
+import ControlPage from '@/pages/ControlPage';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const AuthenticatedApp = () => {
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
         <Route path="/project-details-setup" element={<ProjectDetailsSetup />} />
         <Route path="/calculation-routing" element={<CalculationRouting />} />
         <Route path="/calculation-engine" element={<CalculationEngine />} />
+        <Route path="/control-page" element={<ControlPage />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

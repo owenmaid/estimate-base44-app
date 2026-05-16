@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
@@ -260,6 +261,14 @@ const addEquipmentRow = () => {
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
+  // Load Sa_Su_St list from localStorage (managed on Control Page)
+  const saSuStList = React.useMemo(() => {
+    try {
+      const raw = localStorage.getItem('sa_su_st_list');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }, []);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header with Load Project */}
@@ -269,6 +278,11 @@ const addEquipmentRow = () => {
           <p className="text-muted-foreground text-sm mt-1">Define your project timeline and assign manpower to each day.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/control-page">
+            <Button variant="outline" size="sm">
+              <SlidersHorizontal className="h-4 w-4 mr-1.5" /> Control Page
+            </Button>
+          </Link>
           <div className="relative">
             <input
               type="text"
@@ -433,6 +447,25 @@ const addEquipmentRow = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse">
                 <thead>
+                  {/* Type row — references Sa_Su_St list from Control Page */}
+                  <tr className="bg-secondary/40 border-b border-border" style={{ height: '36px' }}>
+                    <th className="sticky left-0 z-10 bg-secondary/60 px-4 py-2 text-left font-semibold text-primary min-w-[100px] border-r border-border text-xs">
+                      Type
+                    </th>
+                    {visibleDates.map((d, i) => (
+                      <th key={d.toISOString()} className="px-1 py-1 text-center border-r border-border last:border-r-0 w-[100px]">
+                        <select
+                          className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 text-xs text-foreground outline-none cursor-pointer"
+                          defaultValue=""
+                        >
+                          <option value="">—</option>
+                          {saSuStList.map((item, idx) => (
+                            <option key={idx} value={item}>{item}</option>
+                          ))}
+                        </select>
+                      </th>
+                    ))}
+                  </tr>
                   <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
                     <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border">
                       Equipment
