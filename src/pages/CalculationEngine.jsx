@@ -18,8 +18,12 @@ const blankFormula = () => ({
   formula_expression: '',
 });
 
+const NUM_COLS = 14;
+const COL_HEADERS = Array.from({ length: NUM_COLS }, (_, i) => `Col ${i + 1}`);
+
 export default function CalculationEngine() {
   const [showNew, setShowNew] = useState(false);
+  const [gridData, setGridData] = useState({});
   const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
@@ -32,8 +36,10 @@ export default function CalculationEngine() {
     queryFn: () => base44.entities.FormulaConfig.list(),
   });
 
-  // Find the KEYERA FT SASK project
-  const activeProject = useMemo(() => projects.find(p => p.name === 'KEYERA FT SASK'), [projects]);
+  // Find the active project from localStorage (set by ProjectDetailsSetup)
+  const activeProjectId = typeof window !== 'undefined' ? localStorage.getItem('activeProjectId') : null;
+  const activeProject = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
+  const equipmentRows = activeProject?.equipment_rows || [];
 
   // Calculate total mandays from first equipment row
    const totalMandays = useMemo(() => {
@@ -111,6 +117,67 @@ export default function CalculationEngine() {
       </div>
 
 
+
+      {/* Spreadsheet Grid */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-primary" />
+            Equipment Grid
+            {activeProject && <span className="text-primary font-bold text-sm">— {activeProject.name}</span>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-secondary/60 border-b border-border">
+                  <th className="sticky left-0 z-10 bg-secondary/80 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[140px] border-r border-border">
+                    Equipment
+                  </th>
+                  {COL_HEADERS.map((col, i) => (
+                    <th key={i} className="px-3 py-2.5 text-center font-semibold text-muted-foreground border-r border-border last:border-r-0 min-w-[70px]">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={NUM_COLS + 1} className="px-4 py-8 text-center text-muted-foreground">
+                      No active project loaded. Open a project in Project Details Setup first.
+                    </td>
+                  </tr>
+                ) : (
+                  equipmentRows.map((row) => (
+                    <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
+                      <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border font-medium text-foreground truncate max-w-[140px]" title={row.label}>
+                        {row.label}
+                      </td>
+                      {COL_HEADERS.map((_, colIdx) => {
+                        const key = `${row.id}_col${colIdx}`;
+                        return (
+                          <td key={colIdx} className="px-1 py-1 border-r border-border last:border-r-0">
+                            <input
+                              type="number"
+                              min="0"
+                              value={gridData[key] || ''}
+                              onChange={e => setGridData(prev => ({ ...prev, [key]: e.target.value }))}
+                              className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all text-center"
+                              placeholder="—"
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Status Banner */}
       {formulas.length > 0 && (
