@@ -711,6 +711,9 @@ const addEquipmentRow = () => {
                           >
                             <option value=""></option>
                             <option value="N">N</option>
+                            <option value="Sa">Sa</option>
+                            <option value="Su">Su</option>
+                            <option value="St">St</option>
                             {saSuStList.map((item, idx) => (
                               <option key={idx} value={item}>{item}</option>
                             ))}
