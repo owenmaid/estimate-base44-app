@@ -148,17 +148,10 @@ export default function ProjectDetailsSetup() {
   };
 
   const buildTypeGridFromDates = (allDates, existingTypeGrid = {}, holidays = []) => {
-    const holidayDates = new Set(holidays.map(h => h.date));
     const grid = { ...existingTypeGrid };
     allDates.forEach(d => {
       const dateStr = format(d, 'yyyy-MM-dd');
-      const day = d.getDay();
-      // Always enforce Sa, Su, St — these override any saved value
-      if (holidayDates.has(dateStr)) grid[dateStr] = 'St';
-      else if (day === 6) grid[dateStr] = 'Sa';
-      else if (day === 0) grid[dateStr] = 'Su';
-      // Only default to 'N' if nothing is saved yet for this weekday
-      else if (grid[dateStr] === undefined || grid[dateStr] === 'Sa' || grid[dateStr] === 'Su' || grid[dateStr] === 'St') grid[dateStr] = 'N';
+      if (grid[dateStr] === undefined) grid[dateStr] = '';
     });
     return grid;
   };
@@ -538,7 +531,7 @@ const addEquipmentRow = () => {
                     </th>
                     {visibleDates.map((d) => {
                       const dateStr = format(d, 'yyyy-MM-dd');
-                      const typeVal = typeGrid[dateStr] !== undefined ? typeGrid[dateStr] : 'N';
+                      const typeVal = typeGrid[dateStr] !== undefined ? typeGrid[dateStr] : '';
                       return (
                         <th key={d.toISOString()} className="px-1 py-1 text-center border-r border-border last:border-r-0 w-[100px]">
                           <select
@@ -546,6 +539,7 @@ const addEquipmentRow = () => {
                             value={typeVal}
                             onChange={e => setTypeGrid(prev => ({ ...prev, [dateStr]: e.target.value }))}
                           >
+                            <option value=""></option>
                             <option value="N">N</option>
                             {saSuStList.map((item, idx) => (
                               <option key={idx} value={item}>{item}</option>
