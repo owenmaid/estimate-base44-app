@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -40,22 +40,34 @@ export default function CalculationEngine() {
   const activeProjectId = typeof window !== 'undefined' ? localStorage.getItem('activeProjectId') : null;
   const activeProject = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
   const equipmentRows = activeProject?.equipment_rows || [];
+  const equipmentGrid = activeProject?.equipment_grid || {};
 
-  // Calculate total mandays from first equipment row
-   const totalMandays = useMemo(() => {
-     if (!activeProject?.equipment_grid || !activeProject?.equipment_rows?.length) return 0;
-     const firstRowId = activeProject.equipment_rows[0].id;
-     let sum = 0;
-     Object.entries(activeProject.equipment_grid).forEach(([key, value]) => {
-       if (key.startsWith(`${firstRowId}_`)) {
-         const num = parseInt(value, 10);
-         if (!isNaN(num) && num > 0) {
-           sum += num;
-         }
-       }
-     });
-     return sum;
-   }, [activeProject]);
+  // Subscribe to real-time project changes so grid auto-updates
+  useEffect(() => {
+    if (!activeProjectId) return;
+    const unsubscribe = base44.entities.Project.subscribe((event) => {
+      if (event.id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
+      }
+    });
+    return unsubscribe;
+  }, [activeProjectId, queryClient]);
+
+  // For each equipment row, sum all values > 0 from the equipment_grid (Col 1 auto-value)
+  const rowSums = useMemo(() => {
+    const sums = {};
+    equipmentRows.forEach(row => {
+      let sum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (key.startsWith(`${row.id}_`)) {
+          const num = parseInt(value, 10);
+          if (!isNaN(num) && num > 0) sum += num;
+        }
+      });
+      sums[row.id] = sum;
+    });
+    return sums;
+  }, [equipmentRows, equipmentGrid]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
@@ -136,8 +148,8 @@ export default function CalculationEngine() {
                     Equipment
                   </th>
                   {COL_HEADERS.map((col, i) => (
-                    <th key={i} className="px-3 py-2.5 text-center font-semibold text-muted-foreground border-r border-border last:border-r-0 min-w-[70px]">
-                      {col}
+                    <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {i === 0 ? 'Col 1 (Σ)' : col}
                     </th>
                   ))}
                 </tr>
@@ -157,16 +169,24 @@ export default function CalculationEngine() {
                       </td>
                       {COL_HEADERS.map((_, colIdx) => {
                         const key = `${row.id}_col${colIdx}`;
+                        const isAutoCol = colIdx === 0;
+                        const autoValue = rowSums[row.id] || 0;
                         return (
                           <td key={colIdx} className="px-1 py-1 border-r border-border last:border-r-0">
-                            <input
-                              type="number"
-                              min="0"
-                              value={gridData[key] || ''}
-                              onChange={e => setGridData(prev => ({ ...prev, [key]: e.target.value }))}
-                              className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all text-center"
-                              placeholder="—"
-                            />
+                            {isAutoCol ? (
+                              <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]">
+                                {autoValue > 0 ? autoValue : '—'}
+                              </div>
+                            ) : (
+                              <input
+                                type="number"
+                                min="0"
+                                value={gridData[key] || ''}
+                                onChange={e => setGridData(prev => ({ ...prev, [key]: e.target.value }))}
+                                className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all text-center"
+                                placeholder="—"
+                              />
+                            )}
                           </td>
                         );
                       })}
