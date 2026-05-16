@@ -455,7 +455,7 @@ const addEquipmentRow = () => {
                 {statHolidays.map((h, i) => (
                   <tr key={i} className="border-b border-border hover:bg-secondary/20">
                     <td className="px-4 py-2 font-medium text-foreground whitespace-nowrap">
-                      {h.date ? format(parseISO(h.date), 'EEE, MMM d yyyy') : h.date}
+                      {(() => { try { return h.date ? format(parseISO(h.date), 'EEE, MMM d yyyy') : '—'; } catch { return h.date || '—'; } })()}
                     </td>
                     <td className="px-4 py-2 text-foreground">{h.name}</td>
                     <td className="px-4 py-2 text-muted-foreground">{h.provinces}</td>
