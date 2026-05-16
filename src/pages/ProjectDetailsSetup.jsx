@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -127,6 +127,7 @@ export default function ProjectDetailsSetup() {
     setDateOffset(0);
     setSelectedProjectId(projectId);
     localStorage.setItem('activeProjectId', projectId);
+    isInitialLoad.current = true;
   };
 
   const getNextSampleNumber = () => {
@@ -178,6 +179,27 @@ export default function ProjectDetailsSetup() {
       },
     });
   };
+
+  // Auto-save debounced on grid/rows changes
+  const autoSaveTimer = useRef(null);
+  const isInitialLoad = useRef(true);
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      base44.entities.Project.update(selectedProjectId, {
+        equipment_grid: equipmentGrid,
+        equipment_rows: equipmentRows,
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
+      });
+    }, 1500);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [equipmentGrid, equipmentRows, selectedProjectId]);
 
   const PAGE_SIZE = 15;
   const visibleDates = dates.slice(dateOffset, dateOffset + PAGE_SIZE);
