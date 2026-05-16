@@ -667,7 +667,7 @@ const addEquipmentRow = () => {
         </Card>
 
         {/* Equipment Calculations Panel */}
-         <Card className="w-72 shrink-0 self-start">
+         <Card className="w-96 shrink-0 self-start">
            <CardHeader className="pb-2">
              <CardTitle style={{ fontSize: '20.5px' }}>Equipment Calculations</CardTitle>
            </CardHeader>
@@ -675,7 +675,10 @@ const addEquipmentRow = () => {
              <table className="w-full text-xs border-collapse">
                <thead>
                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
-                   <th className="px-4 py-2.5 font-semibold text-muted-foreground">Total</th>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Total</th>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Reg Cost</th>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">OT Cost</th>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground">Special Cost</th>
                  </tr>
                </thead>
                <tbody>
