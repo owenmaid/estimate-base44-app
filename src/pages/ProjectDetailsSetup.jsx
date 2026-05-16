@@ -121,12 +121,13 @@ export default function ProjectDetailsSetup() {
     setEndDate(project.end_date || '');
     setEquipmentGrid(project.equipment_grid || {});
     setEquipmentRows(project.equipment_rows || []);
-    setTypeGrid(project.type_grid || {});
-    
+
     const start = parseISO(project.start_date);
     const end = parseISO(project.end_date);
     const allDates = eachDayOfInterval({ start, end });
     setDates(allDates);
+    const mergedTypeGrid = buildTypeGridFromDates(allDates, project.type_grid || {});
+    setTypeGrid(mergedTypeGrid);
     setViewMonth(start);
     setDateOffset(0);
     setSelectedProjectId(projectId);
@@ -144,6 +145,18 @@ export default function ProjectDetailsSetup() {
     return `Sample${String(maxNum + 1).padStart(2, '0')}`;
   };
 
+  const buildTypeGridFromDates = (allDates, existingTypeGrid = {}) => {
+    const grid = { ...existingTypeGrid };
+    allDates.forEach(d => {
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const day = d.getDay();
+      if (day === 6) grid[dateStr] = 'Sa';
+      else if (day === 0) grid[dateStr] = 'Su';
+      else if (grid[dateStr] === undefined) grid[dateStr] = 'N';
+    });
+    return grid;
+  };
+
   const handleCreateDates = async () => {
     if (!startDate || !endDate) return;
     const start = parseISO(startDate);
@@ -155,7 +168,8 @@ export default function ProjectDetailsSetup() {
     setDateOffset(0);
     setEquipmentGrid({});
     setEquipmentRows([]);
-    setTypeGrid({});
+    const newTypeGrid = buildTypeGridFromDates(allDates);
+    setTypeGrid(newTypeGrid);
 
     // Save as new project
     const projectName = getNextSampleNumber();
