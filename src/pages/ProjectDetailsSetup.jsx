@@ -810,7 +810,7 @@ const addEquipmentRow = () => {
                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Reg Cost</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">OT Cost</th>
-                   <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Special Cost</th>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Spec Cost</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground">Total</th>
                  </tr>
                </thead>
