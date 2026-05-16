@@ -178,13 +178,16 @@ export default function CalculationEngine() {
               <thead>
                 <tr className="bg-secondary/60 border-b border-border">
                   <th className="sticky left-0 z-10 bg-secondary/80 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[140px] border-r border-border">
-                    Equipment
-                  </th>
-                  {COL_HEADERS.map((col, i) => (
-                    <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : col}
+                      Equipment
                     </th>
-                  ))}
+                    <th className="px-3 py-2.5 text-center font-semibold border-r border-border min-w-[80px] text-primary">
+                      Shift Hrs
+                    </th>
+                    {COL_HEADERS.map((col, i) => (
+                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : col}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
@@ -198,9 +201,14 @@ export default function CalculationEngine() {
                   equipmentRows.map((row) => (
                     <tr key={row.id} className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border font-medium text-foreground truncate max-w-[140px]" title={row.label}>
-                        {row.label}
-                      </td>
-                      {COL_HEADERS.map((_, colIdx) => {
+                         {row.label}
+                       </td>
+                       <td className="px-1 py-1 border-r border-border">
+                         <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]">
+                           {(row.label || '').toLowerCase().includes('pre-work') || (row.label || '').toLowerCase().includes('post-work') ? 10 : 12}
+                         </div>
+                       </td>
+                       {COL_HEADERS.map((_, colIdx) => {
                         const key = `${row.id}_col${colIdx}`;
                         const isCol1 = colIdx === 0;
                         const isCol2 = colIdx === 1;
