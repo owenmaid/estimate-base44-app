@@ -300,6 +300,139 @@ const addEquipmentRow = () => {
     } catch { return []; }
   }, []);
 
+  // Map inventory items by id/name for lookup (reg and OT values)
+  const inventoryValueMap = useMemo(() => {
+    const byId = {};
+    const byName = {};
+    equipmentInventory.forEach(item => {
+      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value };
+      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
+      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
+    });
+    return { byId, byName };
+  }, [equipmentInventory]);
+
+  // Calculate Col 4: sum of (N days × 8) + (Sa days × 4)
+  const rowCol4 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      let nSum = 0, saSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        const type = typeGrid[dateStr];
+        if (type === 'N') nSum += num;
+        else if (type === 'Sa') saSum += num;
+      });
+      result[row.id] = (nSum * 8) + (saSum * 4);
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
+  // Calculate Col 5: N days × (Shift - 8)
+  const rowCol5 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      const overtimeHrs = Math.max(0, shiftHrs - 8);
+      let nSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        if (typeGrid[dateStr] === 'N') nSum += num;
+      });
+      result[row.id] = nSum * overtimeHrs;
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
+  // Calculate Col 6: Sa days × max(Shift - 4, 0)
+  const rowCol6 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      const multiplier = Math.max(shiftHrs - 4, 0);
+      let saSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        if (typeGrid[dateStr] === 'Sa') saSum += num;
+      });
+      result[row.id] = saSum * multiplier;
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
+  // Calculate Col 7: Su days × Shift
+  const rowCol7 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      let suSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        if (typeGrid[dateStr] === 'Su') suSum += num;
+      });
+      result[row.id] = suSum * shiftHrs;
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
+  // Calculate Col 8: St days × Shift
+  const rowCol8 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      let stSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        if (typeGrid[dateStr] === 'St') stSum += num;
+      });
+      result[row.id] = stSum * shiftHrs;
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
+  // Calculate Reg Cost, OT Cost, Special Cost per row
+  const calculateRowCosts = useMemo(() => {
+    const costs = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      const inventoryEntry = inventoryValueMap.byId[row.item_id] 
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
+        ?? null;
+      const regRate = inventoryEntry?.reg ?? null;
+      const otRate = inventoryEntry?.ot ?? null;
+
+      const regCost = regRate != null ? (rowCol4[row.id] || 0) * regRate : null;
+      const otCost = otRate != null ? ((rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0)) * otRate : null;
+      const specialCost = otRate != null
+        ? ((rowCol8[row.id] || 0) * 2 * (4 / (shiftHrs * 2)) * otRate) + 
+          ((rowCol8[row.id] || 0) * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+        : null;
+
+      costs[row.id] = { regCost, otCost, specialCost };
+    });
+    return costs;
+  }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header with Load Project */}
@@ -692,6 +825,7 @@ const addEquipmentRow = () => {
                    const rowTotal = Object.entries(equipmentGrid).reduce((sum, [key, value]) => {
                      return key.startsWith(`${row.id}_`) ? sum + (parseInt(value) || 0) : sum;
                    }, 0);
+                   const costs = calculateRowCosts[row.id] || {};
                    return (
                      <React.Fragment key={row.id}>
                        {idx === 7 && (
@@ -703,18 +837,24 @@ const addEquipmentRow = () => {
                           </tr>
                        )}
                        <tr className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
-                         <td className="px-4 py-2 text-foreground font-semibold border-r border-border"></td>
-                         <td className="px-4 py-2 text-foreground font-semibold border-r border-border"></td>
-                         <td className="px-4 py-2 text-foreground font-semibold border-r border-border"></td>
+                         <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.regCost != null && costs.regCost > 0 ? costs.regCost.toFixed(2) : '—'}</td>
+                         <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.otCost != null && costs.otCost > 0 ? costs.otCost.toFixed(2) : '—'}</td>
+                         <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.specialCost != null && costs.specialCost > 0 ? costs.specialCost.toFixed(2) : '—'}</td>
                          <td className="px-4 py-2 text-foreground font-semibold">{rowTotal}</td>
                        </tr>
                      </React.Fragment>
                    );
                  })}
                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                   <td className="px-4 py-2 text-foreground border-r border-border"></td>
-                   <td className="px-4 py-2 text-foreground border-r border-border"></td>
-                   <td className="px-4 py-2 text-foreground border-r border-border"></td>
+                   <td className="px-4 py-2 text-foreground border-r border-border text-right">
+                     {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0).toFixed(2)}
+                   </td>
+                   <td className="px-4 py-2 text-foreground border-r border-border text-right">
+                     {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.otCost || 0), 0).toFixed(2)}
+                   </td>
+                   <td className="px-4 py-2 text-foreground border-r border-border text-right">
+                     {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0).toFixed(2)}
+                   </td>
                    <td className="px-4 py-2 text-foreground">
                      {Object.values(equipmentGrid).reduce((sum, val) => sum + (parseInt(val) || 0), 0)}
                    </td>
