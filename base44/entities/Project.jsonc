@@ -135,6 +135,11 @@
           }
         }
       }
+    },
+    "type_grid": {
+      "type": "object",
+      "description": "Type selections per date in the equipment schedule",
+      "additionalProperties": true
     }
   },
   "required": [

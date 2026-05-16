@@ -21,6 +21,7 @@ export default function ProjectDetailsSetup() {
   const [dateOffset, setDateOffset] = useState(0);
   const [equipmentRows, setEquipmentRows] = useState([]);
   const [equipmentGrid, setEquipmentGrid] = useState({});
+  const [typeGrid, setTypeGrid] = useState({});
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [search, setSearch] = useState('');
   const [editingName, setEditingName] = useState('');
@@ -96,6 +97,7 @@ export default function ProjectDetailsSetup() {
     setDates([]);
     setEquipmentRows([]);
     setEquipmentGrid({});
+    setTypeGrid({});
     setEditingName('');
     localStorage.removeItem('activeProjectId');
     toast.success('Project closed');
@@ -119,6 +121,7 @@ export default function ProjectDetailsSetup() {
     setEndDate(project.end_date || '');
     setEquipmentGrid(project.equipment_grid || {});
     setEquipmentRows(project.equipment_rows || []);
+    setTypeGrid(project.type_grid || {});
     
     const start = parseISO(project.start_date);
     const end = parseISO(project.end_date);
@@ -152,6 +155,7 @@ export default function ProjectDetailsSetup() {
     setDateOffset(0);
     setEquipmentGrid({});
     setEquipmentRows([]);
+    setTypeGrid({});
 
     // Save as new project
     const projectName = getNextSampleNumber();
@@ -177,6 +181,7 @@ export default function ProjectDetailsSetup() {
       data: {
         equipment_grid: equipmentGrid,
         equipment_rows: equipmentRows,
+        type_grid: typeGrid,
       },
     });
   };
@@ -195,12 +200,13 @@ export default function ProjectDetailsSetup() {
       base44.entities.Project.update(selectedProjectId, {
         equipment_grid: equipmentGrid,
         equipment_rows: equipmentRows,
+        type_grid: typeGrid,
       }).then(() => {
         queryClient.invalidateQueries({ queryKey: ['projects'] });
       });
     }, 1500);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [equipmentGrid, equipmentRows, selectedProjectId]);
+  }, [equipmentGrid, equipmentRows, typeGrid, selectedProjectId]);
 
   const PAGE_SIZE = 15;
   const visibleDates = dates.slice(dateOffset, dateOffset + PAGE_SIZE);
@@ -509,19 +515,24 @@ const addEquipmentRow = () => {
                     <th className="sticky left-0 z-10 bg-secondary/60 px-4 py-2 text-left font-semibold text-primary min-w-[100px] border-r border-border text-xs">
                       Type
                     </th>
-                    {visibleDates.map((d, i) => (
-                      <th key={d.toISOString()} className="px-1 py-1 text-center border-r border-border last:border-r-0 w-[100px]">
-                        <select
-                          className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 text-xs text-foreground outline-none cursor-pointer"
-                          defaultValue=""
-                        >
-                          <option value="">—</option>
-                          {saSuStList.map((item, idx) => (
-                            <option key={idx} value={item}>{item}</option>
-                          ))}
-                        </select>
-                      </th>
-                    ))}
+                    {visibleDates.map((d) => {
+                      const dateStr = format(d, 'yyyy-MM-dd');
+                      const typeVal = typeGrid[dateStr] !== undefined ? typeGrid[dateStr] : 'N';
+                      return (
+                        <th key={d.toISOString()} className="px-1 py-1 text-center border-r border-border last:border-r-0 w-[100px]">
+                          <select
+                            className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 text-xs text-foreground outline-none cursor-pointer"
+                            value={typeVal}
+                            onChange={e => setTypeGrid(prev => ({ ...prev, [dateStr]: e.target.value }))}
+                          >
+                            <option value="N">N</option>
+                            {saSuStList.map((item, idx) => (
+                              <option key={idx} value={item}>{item}</option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    })}
                   </tr>
                   <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
                     <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border">
