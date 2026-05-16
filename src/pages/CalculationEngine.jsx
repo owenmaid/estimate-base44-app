@@ -110,25 +110,7 @@ export default function CalculationEngine() {
         </Button>
       </div>
 
-      {/* Project Data Summary */}
-      {activeProject && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              {activeProject.name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <div className="text-xs text-muted-foreground mb-1">Total Mandays</div>
-                <div className="text-3xl font-bold text-primary">{totalMandays}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Status Banner */}
       {formulas.length > 0 && (
