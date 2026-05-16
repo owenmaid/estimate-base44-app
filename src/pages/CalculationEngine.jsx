@@ -102,6 +102,27 @@ export default function CalculationEngine() {
     return result;
   }, [equipmentRows, equipmentGrid, typeGrid]);
 
+  // Col 5: sum of equipment values on 'N' days × (shiftHrs - 8)
+  const rowCol5 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const isSpecial = label.includes('pre-work') || label.includes('post-work');
+      const shiftHrs = isSpecial ? 10 : 12;
+      const overtimeHrs = Math.max(0, shiftHrs - 8);
+      let nSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        if (typeGrid[dateStr] === 'N') nSum += num;
+      });
+      result[row.id] = nSum * overtimeHrs;
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
     onSuccess: () => {
@@ -184,8 +205,8 @@ export default function CalculationEngine() {
                       Shift Hrs
                     </th>
                     {COL_HEADERS.map((col, i) => (
-                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : col}
+                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 || i === 4 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : col}
                       </th>
                     ))}
                 </tr>
@@ -193,7 +214,7 @@ export default function CalculationEngine() {
               <tbody>
                 {equipmentRows.length === 0 ? (
                   <tr>
-                    <td colSpan={NUM_COLS + 1} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={NUM_COLS + 2} className="px-4 py-8 text-center text-muted-foreground">
                       No active project loaded. Open a project in Project Details Setup first.
                     </td>
                   </tr>
@@ -213,11 +234,14 @@ export default function CalculationEngine() {
                         const isCol1 = colIdx === 0;
                         const isCol2 = colIdx === 1;
                         const isCol4 = colIdx === 3;
+                        const isCol5 = colIdx === 4;
                         const col1Value = rowSums[row.id] || 0;
                         const col2Value = rowHours[row.id] || 0;
                         const col4Value = rowCol4[row.id] || 0;
+                        const col5Value = rowCol5[row.id] || 0;
                         const label = (row.label || '').toLowerCase();
-                        const isSpecial = label.includes('(pre-work)') || label.includes('(post-work)');
+                        const isSpecial = label.includes('pre-work') || label.includes('post-work');
+                        const shiftHrs = isSpecial ? 10 : 12;
                         return (
                           <td key={colIdx} className="px-1 py-1 border-r border-border last:border-r-0">
                             {isCol1 ? (
@@ -229,10 +253,14 @@ export default function CalculationEngine() {
                                 {col2Value > 0 ? col2Value : '—'}
                               </div>
                             ) : isCol4 ? (
-                              <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="(N days × 8) + (Sa days × 4)">
-                                {col4Value > 0 ? col4Value : '—'}
-                              </div>
-                            ) : (
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title="(N days × 8) + (Sa days × 4)">
+                                 {col4Value > 0 ? col4Value : '—'}
+                               </div>
+                             ) : isCol5 ? (
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title={`N-day sum × ${shiftHrs - 8} OT hrs (Shift ${shiftHrs}h - 8h)`}>
+                                 {col5Value > 0 ? col5Value : '—'}
+                               </div>
+                             ) : (
                               <input
                                 type="number"
                                 min="0"
