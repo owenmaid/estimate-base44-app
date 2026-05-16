@@ -840,7 +840,7 @@ const addEquipmentRow = () => {
                          <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.regCost != null && costs.regCost > 0 ? costs.regCost.toFixed(2) : '—'}</td>
                          <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.otCost != null && costs.otCost > 0 ? costs.otCost.toFixed(2) : '—'}</td>
                          <td className="px-4 py-2 text-foreground font-semibold border-r border-border text-right">{costs.specialCost != null && costs.specialCost > 0 ? costs.specialCost.toFixed(2) : '—'}</td>
-                         <td className="px-4 py-2 text-foreground font-semibold">{rowTotal}</td>
+                         <td className="px-4 py-2 text-foreground font-semibold text-right">{(costs.regCost || 0) + (costs.otCost || 0) + (costs.specialCost || 0) > 0 ? ((costs.regCost || 0) + (costs.otCost || 0) + (costs.specialCost || 0)).toFixed(2) : '—'}</td>
                        </tr>
                      </React.Fragment>
                    );
@@ -855,8 +855,10 @@ const addEquipmentRow = () => {
                    <td className="px-4 py-2 text-foreground border-r border-border text-right">
                      {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0).toFixed(2)}
                    </td>
-                   <td className="px-4 py-2 text-foreground">
-                     {Object.values(equipmentGrid).reduce((sum, val) => sum + (parseInt(val) || 0), 0)}
+                   <td className="px-4 py-2 text-foreground text-right">
+                     {(equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0) + 
+                       equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.otCost || 0), 0) + 
+                       equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0)).toFixed(2)}
                    </td>
                  </tr>
                </tbody>
