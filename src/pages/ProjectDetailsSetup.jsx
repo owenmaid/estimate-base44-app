@@ -675,6 +675,7 @@ const addEquipmentRow = () => {
              <table className="w-full text-xs border-collapse">
                <thead>
                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
+                   <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Total</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Reg Cost</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">OT Cost</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground">Special Cost</th>
@@ -682,24 +683,29 @@ const addEquipmentRow = () => {
                </thead>
                <tbody>
                  <tr style={{ height: '82px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
-                   <td colSpan="3"></td>
+                   <td className="px-4 py-2"></td>
                  </tr>
                  {equipmentRows.map((row, idx) => {
+                   const rowTotal = Object.entries(equipmentGrid).reduce((sum, [key, value]) => {
+                     return key.startsWith(`${row.id}_`) ? sum + (parseInt(value) || 0) : sum;
+                   }, 0);
                    return (
                      <React.Fragment key={row.id}>
                        {idx === 7 && (
                          <tr style={{ height: '82px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
-                            <td colSpan="3"></td>
+                            <td className="px-4 py-2"></td>
                           </tr>
                        )}
                        <tr className="border-b border-border hover:bg-secondary/20 transition-colors" style={{ height: '40px' }}>
-                         <td colSpan="3"></td>
+                         <td className="px-4 py-2 text-foreground font-semibold">{rowTotal}</td>
                        </tr>
                      </React.Fragment>
                    );
                  })}
                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                   <td colSpan="3"></td>
+                   <td className="px-4 py-2 text-foreground">
+                     {Object.values(equipmentGrid).reduce((sum, val) => sum + (parseInt(val) || 0), 0)}
+                   </td>
                  </tr>
                </tbody>
              </table>
