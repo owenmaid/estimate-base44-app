@@ -27,6 +27,8 @@ export default function ProjectDetailsSetup() {
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
+  const [statHolidays, setStatHolidays] = useState([]);
+  const [loadingHolidays, setLoadingHolidays] = useState(false);
 
   const queryClient = useQueryClient();
   
@@ -282,9 +284,6 @@ const addEquipmentRow = () => {
 
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
-
-  const [statHolidays, setStatHolidays] = useState([]);
-  const [loadingHolidays, setLoadingHolidays] = useState(false);
 
   const fetchStatHolidays = async () => {
     if (!startDate || !endDate) return;
