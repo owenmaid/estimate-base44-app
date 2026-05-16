@@ -123,6 +123,26 @@ export default function CalculationEngine() {
     return result;
   }, [equipmentRows, equipmentGrid, typeGrid]);
 
+  // Col 8: sum of equipment values on 'St' days × shiftHrs
+  const rowCol8 = useMemo(() => {
+    const result = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const isSpecial = label.includes('pre-work') || label.includes('post-work');
+      const shiftHrs = isSpecial ? 10 : 12;
+      let stSum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        if (typeGrid[dateStr] === 'St') stSum += num;
+      });
+      result[row.id] = stSum * shiftHrs;
+    });
+    return result;
+  }, [equipmentRows, equipmentGrid, typeGrid]);
+
   // Col 7: sum of equipment values on 'Su' days × shiftHrs
   const rowCol7 = useMemo(() => {
     const result = {};
@@ -246,8 +266,8 @@ export default function CalculationEngine() {
                       Shift Hrs
                     </th>
                     {COL_HEADERS.map((col, i) => (
-                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 || i === 4 || i === 5 || i === 6 ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : col}
+                      <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i === 0 || i === 1 || i === 3 || i === 4 || i === 5 || i === 6 || i === 7 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : col}
                       </th>
                     ))}
                 </tr>
@@ -278,12 +298,14 @@ export default function CalculationEngine() {
                         const isCol5 = colIdx === 4;
                         const isCol6 = colIdx === 5;
                         const isCol7 = colIdx === 6;
+                        const isCol8 = colIdx === 7;
                         const col1Value = rowSums[row.id] || 0;
                         const col2Value = rowHours[row.id] || 0;
                         const col4Value = rowCol4[row.id] || 0;
                         const col5Value = rowCol5[row.id] || 0;
                         const col6Value = rowCol6[row.id] || 0;
                         const col7Value = rowCol7[row.id] || 0;
+                        const col8Value = rowCol8[row.id] || 0;
                         const label = (row.label || '').toLowerCase();
                         const isSpecial = label.includes('pre-work') || label.includes('post-work');
                         const shiftHrs = isSpecial ? 10 : 12;
@@ -312,6 +334,10 @@ export default function CalculationEngine() {
                              ) : isCol7 ? (
                                <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title={`Su-day sum × ${shiftHrs} shift hrs`}>
                                  {col7Value > 0 ? col7Value : '—'}
+                               </div>
+                             ) : isCol8 ? (
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]" title={`St-day sum × ${shiftHrs} shift hrs`}>
+                                 {col8Value > 0 ? col8Value : '—'}
                                </div>
                              ) : (
                               <input
