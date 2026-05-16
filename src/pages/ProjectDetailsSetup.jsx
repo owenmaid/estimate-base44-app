@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal, Search, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
@@ -261,6 +261,17 @@ const addEquipmentRow = () => {
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
+  const [statHolidays, setStatHolidays] = useState([]);
+  const [loadingHolidays, setLoadingHolidays] = useState(false);
+
+  const fetchStatHolidays = async () => {
+    if (!startDate || !endDate) return;
+    setLoadingHolidays(true);
+    const res = await base44.functions.invoke('getCanadaStatHolidays', { startDate, endDate });
+    setStatHolidays(res.data?.holidays || []);
+    setLoadingHolidays(false);
+  };
+
   // Load Sa_Su_St list from localStorage (managed on Control Page)
   const saSuStList = React.useMemo(() => {
     try {
@@ -400,6 +411,14 @@ const addEquipmentRow = () => {
             <Button onClick={handleCreateDates} disabled={!startDate || !endDate}>
               Create Dates
             </Button>
+            <Button
+              variant="outline"
+              onClick={fetchStatHolidays}
+              disabled={!startDate || !endDate || loadingHolidays}
+            >
+              {loadingHolidays ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Search className="h-4 w-4 mr-1.5" />}
+              Find Stat Holidays
+            </Button>
           </div>
           {dates.length > 0 && (
             <p className="text-xs text-muted-foreground mt-3">
@@ -409,6 +428,44 @@ const addEquipmentRow = () => {
 
         </CardContent>
       </Card>
+
+      {/* Stat Holidays Results */}
+      {statHolidays.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              Canadian Stat Holidays
+              <span className="text-xs text-muted-foreground font-normal ml-1">
+                {format(parseISO(startDate), 'MMM d, yyyy')} – {format(parseISO(endDate), 'MMM d, yyyy')}
+              </span>
+              <Badge variant="secondary" className="ml-auto">{statHolidays.length} found</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-secondary/60 border-b border-border">
+                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Date</th>
+                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Holiday</th>
+                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Provinces / Scope</th>
+                </tr>
+              </thead>
+              <tbody>
+                {statHolidays.map((h, i) => (
+                  <tr key={i} className="border-b border-border hover:bg-secondary/20">
+                    <td className="px-4 py-2 font-medium text-foreground whitespace-nowrap">
+                      {h.date ? format(parseISO(h.date), 'EEE, MMM d yyyy') : h.date}
+                    </td>
+                    <td className="px-4 py-2 text-foreground">{h.name}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{h.provinces}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
 
 {/* Equipment Spreadsheet + Calculations */}
       {dates.length > 0 && (
