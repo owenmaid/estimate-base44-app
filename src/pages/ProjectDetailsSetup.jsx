@@ -154,7 +154,7 @@ export default function ProjectDetailsSetup() {
       if (holidayDates.has(dateStr)) grid[dateStr] = 'St';
       else if (day === 6) grid[dateStr] = 'Sa';
       else if (day === 0) grid[dateStr] = 'Su';
-      else grid[dateStr] = 'N';
+      else if (grid[dateStr] === undefined) grid[dateStr] = 'N';
     });
     return grid;
   };
