@@ -51,7 +51,7 @@ export default function EquipmentCalculator() {
       name: item.name,
       sku: item.sku || '',
       unit: item.unit || 'pcs',
-      unit_cost: item.unit_cost || 0,
+      unit_cost: item.reg_value || 0,
       reg_value: item.reg_value || 0,
       ot_value: item.ot_value || 0,
       quantity: 1,
@@ -190,7 +190,7 @@ export default function EquipmentCalculator() {
                   <tr className="bg-secondary/60 border-b border-border text-left">
                     <th className="px-3 py-2 font-semibold text-muted-foreground">Item</th>
                     <th className="px-3 py-2 font-semibold text-muted-foreground w-24">Qty</th>
-                    <th className="px-3 py-2 font-semibold text-muted-foreground w-28">Unit Cost ($)</th>
+                    <th className="px-3 py-2 font-semibold text-muted-foreground w-28">Reg Value ($)</th>
                     <th className="px-3 py-2 font-semibold text-muted-foreground w-24">OT Hours</th>
                     <th className="px-3 py-2 font-semibold text-muted-foreground w-28">OT Rate ($)</th>
                     <th className="px-3 py-2 font-semibold text-muted-foreground w-28 text-right">Reg Cost</th>
