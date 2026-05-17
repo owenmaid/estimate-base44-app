@@ -24,6 +24,7 @@ import ProjectDetailsSetup from '@/pages/ProjectDetailsSetup';
 import CalculationRouting from '@/pages/CalculationRouting';
 import CalculationEngine from '@/pages/CalculationEngine';
 import ControlPage from '@/pages/ControlPage';
+import CreateEstimatePanel from '@/pages/CreateEstimatePanel';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const AuthenticatedApp = () => {
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         <Route path="/calculation-routing" element={<CalculationRouting />} />
         <Route path="/calculation-engine" element={<CalculationEngine />} />
         <Route path="/control-page" element={<ControlPage />} />
+        <Route path="/create-estimate-panel" element={<CreateEstimatePanel />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
