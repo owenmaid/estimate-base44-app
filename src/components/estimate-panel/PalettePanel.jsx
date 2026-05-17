@@ -31,7 +31,11 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
   const toggleGroup = (key) => setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleAddInventoryItem = async (invItem) => {
-    const targetSectionId = selectedSection || (sections[0]?.id);
+    if (!sections || sections.length === 0) {
+      console.error('No sections available');
+      return;
+    }
+    const targetSectionId = selectedSection || sections[0].id;
     if (!targetSectionId) return;
 
     let unit_price = invItem.unit_cost || 0;
@@ -79,7 +83,8 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
   };
 
   const handleAddManual = () => {
-    const targetSectionId = selectedSection || (sections[0]?.id);
+    if (!sections || sections.length === 0) return;
+    const targetSectionId = selectedSection || sections[0].id;
     if (!targetSectionId || !manualItem.description) return;
     onAddItemToSection(targetSectionId, { ...manualItem });
     setManualItem({ description: '', quantity: 1, unit_price: 0, markup: 0 });
