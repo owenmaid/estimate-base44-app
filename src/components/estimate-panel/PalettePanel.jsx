@@ -37,7 +37,7 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
     let unit_price = invItem.unit_cost || 0;
 
     // If project number exists, try to fetch synced total from ProjectDetailsSetup
-    if (projectNumber && invItem.id) {
+    if (projectNumber && invItem.name) {
       setSyncing(invItem.id);
       try {
         const projects = await base44.entities.Project.list();
@@ -46,7 +46,7 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
         if (matchingProject) {
           const equipmentRows = matchingProject.equipment_rows || [];
           const equipmentGrid = matchingProject.equipment_grid || {};
-          const matchingRow = equipmentRows.find(r => r.item_id === invItem.id);
+          const matchingRow = equipmentRows.find(r => r.label === invItem.name);
           
           if (matchingRow) {
             // Calculate total from equipment grid for this row
