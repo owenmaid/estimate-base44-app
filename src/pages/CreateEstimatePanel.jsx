@@ -36,7 +36,7 @@ export default function CreateEstimatePanel() {
     setActiveEstimate(estimate);
     setClientInfo({
       client_name: estimate.client_name || '',
-      project_number: estimate.project_number || '',
+      project_number: estimate.project_number || estimate.project_name || '',
       project_name: estimate.project_name || '',
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
