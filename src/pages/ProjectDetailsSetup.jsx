@@ -694,7 +694,7 @@ const addEquipmentRow = () => {
                 <thead>
                   {/* Type row — references Sa_Su_St list from Control Page */}
                   <tr className="bg-secondary/40 border-b border-border" style={{ height: '36px' }}>
-                    <th className="sticky left-0 z-10 bg-secondary/60 px-4 py-2 text-left font-semibold text-primary min-w-[100px] border-r border-border text-xs">
+                    <th className="sticky left-0 z-10 bg-secondary/60 px-4 py-2 text-left font-semibold text-primary min-w-[160px] border-r border-border text-xs">
                       Type
                     </th>
                     {visibleDates.map((d) => {
@@ -723,7 +723,7 @@ const addEquipmentRow = () => {
                     })}
                   </tr>
                   <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
-                    <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[100px] border-r border-border">
+                    <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[160px] border-r border-border">
                       Equipment
                     </th>
                     {visibleDates.map(d => {
@@ -758,7 +758,7 @@ const addEquipmentRow = () => {
                           <span {...dragProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
                             <GripVertical className="h-3.5 w-3.5" />
                           </span>
-                          <span className="font-medium text-foreground truncate max-w-[80px]" title={row.label}>{row.label}</span>
+                          <span className="font-medium text-foreground truncate max-w-[130px]" title={row.label}>{row.label}</span>
                           {equipmentRows.length > 0 && (
                             <button
                               onClick={() => removeEquipmentRow(row.id)}
