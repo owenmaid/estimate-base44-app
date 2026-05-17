@@ -101,37 +101,41 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                 <div ref={provided.innerRef} {...provided.droppableProps}>
                   {section.items.map((item, idx) => (
                     <Draggable key={String(item.id)} draggableId={String(item.id)} index={idx}>
-                      {(drag, snapshot) => (
-                        <div
-                          ref={drag.innerRef}
-                          {...drag.draggableProps}
-                          className={`grid grid-cols-12 gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors ${snapshot.isDragging ? 'bg-secondary/60' : 'hover:bg-secondary/20'}`}
-                        >
-                          <div className="col-span-1 flex items-center" {...drag.dragHandleProps}>
-                            <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
+                      {(drag, snapshot) => {
+                        const isCategoryRow = item.description && item.description.startsWith('[') && item.description.endsWith(']');
+                        return (
+                          <div
+                            ref={drag.innerRef}
+                            {...drag.draggableProps}
+                            className={`grid grid-cols-12 gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors ${snapshot.isDragging ? 'bg-secondary/60' : isCategoryRow ? '' : 'hover:bg-secondary/20'}`}
+                            style={isCategoryRow ? { backgroundColor: 'rgba(249, 115, 22, 0.2)' } : {}}
+                          >
+                            <div className="col-span-1 flex items-center" {...drag.dragHandleProps}>
+                              <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
+                            </div>
+                            <div className={`col-span-4 ${isCategoryRow ? 'text-white font-bold' : 'text-foreground'}`}>
+                              <EditableCell value={item.description} onChange={v => onUpdateItem(section.id, item.id, 'description', v)} className="w-full" />
+                            </div>
+                            <div className="col-span-1 text-right">
+                              <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
+                            </div>
+                            <div className="col-span-2 text-right">
+                              <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />
+                            </div>
+                            <div className="col-span-1 text-right">
+                              <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />
+                            </div>
+                            <div className="col-span-2 text-right font-semibold text-foreground">
+                              ${(item.total || 0).toFixed(2)}
+                            </div>
+                            <div className="col-span-1 flex justify-end">
+                              <button onClick={() => onRemoveItem(section.id, item.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="col-span-4 text-foreground">
-                            <EditableCell value={item.description} onChange={v => onUpdateItem(section.id, item.id, 'description', v)} className="w-full" />
-                          </div>
-                          <div className="col-span-1 text-right">
-                            <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
-                          </div>
-                          <div className="col-span-2 text-right">
-                            <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />
-                          </div>
-                          <div className="col-span-1 text-right">
-                            <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />
-                          </div>
-                          <div className="col-span-2 text-right font-semibold text-foreground">
-                            ${(item.total || 0).toFixed(2)}
-                          </div>
-                          <div className="col-span-1 flex justify-end">
-                            <button onClick={() => onRemoveItem(section.id, item.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      }}
                     </Draggable>
                   ))}
                   {provided.placeholder}
