@@ -197,14 +197,27 @@ export default function EstimateDetail() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {estimate.line_items?.map((item, i) => (
-                <TableRow key={i} className={item.description?.includes('— Reg Cost') ? 'bg-primary/5' : item.description?.includes('— OT Cost') ? 'bg-blue-500/5' : item.description?.includes('— Special Cost') ? 'bg-orange-500/5' : ''}>
-                  <TableCell className="font-medium">{item.description || '—'}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                  <TableCell className="text-right">${(item.unit_price || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-right font-semibold">${(item.total || 0).toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
+              {estimate.line_items?.map((item, i) => {
+                const isHeader = item.quantity === 0 && item.total === 0 && item.description?.startsWith('──');
+                if (isHeader) {
+                  return (
+                    <TableRow key={i} className="bg-secondary/60 hover:bg-secondary/60">
+                      <TableCell colSpan={4} className="py-2 px-4 font-semibold text-xs text-primary uppercase tracking-widest">
+                        {item.description?.replace(/^──\s*/, '').replace(/\s*──$/, '')}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+                const rowBg = item.description?.includes('— Reg Cost') ? 'bg-primary/5' : item.description?.includes('— OT Cost') ? 'bg-blue-500/5' : item.description?.includes('— Special Cost') ? 'bg-orange-500/5' : '';
+                return (
+                  <TableRow key={i} className={rowBg}>
+                    <TableCell className="font-medium">{item.description || '—'}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell className="text-right">${(item.unit_price || 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-semibold">${(item.total || 0).toFixed(2)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 

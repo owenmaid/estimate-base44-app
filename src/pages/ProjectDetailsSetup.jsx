@@ -478,24 +478,38 @@ const addEquipmentRow = () => {
       const currentProject = projects.find(p => p.id === selectedProjectId);
       const estimateName = `(EST)-${currentProject?.name || 'Project'}`;
 
-      // Build line items from each equipment row using Col11/12/13 values
-      const lineItems = [];
+      // Build line items grouped by inventory category
+      // First, collect rows per category
+      const categoryMap = {};
       equipmentRows.forEach(row => {
-        const costs = calculateRowCosts[row.id] || {};
-        const { regCost, otCost, specialCost } = costs;
-
-        if (regCost != null && regCost > 0) {
-          lineItems.push({ description: `${row.label} — Reg Cost`, quantity: 1, unit_price: regCost, total: regCost });
-        }
-        if (otCost != null && otCost > 0) {
-          lineItems.push({ description: `${row.label} — OT Cost`, quantity: 1, unit_price: otCost, total: otCost });
-        }
-        if (specialCost != null && specialCost > 0) {
-          lineItems.push({ description: `${row.label} — Special Cost`, quantity: 1, unit_price: specialCost, total: specialCost });
-        }
+        const inventoryItem = equipmentInventory.find(i => i.id === row.item_id);
+        const category = inventoryItem?.category || 'Uncategorized';
+        if (!categoryMap[category]) categoryMap[category] = [];
+        categoryMap[category].push(row);
       });
 
-      if (lineItems.length === 0) {
+      const lineItems = [];
+      // Emit a category header line then line items for each group
+      Object.entries(categoryMap).forEach(([category, rows]) => {
+        // Category header (zero-value separator line)
+        lineItems.push({ description: `── ${category} ──`, quantity: 0, unit_price: 0, total: 0 });
+        rows.forEach(row => {
+          const costs = calculateRowCosts[row.id] || {};
+          const { regCost, otCost, specialCost } = costs;
+          if (regCost != null && regCost > 0) {
+            lineItems.push({ description: `${row.label} — Reg Cost`, quantity: 1, unit_price: regCost, total: regCost });
+          }
+          if (otCost != null && otCost > 0) {
+            lineItems.push({ description: `${row.label} — OT Cost`, quantity: 1, unit_price: otCost, total: otCost });
+          }
+          if (specialCost != null && specialCost > 0) {
+            lineItems.push({ description: `${row.label} — Special Cost`, quantity: 1, unit_price: specialCost, total: specialCost });
+          }
+        });
+      });
+
+      const hasAnyCosts = lineItems.some(item => item.total > 0);
+      if (!hasAnyCosts) {
         toast.error('No cost data to convert. Make sure rows have costs calculated.');
         setConvertingEstimate(false);
         return;
