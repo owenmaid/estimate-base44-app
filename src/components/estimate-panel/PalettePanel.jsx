@@ -39,9 +39,10 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
     if (!targetSectionId) return;
 
     let unit_price = invItem.unit_cost || 0;
+    const itemDescription = invItem.name || invItem.sku;
 
-    // If project number exists, try to fetch synced total from ProjectDetailsSetup
-    if (projectNumber && invItem.name) {
+    // If project number exists, sync total from ProjectDetailsSetup
+    if (projectNumber && itemDescription) {
       setSyncing(invItem.id);
       try {
         const projects = await base44.entities.Project.list();
@@ -50,18 +51,22 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
         if (matchingProject) {
           const equipmentRows = matchingProject.equipment_rows || [];
           const equipmentGrid = matchingProject.equipment_grid || {};
-          const matchingRow = equipmentRows.find(r => r.label === invItem.name);
+          
+          // Find equipment row matching this item's SKU or name
+          const matchingRow = equipmentRows.find(row => {
+            return row.label === itemDescription || row.label === invItem.sku || row.label === invItem.name;
+          });
           
           if (matchingRow) {
-            // Calculate total from equipment grid for this row
+            // Sum all daily entries for this equipment row
             let rowTotal = 0;
             Object.entries(equipmentGrid).forEach(([key, value]) => {
               if (key.startsWith(`${matchingRow.id}_`)) {
-                rowTotal += parseInt(value, 10) || 0;
+                const num = parseInt(value, 10);
+                if (!isNaN(num)) rowTotal += num;
               }
             });
             
-            // Use calculated total as the unit price
             if (rowTotal > 0) {
               unit_price = rowTotal;
             }
@@ -70,16 +75,15 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
       } catch (error) {
         console.error('Error syncing project data:', error);
       }
+      setSyncing(null);
     }
 
     onAddItemToSection(targetSectionId, {
-      description: invItem.name || invItem.sku,
+      description: itemDescription,
       quantity: 1,
       unit_price,
       markup: 0,
     });
-    
-    setSyncing(null);
   };
 
   const handleAddManual = () => {
