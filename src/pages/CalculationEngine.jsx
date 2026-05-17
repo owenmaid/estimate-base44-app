@@ -41,14 +41,14 @@ export default function CalculationEngine() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
-  // Map by id, name, and sku for flexible lookup (reg and OT values)
+  // Map by id, name, and sku for flexible lookup (reg, OT values, and item_group)
   const inventoryValueMap = useMemo(() => {
     const byId = {};
     const byName = {};
     inventoryItems.forEach(item => {
-      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value };
-      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
-      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
+      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
+      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
+      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
     });
     return { byId, byName };
   }, [inventoryItems]);
@@ -311,11 +311,31 @@ export default function CalculationEngine() {
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 border-r border-border font-medium text-foreground truncate max-w-[140px]" title={row.label}>
                          {row.label}
                        </td>
-                       <td className="px-1 py-1 border-r border-border">
-                         <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]">
-                           {(row.label || '').toLowerCase().includes('pre-work') || (row.label || '').toLowerCase().includes('post-work') ? 10 : 12}
-                         </div>
-                       </td>
+                       {(() => {
+                         // Determine item_group for this row
+                         const inventoryEntry = inventoryValueMap.byId[row.item_id]
+                           ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+                           ?? null;
+                         const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+                         const label = (row.label || '').toLowerCase();
+                         const isSpecial = label.includes('pre-work') || label.includes('post-work');
+                         const shiftHrs = isSpecial ? 10 : 12;
+
+                         // Shift Hrs cell: active for Manpower, inactive for others
+                         const shiftHrsCell = (
+                           <td className="px-1 py-1 border-r border-border">
+                             {isManpower ? (
+                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]">
+                                 {shiftHrs}
+                               </div>
+                             ) : (
+                               <div className="w-full bg-secondary/30 border border-border/30 rounded px-1 py-1 text-xs text-muted-foreground/40 text-center min-h-[24px]">—</div>
+                             )}
+                           </td>
+                         );
+
+                         return shiftHrsCell;
+                       })()}
                        {COL_HEADERS.map((_, colIdx) => {
                          const key = `${row.id}_col${colIdx}`;
                          const isCol1 = colIdx === 0;
@@ -340,9 +360,10 @@ export default function CalculationEngine() {
                          const col7Value = rowCol7[row.id] || 0;
                          const col8Value = rowCol8[row.id] || 0;
                          // Look up by item_id first, then by label text matching inventory name/sku
-                         const inventoryEntry = inventoryValueMap.byId[row.item_id] 
-                           ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
+                         const inventoryEntry = inventoryValueMap.byId[row.item_id]
+                           ?? inventoryValueMap.byName[row.label?.toLowerCase()]
                            ?? null;
+                         const isManpower = inventoryEntry?.item_group === 'Manpower Group';
                          const col9Value = inventoryEntry?.reg ?? null;
                          const col10Value = inventoryEntry?.ot ?? null;
                          const label = (row.label || '').toLowerCase();
@@ -354,12 +375,20 @@ export default function CalculationEngine() {
                          const col12Value = col10Value != null ? ((col5Value + col6Value + col7Value) * col10Value) : null;
                          // Col 13: Special Days Cost = (Col8*2*(4/(Shift Hrs*2)))*Col10 + (Col8*2*((Shift Hrs*2-4)/(Shift Hrs*2)))*Col10
                          const col13Value = col10Value != null
-                           ? ((col8Value * 2 * (4 / (shiftHrs * 2))) * col10Value) + 
+                           ? ((col8Value * 2 * (4 / (shiftHrs * 2))) * col10Value) +
                              ((col8Value * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
                            : null;
+
+                         // Inactive style for non-Manpower rows: Shift Hrs + Col2–Col10
+                         const isInactiveForNonManpower = !isManpower && (
+                           isCol2 || isCol3 || isCol4 || isCol5 || isCol6 || isCol7 || isCol8 || isCol9 || isCol10
+                         );
+
                         return (
                           <td key={colIdx} className="px-1 py-1 border-r border-border last:border-r-0">
-                            {isCol1 ? (
+                            {isInactiveForNonManpower ? (
+                              <div className="w-full bg-secondary/30 border border-border/30 rounded px-1 py-1 text-xs text-muted-foreground/40 text-center min-h-[24px]">—</div>
+                            ) : isCol1 ? (
                               <div className="w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]">
                                 {col1Value > 0 ? col1Value : '—'}
                               </div>
