@@ -85,8 +85,8 @@ export default function EquipmentCalculator() {
     const otMult = getMultiplier('ot_cost');
 
     const rows = lineItems.map(l => {
-      const regCost = l.quantity * l.unit_cost * projectDays * regMult;
-      const otCost = l.quantity * l.ot_value * l.ot_hours * otMult;
+      const regCost = l.quantity * l.unit_cost * regMult;
+      const otCost = l.ot_value * l.ot_hours * otMult;
       const subtotal = (regCost + otCost) * subtotalMult;
       return { ...l, regCost, otCost, subtotal };
     });
