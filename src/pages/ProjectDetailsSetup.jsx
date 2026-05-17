@@ -303,14 +303,15 @@ const addEquipmentRow = () => {
     } catch { return []; }
   }, []);
 
-  // Map inventory items by id/name for lookup (reg and OT values)
+  // Map inventory items by id/name for lookup (reg, OT values, and item_group)
   const inventoryValueMap = useMemo(() => {
     const byId = {};
     const byName = {};
     equipmentInventory.forEach(item => {
-      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value };
-      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
-      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
+      const entry = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
+      if (item.id) byId[item.id] = entry;
+      if (item.name) byName[item.name.toLowerCase()] = entry;
+      if (item.sku) byName[item.sku.toLowerCase()] = entry;
     });
     return { byId, byName };
   }, [equipmentInventory]);
@@ -412,7 +413,26 @@ const addEquipmentRow = () => {
     return result;
   }, [equipmentRows, equipmentGrid, typeGrid]);
 
-  // Calculate Reg Cost, OT Cost, Special Cost per row
+  // Calculate Col1 (total sum per row) — mirrors CalculationEngine
+  const rowSums = useMemo(() => {
+    const sums = {};
+    equipmentRows.forEach(row => {
+      let sum = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (key.startsWith(`${row.id}_`)) {
+          const num = parseInt(value, 10);
+          if (!isNaN(num) && num > 0) sum += num;
+        }
+      });
+      sums[row.id] = sum;
+    });
+    return sums;
+  }, [equipmentRows, equipmentGrid]);
+
+  // Calculate Reg Cost (Col11), OT Cost (Col12), Special Cost (Col13) per row
+  // Mirrors CalculationEngine logic exactly:
+  //   Manpower: regCost = col4 × regRate, otCost/specCost use effective cols
+  //   Non-Manpower: regCost = col1 (rowSum) × regRate, otCost/specCost = 0
   const calculateRowCosts = useMemo(() => {
     const costs = {};
     equipmentRows.forEach(row => {
@@ -423,18 +443,28 @@ const addEquipmentRow = () => {
         ?? null;
       const regRate = inventoryEntry?.reg ?? null;
       const otRate = inventoryEntry?.ot ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
 
-      const regCost = regRate != null ? (rowCol4[row.id] || 0) * regRate : null;
-      const otCost = otRate != null ? ((rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0)) * otRate : null;
+      const col1 = rowSums[row.id] || 0;
+      const col4 = rowCol4[row.id] || 0;
+      const col5 = isManpower ? (rowCol5[row.id] || 0) : 0;
+      const col6 = isManpower ? (rowCol6[row.id] || 0) : 0;
+      const col7 = isManpower ? (rowCol7[row.id] || 0) : 0;
+      const col8 = isManpower ? (rowCol8[row.id] || 0) : 0;
+
+      // Col11: Manpower = col4 × regRate, non-Manpower = col1 × regRate
+      const regCost = regRate != null ? ((isManpower ? col4 : col1) * regRate) : null;
+      // Col12: OT cost (Manpower only)
+      const otCost = otRate != null ? ((col5 + col6 + col7) * otRate) : null;
+      // Col13: Special cost (Manpower only)
       const specialCost = otRate != null
-        ? ((rowCol8[row.id] || 0) * 2 * (4 / (shiftHrs * 2)) * otRate) + 
-          ((rowCol8[row.id] || 0) * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
         : null;
 
       costs[row.id] = { regCost, otCost, specialCost };
     });
     return costs;
-  }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
+  }, [equipmentRows, rowSums, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
 
   return (
     <div className="p-6 space-y-6">
