@@ -29,6 +29,7 @@ export default function ProjectDetailsSetup() {
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
   const [statHolidays, setStatHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(false);
+  const [expandedSchedule, setExpandedSchedule] = useState(false);
 
   const queryClient = useQueryClient();
   
@@ -622,12 +623,19 @@ const addEquipmentRow = () => {
 
 {/* Equipment Spreadsheet + Calculations */}
       {dates.length > 0 && (
-        <div className="flex gap-4 items-start">
+        <div className={expandedSchedule ? "fixed inset-0 z-50 bg-background p-4 overflow-auto flex gap-4 items-start" : "flex gap-4 items-start"}>
         <Card className="flex-1 min-w-0">
           <CardHeader className="pb-2">
             <div className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base">Equipment Schedule</CardTitle>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setExpandedSchedule(e => !e)}
+                >
+                  {expandedSchedule ? 'Collapse' : 'Expand Equip Schedule'}
+                </Button>
                 <Button 
                   size="sm" 
                   variant="outline"
