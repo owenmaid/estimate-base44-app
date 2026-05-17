@@ -303,14 +303,14 @@ const addEquipmentRow = () => {
     } catch { return []; }
   }, []);
 
-  // Map inventory items by id/name for lookup (reg and OT values)
+  // Map inventory items by id/name for lookup (reg, OT values, and item_group)
   const inventoryValueMap = useMemo(() => {
     const byId = {};
     const byName = {};
     equipmentInventory.forEach(item => {
-      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value };
-      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
-      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value };
+      if (item.id) byId[item.id] = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
+      if (item.name) byName[item.name.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
+      if (item.sku) byName[item.sku.toLowerCase()] = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
     });
     return { byId, byName };
   }, [equipmentInventory]);
@@ -418,13 +418,15 @@ const addEquipmentRow = () => {
     equipmentRows.forEach(row => {
       const label = (row.label || '').toLowerCase();
       const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
-      const inventoryEntry = inventoryValueMap.byId[row.item_id] 
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
       const regRate = inventoryEntry?.reg ?? null;
       const otRate = inventoryEntry?.ot ?? null;
 
-      const regCost = regRate != null ? (rowCol4[row.id] || 0) * regRate : null;
+      // Reg Cost is only active for Manpower Group rows (Col4 is inactive for non-Manpower)
+      const regCost = (isManpower && regRate != null) ? (rowCol4[row.id] || 0) * regRate : null;
       const otCost = otRate != null ? ((rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0)) * otRate : null;
       const specialCost = otRate != null
         ? ((rowCol8[row.id] || 0) * 2 * (4 / (shiftHrs * 2)) * otRate) + 
