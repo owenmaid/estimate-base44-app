@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'New Estimate', path: '/estimates/new', icon: FilePlus },
+  { label: 'Create Estimate Panel', path: '/create-estimate-panel', icon: PanelLeftOpen },
   { label: 'All Estimates', path: '/estimates', icon: FileText },
   { label: 'Projects', path: '/projects', icon: FolderKanban },
   { label: 'Templates', path: '/project-templates', icon: LayoutTemplate },
