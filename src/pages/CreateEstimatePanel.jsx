@@ -156,20 +156,51 @@ export default function CreateEstimatePanel() {
           lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
         });
       });
+
+      // If already editing a known record, always update it
+      if (activeEstimate) {
+        const payload = {
+          ...clientInfo,
+          line_items: lineItems,
+          subtotal,
+          tax_amount: taxAmount,
+          total,
+          status: activeEstimate.status,
+          estimate_number: activeEstimate.estimate_number,
+        };
+        return base44.entities.Estimate.update(activeEstimate.id, payload);
+      }
+
+      // New save: if project_name is set, check for an existing record with that name first
+      if (clientInfo.project_name.trim()) {
+        const existing = await base44.entities.Estimate.filter({ project_name: clientInfo.project_name.trim() });
+        if (existing && existing.length > 0) {
+          // Update the existing record instead of creating a duplicate
+          const match = existing[0];
+          const payload = {
+            ...clientInfo,
+            line_items: lineItems,
+            subtotal,
+            tax_amount: taxAmount,
+            total,
+            status: match.status || 'draft',
+            estimate_number: match.estimate_number,
+          };
+          return base44.entities.Estimate.update(match.id, payload);
+        }
+      }
+
+      // Truly new — create
       const payload = {
         ...clientInfo,
         line_items: lineItems,
         subtotal,
         tax_amount: taxAmount,
         total,
-        status: activeEstimate?.status || 'draft',
-        estimate_number: activeEstimate?.estimate_number || `EST-${Date.now().toString().slice(-6)}`,
+        status: 'draft',
+        estimate_number: `EST-${Date.now().toString().slice(-6)}`,
       };
-      if (activeEstimate) {
-        return base44.entities.Estimate.update(activeEstimate.id, payload);
-      } else {
-        return base44.entities.Estimate.create(payload);
-      }
+      return base44.entities.Estimate.create(payload);
     },
     onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
