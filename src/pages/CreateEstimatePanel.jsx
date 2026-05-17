@@ -21,7 +21,7 @@ export default function CreateEstimatePanel() {
 
   // Client info
   const [clientInfo, setClientInfo] = useState({
-    client_name: '', project_name: '', client_email: '',
+    client_name: '', project_number: '', project_name: '', client_email: '',
     client_phone: '', client_address: '', notes: '',
     tax_rate: 0, discount: 0,
   });
@@ -36,6 +36,7 @@ export default function CreateEstimatePanel() {
     setActiveEstimate(estimate);
     setClientInfo({
       client_name: estimate.client_name || '',
+      project_number: estimate.project_number || '',
       project_name: estimate.project_name || '',
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
@@ -79,7 +80,7 @@ export default function CreateEstimatePanel() {
   const handleNew = () => {
     setActiveEstimate(null);
     setSections([{ id: Date.now(), title: 'Section 1', items: [] }]);
-    setClientInfo({ client_name: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
+    setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
   };
 
   const handleCloseEstimate = () => setShowCloseConfirm(true);
@@ -294,6 +295,7 @@ export default function CreateEstimatePanel() {
           sections={sections}
           onAddSection={addSection}
           onAddItemToSection={addItemToSection}
+          projectNumber={clientInfo.project_number}
         />
 
         {/* RIGHT: Estimate Canvas */}

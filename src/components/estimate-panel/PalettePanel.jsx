@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Package, Wrench, Users, ChevronDown, ChevronRight, Plus, Search, Layers } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 const GROUP_ICONS = {
   'Service Group': Wrench,
@@ -7,12 +8,13 @@ const GROUP_ICONS = {
   'Manpower Group': Users,
 };
 
-export default function PalettePanel({ inventory, sections, onAddSection, onAddItemToSection }) {
+export default function PalettePanel({ inventory, sections, onAddSection, onAddItemToSection, projectNumber }) {
   const [search, setSearch] = useState('');
   const [expandedGroups, setExpandedGroups] = useState({});
   const [selectedSection, setSelectedSection] = useState(null);
   const [manualItem, setManualItem] = useState({ description: '', quantity: 1, unit_price: 0, markup: 0 });
   const [showManual, setShowManual] = useState(false);
+  const [syncing, setSyncing] = useState(null);
 
   // Group inventory by item_group → category
   const grouped = {};
@@ -28,13 +30,38 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
 
   const toggleGroup = (key) => setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
-  const handleAddInventoryItem = (invItem) => {
+  const handleAddInventoryItem = async (invItem) => {
     const targetSectionId = selectedSection || (sections[0]?.id);
     if (!targetSectionId) return;
+
+    let unit_price = invItem.unit_cost || 0;
+
+    // If project number exists, try to fetch synced total from ProjectDetailsSetup
+    if (projectNumber && invItem.sku) {
+      setSyncing(invItem.id);
+      try {
+        const projects = await base44.entities.Project.list();
+        const matchingProject = projects.find(p => p.project_number === projectNumber);
+        
+        if (matchingProject) {
+          const equipmentRows = matchingProject.equipment_rows || [];
+          const matchingRow = equipmentRows.find(r => r.item_id === invItem.id);
+          
+          if (matchingRow) {
+            // Found matching equipment row - could fetch its calculated total
+            // For now, using the inventory unit cost as fallback
+          }
+        }
+      } catch (error) {
+        console.error('Error syncing project data:', error);
+      }
+      setSyncing(null);
+    }
+
     onAddItemToSection(targetSectionId, {
       description: invItem.name || invItem.sku,
       quantity: 1,
-      unit_price: invItem.unit_cost || 0,
+      unit_price,
       markup: 0,
     });
   };
