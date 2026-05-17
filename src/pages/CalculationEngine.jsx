@@ -365,18 +365,24 @@ export default function CalculationEngine() {
                            ?? null;
                          const isManpower = inventoryEntry?.item_group === 'Manpower Group';
                          const col9Value = inventoryEntry?.reg ?? null;
-                         const col10Value = inventoryEntry?.ot ?? null;
+                         // For non-Manpower rows, treat col4–col8 and col10 as zero for cost calculations
+                         const effectiveCol4 = isManpower ? col4Value : 0;
+                         const effectiveCol5 = isManpower ? col5Value : 0;
+                         const effectiveCol6 = isManpower ? col6Value : 0;
+                         const effectiveCol7 = isManpower ? col7Value : 0;
+                         const effectiveCol8 = isManpower ? col8Value : 0;
+                         const col10Value = isManpower ? (inventoryEntry?.ot ?? null) : null;
                          const label = (row.label || '').toLowerCase();
                          const isSpecial = label.includes('pre-work') || label.includes('post-work');
                          const shiftHrs = isSpecial ? 10 : 12;
-                         // Col 11: Regular Cost = Col4*Col9
-                         const col11Value = col9Value != null ? (col4Value * col9Value) : null;
-                         // Col 12: Overtime Cost = SUM(Col5:Col7)*Col10
-                         const col12Value = col10Value != null ? ((col5Value + col6Value + col7Value) * col10Value) : null;
-                         // Col 13: Special Days Cost = (Col8*2*(4/(Shift Hrs*2)))*Col10 + (Col8*2*((Shift Hrs*2-4)/(Shift Hrs*2)))*Col10
+                         // Col 11: Regular Cost = Col4*Col9 (zero for non-Manpower)
+                         const col11Value = col9Value != null ? (effectiveCol4 * col9Value) : null;
+                         // Col 12: Overtime Cost = SUM(Col5:Col7)*Col10 (zero for non-Manpower)
+                         const col12Value = col10Value != null ? ((effectiveCol5 + effectiveCol6 + effectiveCol7) * col10Value) : null;
+                         // Col 13: Special Days Cost (zero for non-Manpower)
                          const col13Value = col10Value != null
-                           ? ((col8Value * 2 * (4 / (shiftHrs * 2))) * col10Value) +
-                             ((col8Value * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
+                           ? ((effectiveCol8 * 2 * (4 / (shiftHrs * 2))) * col10Value) +
+                             ((effectiveCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
                            : null;
 
                          // Inactive style for non-Manpower rows: Shift Hrs + Col2–Col10
