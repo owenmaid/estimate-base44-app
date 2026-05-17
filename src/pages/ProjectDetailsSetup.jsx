@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal, Search, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal, Search, Loader2, FileText } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function ProjectDetailsSetup() {
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [dates, setDates] = useState([]);
@@ -31,6 +32,7 @@ export default function ProjectDetailsSetup() {
   const [statHolidays, setStatHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [expandedSchedule, setExpandedSchedule] = useState(false);
+  const [convertingEstimate, setConvertingEstimate] = useState(false);
 
   const queryClient = useQueryClient();
   
@@ -466,6 +468,64 @@ const addEquipmentRow = () => {
     return costs;
   }, [equipmentRows, rowSums, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
 
+  const handleConvertToEstimate = async () => {
+    if (!selectedProjectId) {
+      toast.error('Please load a project first');
+      return;
+    }
+    setConvertingEstimate(true);
+    try {
+      const currentProject = projects.find(p => p.id === selectedProjectId);
+      const estimateName = `(EST)-${currentProject?.name || 'Project'}`;
+
+      // Build line items from each equipment row using Col11/12/13 values
+      const lineItems = [];
+      equipmentRows.forEach(row => {
+        const costs = calculateRowCosts[row.id] || {};
+        const { regCost, otCost, specialCost } = costs;
+
+        if (regCost != null && regCost > 0) {
+          lineItems.push({ description: `${row.label} — Reg Cost`, quantity: 1, unit_price: regCost, total: regCost });
+        }
+        if (otCost != null && otCost > 0) {
+          lineItems.push({ description: `${row.label} — OT Cost`, quantity: 1, unit_price: otCost, total: otCost });
+        }
+        if (specialCost != null && specialCost > 0) {
+          lineItems.push({ description: `${row.label} — Special Cost`, quantity: 1, unit_price: specialCost, total: specialCost });
+        }
+      });
+
+      if (lineItems.length === 0) {
+        toast.error('No cost data to convert. Make sure rows have costs calculated.');
+        setConvertingEstimate(false);
+        return;
+      }
+
+      const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+      const estimateNumber = `EST-${Date.now().toString().slice(-6)}`;
+
+      const newEstimate = await base44.entities.Estimate.create({
+        estimate_number: estimateNumber,
+        project_name: estimateName,
+        status: 'draft',
+        line_items: lineItems,
+        subtotal,
+        tax_rate: 0,
+        tax_amount: 0,
+        discount: 0,
+        total: subtotal,
+        description: `Converted from Project Details Setup — ${currentProject?.name}`,
+        notes: `Start: ${startDate || '—'}  |  End: ${endDate || '—'}`,
+      });
+
+      toast.success('Estimate created successfully!');
+      navigate(`/estimates/${newEstimate.id}`);
+    } catch (err) {
+      toast.error('Failed to create estimate');
+    }
+    setConvertingEstimate(false);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header with Load Project */}
@@ -537,6 +597,15 @@ const addEquipmentRow = () => {
                   </Button>
                   <Button onClick={handleSaveSchedule} variant="outline" size="sm">
                     Save Schedule
+                  </Button>
+                  <Button
+                    onClick={handleConvertToEstimate}
+                    size="sm"
+                    disabled={convertingEstimate}
+                    className="gap-1.5"
+                  >
+                    {convertingEstimate ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                    Convert to Estimate
                   </Button>
                </>
               )}

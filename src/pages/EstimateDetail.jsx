@@ -198,11 +198,11 @@ export default function EstimateDetail() {
             </TableHeader>
             <TableBody>
               {estimate.line_items?.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell>{item.description || '—'}</TableCell>
+                <TableRow key={i} className={item.description?.includes('— Reg Cost') ? 'bg-primary/5' : item.description?.includes('— OT Cost') ? 'bg-blue-500/5' : item.description?.includes('— Special Cost') ? 'bg-orange-500/5' : ''}>
+                  <TableCell className="font-medium">{item.description || '—'}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">${(item.unit_price || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-right font-medium">${(item.total || 0).toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-semibold">${(item.total || 0).toFixed(2)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
