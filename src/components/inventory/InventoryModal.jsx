@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+const ITEM_GROUPS = ['Service Group', 'Equipment Group', 'Manpower Group'];
+
 const EMPTY_FORM = {
-  name: '', sku: '', category: '', quantity: 0, unit: 'pcs',
+  name: '', sku: '', category: '', item_group: '', quantity: 0, unit: 'pcs',
   unit_cost: '', reg_value: '', ot_value: '', supplier: '', location: '', min_stock: 0, notes: '', status: 'in_stock',
 };
 
@@ -46,6 +48,15 @@ export default function InventoryModal({ item, onClose, onSave }) {
             <div>
               <Label>SKU</Label>
               <Input value={form.sku} onChange={e => set('sku', e.target.value)} placeholder="e.g. STL-001" />
+            </div>
+            <div>
+              <Label>Item Group</Label>
+              <Select value={form.item_group} onValueChange={v => set('item_group', v)}>
+                <SelectTrigger><SelectValue placeholder="Select group..." /></SelectTrigger>
+                <SelectContent>
+                  {ITEM_GROUPS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Category</Label>

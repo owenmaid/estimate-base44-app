@@ -14,6 +14,15 @@
       "type": "string",
       "description": "Item category"
     },
+    "item_group": {
+      "type": "string",
+      "enum": [
+        "Service Group",
+        "Equipment Group",
+        "Manpower Group"
+      ],
+      "description": "High-level group classification for the inventory item"
+    },
     "quantity": {
       "type": "number",
       "default": 0,
