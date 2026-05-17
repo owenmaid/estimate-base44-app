@@ -48,8 +48,8 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
   const effectiveCol7 = isManpower ? col7Value : 0;
   const effectiveCol8 = isManpower ? col8Value : 0;
 
-  // Col11 uses real col4 (reg cost applies to all rows with a reg rate)
-  const col11Value = col9Value != null ? (col4Value * col9Value) : null;
+  // Col11: Manpower = Col4 × Col9, non-Manpower = Col1 × Col9
+  const col11Value = col9Value != null ? ((isManpower ? col4Value : col1Value) * col9Value) : null;
   // Col12/13 still use effective (zeroed for non-Manpower) since OT cost only applies to Manpower
   const col12Value = col10Value != null ? ((effectiveCol5 + effectiveCol6 + effectiveCol7) * col10Value) : null;
   const col13Value = col10Value != null
