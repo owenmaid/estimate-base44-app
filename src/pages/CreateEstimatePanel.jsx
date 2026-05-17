@@ -55,6 +55,7 @@ export default function CreateEstimatePanel() {
   });
 
   const [notes, setNotes] = useState('');
+  const [editingEstimateId, setEditingEstimateId] = useState(null); // null = new, id = editing existing
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef(null);
@@ -77,6 +78,50 @@ export default function CreateEstimatePanel() {
   useEffect(() => {
     if (showSearch) searchRef.current?.focus();
   }, [showSearch]);
+
+  // Load an existing estimate into the editor
+  const loadEstimate = (est) => {
+    setEditingEstimateId(est.id);
+    setClient({
+      client_name: est.client_name || '',
+      client_email: est.client_email || '',
+      client_phone: est.client_phone || '',
+      client_address: est.client_address || '',
+    });
+    setDetails({
+      estimate_number: est.estimate_number || genEstimateNumber(),
+      project_name: est.project_name || '',
+      status: est.status || 'draft',
+      valid_until: est.valid_until || '',
+      description: est.description || '',
+    });
+    setTotals({
+      tax_rate: est.tax_rate || 0,
+      markup_pct: 0, // markup not stored separately, reset
+      discount: est.discount || 0,
+    });
+    setNotes(est.notes || '');
+
+    // Reconstruct line items from saved data
+    const loaded = (est.line_items || []).map((li, i) => {
+      const isCat = li.description?.startsWith('──') && li.quantity === 0 && li.unit_price === 0;
+      return {
+        id: i + 1,
+        description: isCat ? '' : li.description || '',
+        quantity: li.quantity || 1,
+        unit_price: li.unit_price || 0,
+        total: li.total || 0,
+        is_category: isCat,
+        category_name: isCat ? li.description.replace(/^──\s*/, '').replace(/\s*──$/, '').trim() : '',
+      };
+    });
+    setLineItems(loaded.length > 0 ? loaded : [newLineItem(1)]);
+    setNextId((loaded.length || 1) + 1);
+    setShowSearch(false);
+    setSearchQuery('');
+    setActiveTab('Client');
+    toast.success(`Loaded: ${est.estimate_number || est.project_name}`);
+  };
 
   // --- Calculations ---
   const subtotalBeforeMarkup = useMemo(() => {
@@ -156,11 +201,14 @@ export default function CreateEstimatePanel() {
         total: grandTotal,
         notes: notes || undefined,
       };
+      if (editingEstimateId) {
+        return base44.entities.Estimate.update(editingEstimateId, payload);
+      }
       return base44.entities.Estimate.create(payload);
     },
     onSuccess: (estimate) => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success('Estimate saved!');
+      toast.success(editingEstimateId ? 'Estimate updated!' : 'Estimate saved!');
       navigate(`/estimates/${estimate.id}`);
     },
     onError: (err) => toast.error(`Failed to save: ${err?.message || 'Unknown error'}`),
@@ -202,8 +250,8 @@ export default function CreateEstimatePanel() {
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">New Estimate</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Fill in the details to create a new estimate</p>
+          <h1 className="text-xl font-bold text-white">{editingEstimateId ? 'Edit Estimate' : 'New Estimate'}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{editingEstimateId ? `Editing ${details.estimate_number}` : 'Fill in the details to create a new estimate'}</p>
         </div>
 
         {/* Search Existing Estimates */}
@@ -236,7 +284,7 @@ export default function CreateEstimatePanel() {
                       {filteredEstimates.map(est => (
                         <button
                           key={est.id}
-                          onClick={() => navigate(`/estimates/${est.id}`)}
+                          onClick={() => loadEstimate(est)}
                           className="w-full text-left px-4 py-3 hover:bg-[#222] transition-colors border-b border-[#222] last:border-b-0"
                         >
                           <div className="flex items-center justify-between">
@@ -597,6 +645,23 @@ export default function CreateEstimatePanel() {
           Estimate Total: <span className="text-white font-bold">${grandTotal.toFixed(2)}</span>
         </span>
         <div className="flex items-center gap-3">
+          {editingEstimateId && (
+            <button
+              onClick={() => {
+                setEditingEstimateId(null);
+                setClient({ client_name: '', client_email: '', client_phone: '', client_address: '' });
+                setDetails({ estimate_number: genEstimateNumber(), project_name: '', status: 'draft', valid_until: '', description: '' });
+                setLineItems([newLineItem(1)]);
+                setNextId(2);
+                setTotals({ tax_rate: 0, markup_pct: 0, discount: 0 });
+                setNotes('');
+                setActiveTab('Client');
+              }}
+              className="text-sm text-gray-400 hover:text-white border border-[#333] hover:border-[#555] rounded-md px-4 py-2 transition-colors"
+            >
+              + New Estimate
+            </button>
+          )}
           <button onClick={() => navigate('/estimates')} className="text-sm text-gray-400 hover:text-white transition-colors px-4 py-2">
             Cancel
           </button>
@@ -605,7 +670,7 @@ export default function CreateEstimatePanel() {
             disabled={saveMutation.isPending}
             className="bg-primary hover:bg-primary/90 text-white text-sm font-semibold px-6 py-2 rounded-md transition-colors disabled:opacity-50"
           >
-            {saveMutation.isPending ? 'Saving...' : 'Save Estimate'}
+            {saveMutation.isPending ? 'Saving...' : editingEstimateId ? 'Update Estimate' : 'Save Estimate'}
           </button>
         </div>
       </div>
