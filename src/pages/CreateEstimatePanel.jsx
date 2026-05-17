@@ -112,8 +112,15 @@ export default function CreateEstimatePanel() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = {
-        ...client,
-        ...details,
+        estimate_number: details.estimate_number || undefined,
+        client_name: client.client_name,
+        client_email: client.client_email || undefined,
+        client_phone: client.client_phone || undefined,
+        client_address: client.client_address || undefined,
+        project_name: details.project_name,
+        status: details.status,
+        ...(details.valid_until ? { valid_until: details.valid_until } : {}),
+        ...(details.description ? { description: details.description } : {}),
         line_items: lineItems.map(i => ({
           description: i.is_category ? `── ${i.category_name} ──` : i.description,
           quantity: i.is_category ? 0 : parseFloat(i.quantity) || 0,
@@ -125,7 +132,7 @@ export default function CreateEstimatePanel() {
         tax_amount: taxAmount,
         discount,
         total: grandTotal,
-        notes,
+        notes: notes || undefined,
       };
       return base44.entities.Estimate.create(payload);
     },
@@ -134,12 +141,12 @@ export default function CreateEstimatePanel() {
       toast.success('Estimate saved!');
       navigate(`/estimates/${estimate.id}`);
     },
-    onError: () => toast.error('Failed to save estimate'),
+    onError: (err) => toast.error(`Failed to save: ${err?.message || 'Unknown error'}`),
   });
 
   const handleSave = () => {
-    if (!client.client_name.trim()) { setActiveTab('Client'); toast.error('Client name is required'); return; }
-    if (!details.project_name.trim()) { setActiveTab('Client'); toast.error('Project name is required'); return; }
+    if (!client.client_name?.trim()) { setActiveTab('Client'); toast.error('Client name is required'); return; }
+    if (!details.project_name?.trim()) { setActiveTab('Client'); toast.error('Project name is required'); return; }
     saveMutation.mutate();
   };
 
