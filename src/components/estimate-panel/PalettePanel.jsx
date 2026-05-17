@@ -66,7 +66,6 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
       } catch (error) {
         console.error('Error syncing project data:', error);
       }
-      setSyncing(null);
     }
 
     onAddItemToSection(targetSectionId, {
@@ -75,6 +74,8 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
       unit_price,
       markup: 0,
     });
+    
+    setSyncing(null);
   };
 
   const handleAddManual = () => {
