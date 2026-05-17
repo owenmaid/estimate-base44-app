@@ -27,7 +27,7 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 
 function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems }) {
   const [editingTitle, setEditingTitle] = useState(false);
-  const [titleVal, setTitleVal] = useState(section.title);
+  const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
   const sectionTotal = section.items.reduce((s, i) => s + (i.total || 0), 0);
@@ -58,11 +58,11 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                 onBlur={() => { onRename(section.id, titleVal); setEditingTitle(false); }}
                 onKeyDown={e => {
                   if (e.key === 'Enter') { onRename(section.id, titleVal); setEditingTitle(false); }
-                  if (e.key === 'Escape') { setTitleVal(section.title); setEditingTitle(false); }
+                  if (e.key === 'Escape') { setEditingTitle(false); }
                 }}
               />
               <button onClick={() => { onRename(section.id, titleVal); setEditingTitle(false); }}><Check className="h-3.5 w-3.5 text-primary" /></button>
-              <button onClick={() => { setTitleVal(section.title); setEditingTitle(false); }}><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
+              <button onClick={() => setEditingTitle(false)}><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
             </div>
           ) : (
             <span
