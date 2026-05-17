@@ -51,8 +51,9 @@ export default function CreateEstimatePanel() {
     let current = null;
 
     lineItems.forEach((item) => {
-      if (item._is_section_header) {
-        current = { id: Date.now() + Math.random(), title: item.description, items: [] };
+      if (item.description && item.description.startsWith('__SECTION__:')) {
+        const title = item.description.slice('__SECTION__:'.length);
+        current = { id: Date.now() + Math.random(), title, items: [] };
         rebuilt.push(current);
       } else {
         if (!current) {
@@ -168,7 +169,7 @@ export default function CreateEstimatePanel() {
     mutationFn: async () => {
       const lineItems = [];
       sections.forEach(s => {
-        lineItems.push({ _is_section_header: true, description: s.title, quantity: 0, unit_price: 0, total: 0 });
+        lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
           lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
         });
