@@ -27,6 +27,7 @@ export default function ProjectDetailsSetup() {
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
+  const [newEquipmentCategory, setNewEquipmentCategory] = useState('');
   const [statHolidays, setStatHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [expandedSchedule, setExpandedSchedule] = useState(false);
@@ -240,6 +241,7 @@ const addEquipmentRow = () => {
       item_id: newEquipmentItemId
     }]);
     setNewEquipmentItemId('');
+    setNewEquipmentCategory('');
   };
 
   const removeEquipmentRow = (id) => {
@@ -831,14 +833,27 @@ const addEquipmentRow = () => {
             </div>
             <div className="px-4 py-3 border-t border-border flex items-center gap-2">
               <select
+                value={newEquipmentCategory}
+                onChange={e => { setNewEquipmentCategory(e.target.value); setNewEquipmentItemId(''); }}
+                className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
+              >
+                <option value="">Select category...</option>
+                {[...new Set(equipmentInventory.map(i => i.category).filter(Boolean))].sort().map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <select
                 value={newEquipmentItemId}
                 onChange={e => setNewEquipmentItemId(e.target.value)}
                 className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
+                disabled={!newEquipmentCategory}
               >
-                <option value="">Select equipment...</option>
-                {equipmentInventory.map(item => (
-                  <option key={item.id} value={item.id}>{item.sku || item.name}</option>
-                ))}
+                <option value="">Select item...</option>
+                {equipmentInventory
+                  .filter(i => i.category === newEquipmentCategory)
+                  .map(item => (
+                    <option key={item.id} value={item.id}>{item.sku || item.name}</option>
+                  ))}
               </select>
               <Button variant="outline" size="sm" onClick={addEquipmentRow} disabled={!newEquipmentItemId}>
                 + Add Equipment
