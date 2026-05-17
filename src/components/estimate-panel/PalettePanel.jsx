@@ -41,34 +41,58 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
     let unit_price = invItem.unit_cost || 0;
     const itemDescription = invItem.name || invItem.sku;
 
-    // If project number exists, sync total from ProjectDetailsSetup
-    if (projectNumber && itemDescription) {
+    // If project number exists, sync Col12 (regCost) from ProjectDetailsSetup
+    if (projectNumber && invItem.id) {
       setSyncing(invItem.id);
       try {
-        const projects = await base44.entities.Project.list();
+        const [projects, allInventory] = await Promise.all([
+          base44.entities.Project.list(),
+          base44.entities.InventoryItem.list()
+        ]);
         const matchingProject = projects.find(p => p.project_number === projectNumber);
         
         if (matchingProject) {
           const equipmentRows = matchingProject.equipment_rows || [];
           const equipmentGrid = matchingProject.equipment_grid || {};
+          const typeGrid = matchingProject.type_grid || {};
           
-          // Find equipment row matching this item's SKU or name
-          const matchingRow = equipmentRows.find(row => {
-            return row.label === itemDescription || row.label === invItem.sku || row.label === invItem.name;
-          });
+          // Match by inventory ID
+          const matchingRow = equipmentRows.find(row => row.item_id === invItem.id);
           
           if (matchingRow) {
-            // Sum all daily entries for this equipment row
-            let rowTotal = 0;
+            // Get inventory entry for reg/ot rates
+            const inventoryEntry = allInventory.find(i => i.id === invItem.id);
+            const regRate = inventoryEntry?.reg_value || 0;
+            
+            // Calculate col1 (rowSum) - total of all daily entries
+            let rowSum = 0;
             Object.entries(equipmentGrid).forEach(([key, value]) => {
               if (key.startsWith(`${matchingRow.id}_`)) {
                 const num = parseInt(value, 10);
-                if (!isNaN(num)) rowTotal += num;
+                if (!isNaN(num)) rowSum += num;
               }
             });
             
-            if (rowTotal > 0) {
-              unit_price = rowTotal;
+            // Calculate col4: (N days × 8) + (Sa days × 4)
+            let col4 = 0;
+            Object.entries(equipmentGrid).forEach(([key, value]) => {
+              if (key.startsWith(`${matchingRow.id}_`)) {
+                const dateStr = key.slice(`${matchingRow.id}_`.length);
+                const type = typeGrid[dateStr];
+                const num = parseInt(value, 10);
+                if (!isNaN(num) && num > 0) {
+                  if (type === 'N') col4 += num * 8;
+                  else if (type === 'Sa') col4 += num * 4;
+                }
+              }
+            });
+            
+            // Col12 (regCost) = col4 × regRate (for manpower) or col1 × regRate (for non-manpower)
+            const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+            const regCost = (isManpower ? col4 : rowSum) * regRate;
+            
+            if (regCost > 0) {
+              unit_price = regCost;
             }
           }
         }
