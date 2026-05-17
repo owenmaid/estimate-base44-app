@@ -66,11 +66,7 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
             </div>
           ) : (
             <span
-              className={`text-xs font-semibold truncate cursor-text transition-colors ${
-                section.title.startsWith('[') && section.title.endsWith(']')
-                  ? 'text-orange-400 font-bold'
-                  : 'text-foreground hover:text-primary'
-              }`}
+              className="text-xs font-semibold text-foreground truncate cursor-text hover:text-primary transition-colors"
               onClick={() => { setTitleVal(section.title); setEditingTitle(true); }}
               title="Click to rename section"
             >
