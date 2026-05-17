@@ -605,15 +605,6 @@ const addEquipmentRow = () => {
                 </>
               ) : (
                <>
-                  <Input
-                    value={projectNumber}
-                    onChange={e => {
-                      setProjectNumber(e.target.value);
-                      base44.entities.Project.update(selectedProjectId, { project_number: e.target.value });
-                    }}
-                    placeholder="Project Number"
-                    className="w-32 h-9"
-                  />
                   <Button onClick={() => {
                     const currentProject = projects.find(p => p.id === selectedProjectId);
                     setEditingName(currentProject?.name || '');
@@ -650,7 +641,18 @@ const addEquipmentRow = () => {
             <CalendarDays className="h-4 w-4 text-primary" />
             Set Project Dates
             {selectedProjectId && (
-              <span className="text-primary font-bold">— {projects.find(p => p.id === selectedProjectId)?.name}</span>
+              <div className="flex items-center gap-2 ml-auto">
+                <Input
+                  value={projectNumber}
+                  onChange={e => {
+                    setProjectNumber(e.target.value);
+                    base44.entities.Project.update(selectedProjectId, { project_number: e.target.value });
+                  }}
+                  placeholder="Project #"
+                  className="w-32 h-8"
+                />
+                <span className="text-primary font-bold">— {projects.find(p => p.id === selectedProjectId)?.name}</span>
+              </div>
             )}
           </CardTitle>
         </CardHeader>
