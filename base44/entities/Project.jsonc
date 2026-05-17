@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Project name"
     },
+    "project_number": {
+      "type": "string",
+      "description": "Project number or identifier"
+    },
     "client": {
       "type": "string",
       "description": "Client name"

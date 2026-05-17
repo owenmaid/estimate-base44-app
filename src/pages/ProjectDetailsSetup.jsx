@@ -27,6 +27,7 @@ export default function ProjectDetailsSetup() {
   const [search, setSearch] = useState('');
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
+  const [projectNumber, setProjectNumber] = useState('');
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
   const [newEquipmentCategory, setNewEquipmentCategory] = useState('');
   const [statHolidays, setStatHolidays] = useState([]);
@@ -98,6 +99,7 @@ export default function ProjectDetailsSetup() {
 
   const handleCloseProject = () => {
     setSelectedProjectId('');
+    setProjectNumber('');
     setStartDate('');
     setEndDate('');
     setDates([]);
@@ -123,6 +125,7 @@ export default function ProjectDetailsSetup() {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
     
+    setProjectNumber(project.project_number || '');
     setStartDate(project.start_date || '');
     setEndDate(project.end_date || '');
     setEquipmentGrid(project.equipment_grid || {});
@@ -178,6 +181,7 @@ export default function ProjectDetailsSetup() {
     const projectName = getNextSampleNumber();
     const projectData = {
       name: projectName,
+      project_number: '',
       status: 'planning',
       start_date: startDate,
       end_date: endDate,
@@ -601,6 +605,15 @@ const addEquipmentRow = () => {
                 </>
               ) : (
                <>
+                  <Input
+                    value={projectNumber}
+                    onChange={e => {
+                      setProjectNumber(e.target.value);
+                      base44.entities.Project.update(selectedProjectId, { project_number: e.target.value });
+                    }}
+                    placeholder="Project Number"
+                    className="w-32 h-9"
+                  />
                   <Button onClick={() => {
                     const currentProject = projects.find(p => p.id === selectedProjectId);
                     setEditingName(currentProject?.name || '');
