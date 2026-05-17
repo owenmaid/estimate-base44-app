@@ -347,6 +347,52 @@ export default function CalculationEngine() {
 
   const activeCount = formulas.filter(f => f.is_active).length;
 
+  // Save calculation grid (Col13 values) to active project
+  const saveCalculationGrid = async () => {
+    if (!activeProject) {
+      toast.error('No active project selected');
+      return;
+    }
+
+    try {
+      const calculationGrid = {};
+      equipmentRows.forEach(row => {
+        const label = (row.label || '').toLowerCase();
+        const isSpecial = label.includes('pre-work') || label.includes('post-work');
+        const shiftHrs = isSpecial ? 10 : 12;
+
+        const inventoryEntry = inventoryValueMap.byId[row.item_id]
+          ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+          ?? null;
+
+        const col10Value = inventoryEntry?.ot ?? null;
+        const col5Value = rowCol5[row.id] || 0;
+        const col6Value = rowCol6[row.id] || 0;
+        const col7Value = rowCol7[row.id] || 0;
+        const col8Value = rowCol8[row.id] || 0;
+        const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+        const effectiveCol5 = isManpower ? col5Value : 0;
+        const effectiveCol6 = isManpower ? col6Value : 0;
+        const effectiveCol7 = isManpower ? col7Value : 0;
+        const effectiveCol8 = isManpower ? col8Value : 0;
+
+        const col13Value = col10Value != null
+          ? ((effectiveCol8 * 2 * (4 / (shiftHrs * 2))) * col10Value) +
+            ((effectiveCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
+          : 0;
+
+        calculationGrid[`${row.id}_col13`] = col13Value;
+      });
+
+      await base44.entities.Project.update(activeProject.id, { calculation_grid: calculationGrid });
+      toast.success('Calculation grid saved');
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    } catch (error) {
+      toast.error('Error saving calculation grid');
+      console.error(error);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -357,9 +403,14 @@ export default function CalculationEngine() {
             Define custom formula multipliers that are automatically applied in the Manpower Estimation module.
           </p>
         </div>
-        <Button onClick={() => setShowNew(true)} disabled={showNew}>
-          <Plus className="h-4 w-4 mr-1.5" /> New Formula
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={saveCalculationGrid} variant="outline" disabled={!activeProject}>
+            <Zap className="h-4 w-4 mr-1.5" /> Save Calculations
+          </Button>
+          <Button onClick={() => setShowNew(true)} disabled={showNew}>
+            <Plus className="h-4 w-4 mr-1.5" /> New Formula
+          </Button>
+        </div>
       </div>
 
       {/* Spreadsheet Grid */}

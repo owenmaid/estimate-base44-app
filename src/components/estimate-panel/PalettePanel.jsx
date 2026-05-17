@@ -91,11 +91,11 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
             const isManpower = inventoryEntry?.item_group === 'Manpower Group';
             const regCost = (isManpower ? col4 : rowSum) * regRate;
             
-            // Try to fetch Col13 from calculation engine (if available in project data)
+            // Try to fetch Col13 from saved calculation_grid
             let col13Value = regCost;
             const calculationKey = `${matchingRow.id}_col13`;
-            if (matchingProject.calculation_results && matchingProject.calculation_results[calculationKey]) {
-              col13Value = matchingProject.calculation_results[calculationKey];
+            if (matchingProject.calculation_grid && matchingProject.calculation_grid[calculationKey]) {
+              col13Value = matchingProject.calculation_grid[calculationKey];
             }
             
             if (col13Value > 0) {

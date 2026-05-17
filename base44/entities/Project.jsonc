@@ -136,6 +136,10 @@
           },
           "label": {
             "type": "string"
+          },
+          "item_id": {
+            "type": "string",
+            "description": "Reference to inventory item ID"
           }
         }
       }
@@ -143,6 +147,11 @@
     "type_grid": {
       "type": "object",
       "description": "Type selections per date in the equipment schedule",
+      "additionalProperties": true
+    },
+    "calculation_grid": {
+      "type": "object",
+      "description": "Calculated values from the calculation engine (e.g., Col13 costs per row)",
       "additionalProperties": true
     }
   },
