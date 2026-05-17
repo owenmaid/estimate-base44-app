@@ -482,7 +482,8 @@ const addEquipmentRow = () => {
       // First, collect rows per category
       const categoryMap = {};
       equipmentRows.forEach(row => {
-        const inventoryItem = equipmentInventory.find(i => i.id === row.item_id);
+        const inventoryItem = equipmentInventory.find(i => i.id === row.item_id)
+          ?? equipmentInventory.find(i => i.name === row.label || i.sku === row.label);
         const category = inventoryItem?.category || 'Uncategorized';
         if (!categoryMap[category]) categoryMap[category] = [];
         categoryMap[category].push(row);
