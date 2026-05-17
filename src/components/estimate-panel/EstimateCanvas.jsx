@@ -111,7 +111,11 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                             <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
                           </div>
                           <div className="col-span-4 text-foreground">
-                            <EditableCell value={item.description} onChange={v => onUpdateItem(section.id, item.id, 'description', v)} className="w-full" />
+                            <EditableCell
+                              value={item.description}
+                              onChange={v => onUpdateItem(section.id, item.id, 'description', v)}
+                              className={`w-full ${item.description && item.description.startsWith('[') && item.description.endsWith(']') ? 'text-orange-500 font-bold' : ''}`}
+                            />
                           </div>
                           <div className="col-span-1 text-right">
                             <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
