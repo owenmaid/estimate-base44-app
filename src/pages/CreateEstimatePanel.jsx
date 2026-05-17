@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { ArrowLeft, Plus, Trash2, GripVertical, Tag, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, GripVertical, Tag, ChevronDown, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -55,6 +55,28 @@ export default function CreateEstimatePanel() {
   });
 
   const [notes, setNotes] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const searchRef = useRef(null);
+
+  const { data: allEstimates = [] } = useQuery({
+    queryKey: ['estimates'],
+    queryFn: () => base44.entities.Estimate.list('-created_date', 50),
+  });
+
+  const filteredEstimates = useMemo(() => {
+    if (!searchQuery.trim()) return allEstimates.slice(0, 8);
+    const q = searchQuery.toLowerCase();
+    return allEstimates.filter(e =>
+      e.client_name?.toLowerCase().includes(q) ||
+      e.project_name?.toLowerCase().includes(q) ||
+      e.estimate_number?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [allEstimates, searchQuery]);
+
+  useEffect(() => {
+    if (showSearch) searchRef.current?.focus();
+  }, [showSearch]);
 
   // --- Calculations ---
   const subtotalBeforeMarkup = useMemo(() => {
@@ -179,9 +201,71 @@ export default function CreateEstimatePanel() {
         <button onClick={() => navigate('/estimates')} className="w-9 h-9 rounded-full bg-[#1e1e1e] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold text-white">New Estimate</h1>
           <p className="text-xs text-gray-500 mt-0.5">Fill in the details to create a new estimate</p>
+        </div>
+
+        {/* Search Existing Estimates */}
+        <div className="relative">
+          {showSearch ? (
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
+                <input
+                  ref={searchRef}
+                  className="w-72 bg-[#1e1e1e] border border-[#444] rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                  placeholder="Search by client, project, or EST#..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="text-gray-500 hover:text-white transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+              {/* Dropdown */}
+              {(searchQuery.trim() || allEstimates.length > 0) && (
+                <div className="absolute top-full right-0 mt-1 w-[420px] bg-[#1a1a1a] border border-[#333] rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-[#2a2a2a] text-xs text-gray-500">
+                    {searchQuery ? `${filteredEstimates.length} result(s) for "${searchQuery}"` : 'Recent estimates'}
+                  </div>
+                  {filteredEstimates.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-sm text-gray-500">No estimates found</div>
+                  ) : (
+                    <div className="max-h-72 overflow-y-auto">
+                      {filteredEstimates.map(est => (
+                        <button
+                          key={est.id}
+                          onClick={() => navigate(`/estimates/${est.id}`)}
+                          className="w-full text-left px-4 py-3 hover:bg-[#222] transition-colors border-b border-[#222] last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-mono">{est.estimate_number}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              est.status === 'accepted' ? 'bg-green-900/40 text-green-400' :
+                              est.status === 'declined' ? 'bg-red-900/40 text-red-400' :
+                              est.status === 'sent' ? 'bg-blue-900/40 text-blue-400' :
+                              'bg-gray-800 text-gray-400'
+                            }`}>{est.status}</span>
+                          </div>
+                          <div className="text-sm text-white font-medium mt-0.5">{est.client_name}</div>
+                          <div className="text-xs text-gray-400">{est.project_name}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowSearch(true)}
+              className="flex items-center gap-2 text-sm text-gray-400 hover:text-white border border-[#333] hover:border-[#555] bg-[#1e1e1e] rounded-lg px-4 py-2 transition-colors"
+            >
+              <Search className="h-3.5 w-3.5" />
+              Find Estimate
+            </button>
+          )}
         </div>
       </div>
 
