@@ -38,14 +38,15 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
   const col7Value = rowCol7[row.id] || 0;
   const col8Value = rowCol8[row.id] || 0;
 
+  // Col9 and Col10 always show inventory values regardless of item_group
   const col9Value = inventoryEntry?.reg ?? null;
-  // For non-Manpower: zero out inputs to Col11/12/13
+  const col10Value = inventoryEntry?.ot ?? null;
+  // For non-Manpower: zero out inputs to Col11/12/13 so costs stay correct
   const effectiveCol4 = isManpower ? col4Value : 0;
   const effectiveCol5 = isManpower ? col5Value : 0;
   const effectiveCol6 = isManpower ? col6Value : 0;
   const effectiveCol7 = isManpower ? col7Value : 0;
   const effectiveCol8 = isManpower ? col8Value : 0;
-  const col10Value = isManpower ? (inventoryEntry?.ot ?? null) : null;
 
   const col11Value = col9Value != null ? (effectiveCol4 * col9Value) : null;
   const col12Value = col10Value != null ? ((effectiveCol5 + effectiveCol6 + effectiveCol7) * col10Value) : null;
@@ -87,8 +88,8 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
         const isCol12 = colIdx === 11;
         const isCol13 = colIdx === 12;
 
-        // Non-Manpower: Col2–Col10 are inactive (show —, treated as 0)
-        const isInactive = !isManpower && (isCol2 || isCol3 || isCol4 || isCol5 || isCol6 || isCol7 || isCol8 || isCol9 || isCol10);
+        // Non-Manpower: Col2–Col8 are inactive; Col9 and Col10 always show inventory rates
+        const isInactive = !isManpower && (isCol2 || isCol3 || isCol4 || isCol5 || isCol6 || isCol7 || isCol8);
 
         let cellContent;
         if (isInactive) {
