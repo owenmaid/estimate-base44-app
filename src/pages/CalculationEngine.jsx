@@ -387,6 +387,7 @@ export default function CalculationEngine() {
       await base44.entities.Project.update(activeProject.id, { calculation_grid: calculationGrid });
       toast.success('Calculation grid saved');
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (error) {
       toast.error('Error saving calculation grid');
       console.error(error);
