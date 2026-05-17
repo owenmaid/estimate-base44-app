@@ -179,7 +179,6 @@ export default function EstimateCanvas({
           <div className="grid grid-cols-2 gap-3 p-4">
             {[
               { label: 'Client Name', field: 'client_name' },
-              { label: 'Project Number', field: 'project_number' },
               { label: 'Project Name', field: 'project_name' },
               { label: 'Email', field: 'client_email' },
               { label: 'Phone', field: 'client_phone' },
