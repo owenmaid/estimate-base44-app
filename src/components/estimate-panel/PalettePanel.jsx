@@ -91,7 +91,16 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
             const isManpower = inventoryEntry?.item_group === 'Manpower Group';
             const regCost = (isManpower ? col4 : rowSum) * regRate;
             
-            if (regCost > 0) {
+            // Try to fetch Col13 from calculation engine (if available in project data)
+            let col13Value = regCost;
+            const calculationKey = `${matchingRow.id}_col13`;
+            if (matchingProject.calculation_results && matchingProject.calculation_results[calculationKey]) {
+              col13Value = matchingProject.calculation_results[calculationKey];
+            }
+            
+            if (col13Value > 0) {
+              unit_price = col13Value;
+            } else if (regCost > 0) {
               unit_price = regCost;
             }
           }
