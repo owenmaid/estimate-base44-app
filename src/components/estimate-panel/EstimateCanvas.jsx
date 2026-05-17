@@ -55,19 +55,27 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                 className="flex-1 text-xs bg-secondary border border-primary rounded px-2 py-0.5 text-foreground outline-none"
                 value={titleVal}
                 onChange={e => setTitleVal(e.target.value)}
+                onBlur={() => { onRename(section.id, titleVal); setEditingTitle(false); }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { onRename(section.id, titleVal); setEditingTitle(false); }
+                  if (e.key === 'Escape') { setTitleVal(section.title); setEditingTitle(false); }
+                }}
               />
               <button onClick={() => { onRename(section.id, titleVal); setEditingTitle(false); }}><Check className="h-3.5 w-3.5 text-primary" /></button>
-              <button onClick={() => setEditingTitle(false)}><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
+              <button onClick={() => { setTitleVal(section.title); setEditingTitle(false); }}><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
             </div>
           ) : (
-            <span className="text-xs font-semibold text-foreground truncate">{section.title}</span>
+            <span
+              className="text-xs font-semibold text-foreground truncate cursor-text hover:text-primary transition-colors"
+              onClick={() => { setTitleVal(section.title); setEditingTitle(true); }}
+              title="Click to rename section"
+            >
+              {section.title}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-semibold text-primary">${sectionTotal.toFixed(2)}</span>
-          <button onClick={() => { setTitleVal(section.title); setEditingTitle(true); }} className="text-muted-foreground hover:text-foreground">
-            <Pencil className="h-3 w-3" />
-          </button>
           <button onClick={() => onRemove(section.id)} className="text-muted-foreground hover:text-destructive transition-colors">
             <Trash2 className="h-3 w-3" />
           </button>
