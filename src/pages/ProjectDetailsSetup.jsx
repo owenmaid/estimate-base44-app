@@ -506,6 +506,7 @@ const addEquipmentRow = () => {
 
       const newEstimate = await base44.entities.Estimate.create({
         estimate_number: estimateNumber,
+        client_name: currentProject?.client || 'TBD',
         project_name: estimateName,
         status: 'draft',
         line_items: lineItems,
