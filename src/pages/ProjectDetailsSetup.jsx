@@ -192,59 +192,6 @@ export default function ProjectDetailsSetup() {
     saveProjectMutation.mutate(projectData);
   };
 
-  const buildCalculationGrid = () => {
-    const calculationGrid = {};
-    equipmentRows.forEach(row => {
-      const label = (row.label || '').toLowerCase();
-      const isSpecial = label.includes('pre-work') || label.includes('post-work');
-      const shiftHrs = isSpecial ? 10 : 12;
-
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      const regRate = inventoryEntry?.reg ?? null;
-      const otRate = inventoryEntry?.ot ?? null;
-
-      const col1 = rowSums[row.id] || 0;
-      const col4 = rowCol4[row.id] || 0;
-      const col5 = isManpower ? (rowCol5[row.id] || 0) : 0;
-      const col6 = isManpower ? (rowCol6[row.id] || 0) : 0;
-      const col7 = isManpower ? (rowCol7[row.id] || 0) : 0;
-      const col8 = isManpower ? (rowCol8[row.id] || 0) : 0;
-
-      const col11 = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
-      const col12 = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
-      const col13 = otRate != null
-        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
-        : 0;
-
-      calculationGrid[`${row.id}_col11`] = col11;
-      calculationGrid[`${row.id}_col12`] = col12;
-      calculationGrid[`${row.id}_col13`] = col13;
-    });
-    return calculationGrid;
-  };
-
-  const handleSaveSchedule = () => {
-    if (!selectedProjectId) {
-      toast.error('Please load a project first');
-      return;
-    }
-    const calculationGrid = buildCalculationGrid();
-    updateProjectMutation.mutate({
-      id: selectedProjectId,
-      data: {
-        project_number: projectNumber,
-        equipment_grid: equipmentGrid,
-        equipment_rows: equipmentRows,
-        type_grid: typeGrid,
-        calculation_grid: calculationGrid,
-      },
-    });
-  };
-
   // Auto-save debounced on grid/rows changes
   const autoSaveTimer = useRef(null);
   const isInitialLoad = useRef(true);
@@ -511,6 +458,50 @@ const addEquipmentRow = () => {
     });
     return costs;
   }, [equipmentRows, rowSums, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
+
+  const buildCalculationGrid = () => {
+    const calculationGrid = {};
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const isSpecial = label.includes('pre-work') || label.includes('post-work');
+      const shiftHrs = isSpecial ? 10 : 12;
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      const regRate = inventoryEntry?.reg ?? null;
+      const otRate = inventoryEntry?.ot ?? null;
+      const col1 = rowSums[row.id] || 0;
+      const col4 = rowCol4[row.id] || 0;
+      const col5 = isManpower ? (rowCol5[row.id] || 0) : 0;
+      const col6 = isManpower ? (rowCol6[row.id] || 0) : 0;
+      const col7 = isManpower ? (rowCol7[row.id] || 0) : 0;
+      const col8 = isManpower ? (rowCol8[row.id] || 0) : 0;
+      calculationGrid[`${row.id}_col11`] = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
+      calculationGrid[`${row.id}_col12`] = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
+      calculationGrid[`${row.id}_col13`] = otRate != null
+        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+        : 0;
+    });
+    return calculationGrid;
+  };
+
+  const handleSaveSchedule = () => {
+    if (!selectedProjectId) {
+      toast.error('Please load a project first');
+      return;
+    }
+    updateProjectMutation.mutate({
+      id: selectedProjectId,
+      data: {
+        project_number: projectNumber,
+        equipment_grid: equipmentGrid,
+        equipment_rows: equipmentRows,
+        type_grid: typeGrid,
+        calculation_grid: buildCalculationGrid(),
+      },
+    });
+  };
 
   const handleConvertToEstimate = async () => {
     if (!selectedProjectId) {
