@@ -25,7 +25,7 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
   );
 }
 
-const isSubtotalHeader = (desc) => /total|labour|logistics|cost|subtotal/i.test(desc || '');
+const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '') || /total|labour|logistics|cost|subtotal/i.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
 // Normalize a header description for matching (strip brackets, lowercase, trim)
