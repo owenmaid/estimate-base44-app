@@ -88,8 +88,13 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
-  const sectionTotal = section.items.reduce((s, i) => s + (i.total || 0), 0);
   const subtotalMap = buildSubtotals(section.items, allItems);
+  
+  // Find if this section has a subtotal header and use its aggregated value
+  const subtotalHeaderItem = section.items.find(i => isSubtotalHeader(i.description));
+  const sectionTotal = subtotalHeaderItem && subtotalMap[subtotalHeaderItem.id] !== undefined
+    ? subtotalMap[subtotalHeaderItem.id]
+    : section.items.reduce((s, i) => s + (i.total || 0), 0);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
