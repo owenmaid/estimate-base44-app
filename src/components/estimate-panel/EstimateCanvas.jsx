@@ -35,35 +35,35 @@ const normalizeHeader = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCas
 const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
 const AGGREGATE_TARGET  = 'total labour | logistics cost';
 
-// For each subtotal-header item, compute the running sum of all non-header items
-// below it until the next header (or end of list).
+// For each subtotal-header item, compute the sum of section totals.
 // allItems is the flat list across ALL sections (for cross-section aggregation).
 function buildSubtotals(items, allItems) {
   const flatItems = allItems || items;
 
-  // Step 1: compute per-header sums - each header sums items below it until next header
-  const headerSums = {};
-  const headerList = []; // track order of headers
+  // Step 1: Find all section totals by summing items between headers
+  const sectionTotals = [];
+  let currentSectionSum = 0;
+  let inSection = false;
+
   for (let i = 0; i < flatItems.length; i++) {
     if (isSubtotalHeader(flatItems[i].description)) {
-      const key = normalizeHeader(flatItems[i].description);
-      let sum = 0;
-      for (let j = i + 1; j < flatItems.length; j++) {
-        if (isSubtotalHeader(flatItems[j].description)) break;
-        if (isSpacer(flatItems[j].description)) continue;
-        sum += flatItems[j].total || 0;
+      // Save previous section total if we were in a section
+      if (inSection && currentSectionSum > 0) {
+        sectionTotals.push(currentSectionSum);
       }
-      headerSums[key] = sum;
-      headerList.push(key);
+      // Reset for next section
+      currentSectionSum = 0;
+      inSection = true;
+    } else if (inSection && !isSpacer(flatItems[i].description)) {
+      currentSectionSum += flatItems[i].total || 0;
     }
   }
 
-  // Step 2: [Total Labour | Logistics Cost] sums all OTHER headers (not itself)
-  const aggregateTotal = Object.entries(headerSums)
-    .filter(([key]) => key !== AGGREGATE_TARGET)
-    .reduce((sum, [, val]) => sum + val, 0);
+  // Step 2: [Total Labour | Logistics Cost] = sum of all section totals
+  const aggregateTotal = sectionTotals.reduce((sum, val) => sum + val, 0);
   
-  console.log(`Aggregate total from all headers except [${AGGREGATE_TARGET}]: $${aggregateTotal.toFixed(2)}`);
+  console.log(`Section totals: [${sectionTotals.map(t => `$${t.toFixed(2)}`).join(', ')}]`);
+  console.log(`Aggregate total (sum of section totals): $${aggregateTotal.toFixed(2)}`);
 
   // Step 3: build return map for items in this section
   const map = {};
@@ -73,7 +73,15 @@ function buildSubtotals(items, allItems) {
     if (key === AGGREGATE_TARGET) {
       map[item.id] = aggregateTotal;
     } else {
-      map[item.id] = headerSums[key] || 0;
+      // For other headers, just sum items below until next header
+      const idx = flatItems.findIndex(f => f.id === item.id);
+      let sum = 0;
+      for (let j = idx + 1; j < flatItems.length; j++) {
+        if (isSubtotalHeader(flatItems[j].description)) break;
+        if (isSpacer(flatItems[j].description)) continue;
+        sum += flatItems[j].total || 0;
+      }
+      map[item.id] = sum;
     }
   });
   return map;
