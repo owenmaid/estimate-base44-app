@@ -7,37 +7,45 @@ const normalizeHeader = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCas
 const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
 const AGGREGATE_TARGET  = 'total labour | logistics cost';
 
-function buildSubtotals(items) {
-  const map = {};
-  for (let i = 0; i < items.length; i++) {
-    if (isSubtotalHeader(items[i].description)) {
-      const key = normalizeHeader(items[i].description);
+// allItems = flat list across ALL sections for cross-section aggregation
+function buildSubtotals(items, allItems) {
+  const flatItems = allItems || items;
+
+  // Step 1: per-header sums across the full flat list
+  const globalMap = {};
+  for (let i = 0; i < flatItems.length; i++) {
+    if (isSubtotalHeader(flatItems[i].description)) {
+      const key = normalizeHeader(flatItems[i].description);
       if (key === AGGREGATE_TARGET) continue;
       let sum = 0;
-      for (let j = i + 1; j < items.length; j++) {
-        if (isSubtotalHeader(items[j].description)) break;
-        if (isSpacer(items[j].description)) continue;
-        sum += items[j].total || 0;
+      for (let j = i + 1; j < flatItems.length; j++) {
+        if (isSubtotalHeader(flatItems[j].description)) break;
+        if (isSpacer(flatItems[j].description)) continue;
+        sum += flatItems[j].total || 0;
       }
-      map[items[i].id] = sum;
+      globalMap[flatItems[i].id] = sum;
     }
   }
 
-  // Aggregate target = sum of the three named source subtotals
+  // Step 2: aggregate total from three named sources
   const sourceSubtotals = {};
-  for (let i = 0; i < items.length; i++) {
-    if (!isSubtotalHeader(items[i].description)) continue;
-    const key = normalizeHeader(items[i].description);
-    if (AGGREGATE_SOURCES.includes(key)) sourceSubtotals[key] = map[items[i].id] || 0;
+  for (let i = 0; i < flatItems.length; i++) {
+    if (!isSubtotalHeader(flatItems[i].description)) continue;
+    const key = normalizeHeader(flatItems[i].description);
+    if (AGGREGATE_SOURCES.includes(key)) sourceSubtotals[key] = globalMap[flatItems[i].id] || 0;
   }
   const aggregateTotal = AGGREGATE_SOURCES.reduce((s, k) => s + (sourceSubtotals[k] || 0), 0);
 
-  for (let i = 0; i < items.length; i++) {
-    if (isSubtotalHeader(items[i].description) && normalizeHeader(items[i].description) === AGGREGATE_TARGET) {
-      map[items[i].id] = aggregateTotal;
+  // Step 3: assign to [Total Labour | Logistics Cost]
+  for (let i = 0; i < flatItems.length; i++) {
+    if (isSubtotalHeader(flatItems[i].description) && normalizeHeader(flatItems[i].description) === AGGREGATE_TARGET) {
+      globalMap[flatItems[i].id] = aggregateTotal;
     }
   }
 
+  // Return only entries relevant to the requested items list
+  const map = {};
+  items.forEach(item => { if (globalMap[item.id] !== undefined) map[item.id] = globalMap[item.id]; });
   return map;
 }
 
@@ -135,6 +143,7 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
   const colTotal = margin + contentW;
 
   // ── Sections ────────────────────────────────────────────────────────────────
+  const allItems = sections.flatMap(s => s.items);
   sections.forEach((section) => {
     checkPage(40);
 
@@ -172,7 +181,7 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     // Items
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
-    const subtotalMap = buildSubtotals(section.items);
+    const subtotalMap = buildSubtotals(section.items, allItems);
     let regularRowIdx = 0;
     section.items.forEach((item) => {
       const isHeader = isSubtotalHeader(item.description);

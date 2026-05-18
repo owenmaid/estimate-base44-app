@@ -37,51 +37,59 @@ const AGGREGATE_TARGET  = 'total labour | logistics cost';
 
 // For each subtotal-header item, compute the running sum of all non-header items
 // below it until the next header (or end of list).
-function buildSubtotals(items) {
-  // subtotalMap[headerItemId] = sum of items below it until next header
-  const map = {};
-  for (let i = 0; i < items.length; i++) {
-    if (isSubtotalHeader(items[i].description)) {
-      const key = normalizeHeader(items[i].description);
-      if (key === AGGREGATE_TARGET) continue; // handled separately below
+// allItems is the flat list across ALL sections (for cross-section aggregation).
+function buildSubtotals(items, allItems) {
+  const flatItems = allItems || items;
+
+  // Step 1: compute per-header sums for every header across the flat list
+  const globalMap = {};
+  for (let i = 0; i < flatItems.length; i++) {
+    if (isSubtotalHeader(flatItems[i].description)) {
+      const key = normalizeHeader(flatItems[i].description);
+      if (key === AGGREGATE_TARGET) continue;
       let sum = 0;
-      for (let j = i + 1; j < items.length; j++) {
-        if (isSubtotalHeader(items[j].description)) break;
-        if (isSpacer(items[j].description)) continue;
-        sum += items[j].total || 0;
+      for (let j = i + 1; j < flatItems.length; j++) {
+        if (isSubtotalHeader(flatItems[j].description)) break;
+        if (isSpacer(flatItems[j].description)) continue;
+        sum += flatItems[j].total || 0;
       }
-      map[items[i].id] = sum;
+      globalMap[flatItems[i].id] = sum;
     }
   }
 
-  // Now compute the aggregate target by summing the subtotals of the source headers
+  // Step 2: compute aggregate total from the three named source headers
   const sourceSubtotals = {};
-  for (let i = 0; i < items.length; i++) {
-    if (!isSubtotalHeader(items[i].description)) continue;
-    const key = normalizeHeader(items[i].description);
+  for (let i = 0; i < flatItems.length; i++) {
+    if (!isSubtotalHeader(flatItems[i].description)) continue;
+    const key = normalizeHeader(flatItems[i].description);
     if (AGGREGATE_SOURCES.includes(key)) {
-      sourceSubtotals[key] = map[items[i].id] || 0;
+      sourceSubtotals[key] = globalMap[flatItems[i].id] || 0;
     }
   }
   const aggregateTotal = AGGREGATE_SOURCES.reduce((s, k) => s + (sourceSubtotals[k] || 0), 0);
 
-  // Assign the aggregate total to any [Total Labour | Logistics Cost] header
-  for (let i = 0; i < items.length; i++) {
-    if (isSubtotalHeader(items[i].description) && normalizeHeader(items[i].description) === AGGREGATE_TARGET) {
-      map[items[i].id] = aggregateTotal;
+  // Step 3: assign aggregate total to any [Total Labour | Logistics Cost] header
+  for (let i = 0; i < flatItems.length; i++) {
+    if (isSubtotalHeader(flatItems[i].description) && normalizeHeader(flatItems[i].description) === AGGREGATE_TARGET) {
+      globalMap[flatItems[i].id] = aggregateTotal;
     }
   }
 
+  // Return only the entries relevant to the requested items list
+  const map = {};
+  items.forEach(item => {
+    if (globalMap[item.id] !== undefined) map[item.id] = globalMap[item.id];
+  });
   return map;
 }
 
-function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory }) {
+function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory, allItems }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
   const sectionTotal = section.items.reduce((s, i) => s + (i.total || 0), 0);
-  const subtotalMap = buildSubtotals(section.items);
+  const subtotalMap = buildSubtotals(section.items, allItems);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -238,6 +246,9 @@ export default function EstimateCanvas({
 
   const update = (field, value) => onClientInfoChange(prev => ({ ...prev, [field]: value }));
 
+  // Flat list of all items across all sections for cross-section aggregation
+  const allItems = sections.flatMap(s => s.items);
+
   return (
     <div className="flex-1 overflow-y-auto bg-background p-5 space-y-4">
       {/* Client Info */}
@@ -292,6 +303,7 @@ export default function EstimateCanvas({
           onRemoveItem={onRemoveItem}
           onReorderItems={onReorderItems}
           inventory={inventory}
+          allItems={allItems}
         />
       ))}
 
