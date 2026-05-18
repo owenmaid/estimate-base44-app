@@ -41,44 +41,34 @@ const AGGREGATE_TARGET  = 'total labour | logistics cost';
 function buildSubtotals(items, allItems) {
   const flatItems = allItems || items;
 
-  // Step 1: compute per-header sums for every header across the flat list
-  const globalMap = {};
+  // Step 1: compute per-header sums - each header sums items below it until next header
+  const headerSums = {};
   for (let i = 0; i < flatItems.length; i++) {
     if (isSubtotalHeader(flatItems[i].description)) {
       const key = normalizeHeader(flatItems[i].description);
-      if (key === AGGREGATE_TARGET) continue;
       let sum = 0;
       for (let j = i + 1; j < flatItems.length; j++) {
         if (isSubtotalHeader(flatItems[j].description)) break;
         if (isSpacer(flatItems[j].description)) continue;
         sum += flatItems[j].total || 0;
       }
-      globalMap[flatItems[i].id] = sum;
+      headerSums[key] = sum;
     }
   }
 
   // Step 2: compute aggregate total from the three named source headers
-  const sourceSubtotals = {};
-  for (let i = 0; i < flatItems.length; i++) {
-    if (!isSubtotalHeader(flatItems[i].description)) continue;
-    const key = normalizeHeader(flatItems[i].description);
-    if (AGGREGATE_SOURCES.includes(key)) {
-      sourceSubtotals[key] = globalMap[flatItems[i].id] || 0;
-    }
-  }
-  const aggregateTotal = AGGREGATE_SOURCES.reduce((s, k) => s + (sourceSubtotals[k] || 0), 0);
+  const aggregateTotal = AGGREGATE_SOURCES.reduce((sum, key) => sum + (headerSums[key] || 0), 0);
 
-  // Step 3: assign aggregate total to any [Total Labour | Logistics Cost] header
-  for (let i = 0; i < flatItems.length; i++) {
-    if (isSubtotalHeader(flatItems[i].description) && normalizeHeader(flatItems[i].description) === AGGREGATE_TARGET) {
-      globalMap[flatItems[i].id] = aggregateTotal;
-    }
-  }
-
-  // Return only the entries relevant to the requested items list
+  // Step 3: build return map for items in this section
   const map = {};
   items.forEach(item => {
-    if (globalMap[item.id] !== undefined) map[item.id] = globalMap[item.id];
+    if (!isSubtotalHeader(item.description)) return;
+    const key = normalizeHeader(item.description);
+    if (key === AGGREGATE_TARGET) {
+      map[item.id] = aggregateTotal;
+    } else {
+      map[item.id] = headerSums[key] || 0;
+    }
   });
   return map;
 }
