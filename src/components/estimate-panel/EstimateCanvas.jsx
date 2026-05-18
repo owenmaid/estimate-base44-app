@@ -43,6 +43,7 @@ function buildSubtotals(items, allItems) {
 
   // Step 1: compute per-header sums - each header sums items below it until next header
   const headerSums = {};
+  const headerList = []; // track order of headers
   for (let i = 0; i < flatItems.length; i++) {
     if (isSubtotalHeader(flatItems[i].description)) {
       const key = normalizeHeader(flatItems[i].description);
@@ -53,17 +54,16 @@ function buildSubtotals(items, allItems) {
         sum += flatItems[j].total || 0;
       }
       headerSums[key] = sum;
-      console.log(`Header "${key}" subtotal: $${sum.toFixed(2)}`);
+      headerList.push(key);
     }
   }
 
-  // Step 2: compute aggregate total from the three named source headers
-  const indirectsTotal = headerSums['indirects total'] || 0;
-  const directsTotal = headerSums['directs total'] || 0;
-  const supportLogistics = headerSums['support and logistics'] || 0;
-  const aggregateTotal = indirectsTotal + directsTotal + supportLogistics;
+  // Step 2: [Total Labour | Logistics Cost] sums all OTHER headers (not itself)
+  const aggregateTotal = Object.entries(headerSums)
+    .filter(([key]) => key !== AGGREGATE_TARGET)
+    .reduce((sum, [, val]) => sum + val, 0);
   
-  console.log(`Aggregate: ${indirectsTotal} + ${directsTotal} + ${supportLogistics} = ${aggregateTotal}`);
+  console.log(`Aggregate total from all headers except [${AGGREGATE_TARGET}]: $${aggregateTotal.toFixed(2)}`);
 
   // Step 3: build return map for items in this section
   const map = {};
@@ -72,7 +72,6 @@ function buildSubtotals(items, allItems) {
     const key = normalizeHeader(item.description);
     if (key === AGGREGATE_TARGET) {
       map[item.id] = aggregateTotal;
-      console.log(`Setting [Total Labour | Logistics Cost] to $${aggregateTotal.toFixed(2)}`);
     } else {
       map[item.id] = headerSums[key] || 0;
     }
