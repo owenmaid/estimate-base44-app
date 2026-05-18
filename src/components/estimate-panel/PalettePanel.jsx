@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Package, Wrench, Users, ChevronDown, ChevronRight, Plus, Search, Layers } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Package, Wrench, Users, ChevronDown, ChevronRight, Plus, Search, Layers, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const GROUP_ICONS = {
@@ -8,6 +8,62 @@ const GROUP_ICONS = {
   'Manpower Group': Users,
 };
 
+// Compute col14 for a given row using the same logic as CalculationEngine
+function computeCol14(row, equipmentGrid, typeGrid, inventoryItems) {
+  const inventoryEntry = inventoryItems.find(i => String(i.id) === String(row.item_id))
+    || inventoryItems.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+    || null;
+
+  if (!inventoryEntry) return null;
+
+  const isManpower = inventoryEntry.item_group === 'Manpower Group';
+  const label = (row.label || '').toLowerCase();
+  const isSpecial = label.includes('pre-work') || label.includes('post-work');
+  const shiftHrs = isSpecial ? 10 : 12;
+
+  const regRate = inventoryEntry.reg_value ?? null;
+  const otRate = inventoryEntry.ot_value ?? null;
+
+  // Col1: sum of all scheduled days for this row
+  let col1 = 0;
+  let nDays = 0, saDays = 0, suDays = 0, stDays = 0;
+
+  Object.entries(equipmentGrid).forEach(([key, value]) => {
+    if (!key.startsWith(`${row.id}_`)) return;
+    const dateStr = key.slice(`${row.id}_`.length);
+    const num = parseInt(value, 10);
+    if (isNaN(num) || num <= 0) return;
+    col1 += num;
+    const dayType = typeGrid[dateStr];
+    if (dayType === 'N') nDays += num;
+    else if (dayType === 'Sa') saDays += num;
+    else if (dayType === 'Su') suDays += num;
+    else if (dayType === 'St') stDays += num;
+  });
+
+  // Col4: (N×8) + (Sa×4)
+  const col4 = (nDays * 8) + (saDays * 4);
+  // Col5: N × (shiftHrs - 8)
+  const col5 = isManpower ? nDays * Math.max(0, shiftHrs - 8) : 0;
+  // Col6: Sa × max(shiftHrs - 4, 0)
+  const col6 = isManpower ? saDays * Math.max(shiftHrs - 4, 0) : 0;
+  // Col7: Su × shiftHrs
+  const col7 = isManpower ? suDays * shiftHrs : 0;
+  // Col8: St × shiftHrs
+  const col8 = isManpower ? stDays * shiftHrs : 0;
+
+  // Col11: Manpower = col4 × regRate, non-Manpower = col1 × regRate
+  const col11 = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
+  // Col12: (col5 + col6 + col7) × otRate  (Manpower only)
+  const col12 = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
+  // Col13: St special cost
+  const col13 = otRate != null
+    ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+    : 0;
+
+  return col11 + col12 + col13;
+}
+
 export default function PalettePanel({ inventory, sections, onAddSection, onAddItemToSection, projectNumber }) {
   const [search, setSearch] = useState('');
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -15,6 +71,36 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
   const [manualItem, setManualItem] = useState({ description: '', quantity: 1, unit_price: 0, markup: 0 });
   const [showManual, setShowManual] = useState(false);
   const [syncing, setSyncing] = useState(null);
+  const [activeProject, setActiveProject] = useState(null);
+
+  // Load the active project once when projectNumber changes
+  useEffect(() => {
+    if (!projectNumber) { setActiveProject(null); return; }
+    base44.entities.Project.list().then(all => {
+      const match = all.find(p =>
+        (p.project_number || '').trim().toLowerCase() === projectNumber.trim().toLowerCase()
+      );
+      setActiveProject(match || null);
+    }).catch(() => setActiveProject(null));
+  }, [projectNumber]);
+
+  // Build a col14 lookup map keyed by inventory item id
+  const col14Map = useMemo(() => {
+    if (!activeProject) return {};
+    const map = {};
+    const rows = activeProject.equipment_rows || [];
+    const eGrid = activeProject.equipment_grid || {};
+    const tGrid = activeProject.type_grid || {};
+
+    rows.forEach(row => {
+      if (!row.item_id) return;
+      const val = computeCol14(row, eGrid, tGrid, inventory);
+      if (val != null && val > 0) {
+        map[String(row.item_id)] = val;
+      }
+    });
+    return map;
+  }, [activeProject, inventory]);
 
   // Group inventory by item_group → category
   const grouped = {};
@@ -30,46 +116,17 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
 
   const toggleGroup = (key) => setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
-  const handleAddInventoryItem = async (invItem) => {
+  const handleAddInventoryItem = (invItem) => {
     if (!sections || sections.length === 0) return;
     const targetSectionId = selectedSection || sections[0].id;
     if (!targetSectionId) return;
 
-    let unit_price = invItem.unit_cost || 0;
-    const itemDescription = invItem.name || invItem.sku;
-
-    // If a project number is set, look up col14 from saved calculation_grid
-    if (projectNumber && invItem.id) {
-      setSyncing(invItem.id);
-      try {
-        // Fetch all accessible projects and match by project_number
-        const allProjects = await base44.entities.Project.list();
-        const matchingProject = allProjects.find(p =>
-          (p.project_number || '').trim().toLowerCase() === projectNumber.trim().toLowerCase()
-        );
-
-        if (matchingProject) {
-          const projRows = matchingProject.equipment_rows || [];
-          const calculationGrid = matchingProject.calculation_grid || {};
-
-          // Match row by inventory item ID (both are strings/IDs)
-          const matchingRow = projRows.find(row => String(row.item_id) === String(invItem.id));
-          if (matchingRow) {
-            const col14Key = `${matchingRow.id}_col14`;
-            const col14 = calculationGrid[col14Key];
-            if (col14 != null && Number(col14) > 0) {
-              unit_price = Number(col14);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching project calculation data:', error);
-      }
-      setSyncing(null);
-    }
+    // Use col14 from project if available, otherwise fall back to unit_cost
+    const col14 = col14Map[String(invItem.id)];
+    const unit_price = (col14 != null && col14 > 0) ? col14 : (invItem.unit_cost || 0);
 
     onAddItemToSection(targetSectionId, {
-      description: itemDescription,
+      description: invItem.name || invItem.sku,
       quantity: 1,
       unit_price,
       markup: 0,
@@ -131,7 +188,7 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
         {Object.entries(grouped).map(([group, categories]) => {
           const GroupIcon = GROUP_ICONS[group] || Package;
-          const groupOpen = expandedGroups[group] !== false; // default open
+          const groupOpen = expandedGroups[group] !== false;
           return (
             <div key={group}>
               <button
@@ -154,24 +211,32 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
                       {catOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                       {cat}
                     </button>
-                    {catOpen && items.map(item => (
-                      <div
-                        key={item.id}
-                        className="ml-3 flex items-center justify-between px-2 py-1.5 rounded text-xs hover:bg-secondary group transition-colors cursor-default"
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-foreground font-medium">{item.name || item.sku}</div>
-                          <div className="text-muted-foreground">${(item.unit_cost || 0).toFixed(2)}</div>
-                        </div>
-                        <button
-                          onClick={() => handleAddInventoryItem(item)}
-                          className="shrink-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
-                          title="Add to estimate"
+                    {catOpen && items.map(item => {
+                      const col14 = col14Map[String(item.id)];
+                      const displayPrice = (col14 != null && col14 > 0) ? col14 : (item.unit_cost || 0);
+                      const hasProjectPrice = col14 != null && col14 > 0;
+                      return (
+                        <div
+                          key={item.id}
+                          className="ml-3 flex items-center justify-between px-2 py-1.5 rounded text-xs hover:bg-secondary group transition-colors cursor-default"
                         >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="min-w-0">
+                            <div className="truncate text-foreground font-medium">{item.name || item.sku}</div>
+                            <div className={hasProjectPrice ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                              ${displayPrice.toFixed(2)}
+                              {hasProjectPrice && <span className="ml-1 text-muted-foreground font-normal">(Col14)</span>}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleAddInventoryItem(item)}
+                            className="shrink-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                            title="Add to estimate"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
