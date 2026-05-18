@@ -26,6 +26,7 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 }
 
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
+const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
 // For each subtotal-header item, compute the running sum of all non-header items
 // below it until the next header (or end of list).
@@ -36,8 +37,9 @@ function buildSubtotals(items) {
     if (isSubtotalHeader(items[i].description)) {
       let sum = 0;
       for (let j = i + 1; j < items.length; j++) {
-        if (isSubtotalHeader(items[j].description)) break;
-        sum += items[j].total || 0;
+      if (isSubtotalHeader(items[j].description)) break;
+      if (isSpacer(items[j].description)) continue;
+      sum += items[j].total || 0;
       }
       map[items[i].id] = sum;
     }
@@ -123,6 +125,7 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                 <div ref={provided.innerRef} {...provided.droppableProps}>
                   {section.items.map((item, idx) => {
                     const isHeader = isSubtotalHeader(item.description);
+                    const spacer = isSpacer(item.description);
                     const headerSubtotal = isHeader ? subtotalMap[item.id] : null;
                     return (
                     <Draggable key={String(item.id)} draggableId={String(item.id)} index={idx}>
@@ -130,38 +133,42 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                         <div
                           ref={drag.innerRef}
                           {...drag.draggableProps}
-                          className={`grid gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors
-                            ${isHeader ? 'bg-orange-500/10 border-l-2 border-l-orange-500' : ''}
-                            ${snapshot.isDragging ? 'bg-secondary/60' : (!isHeader ? 'hover:bg-secondary/20' : '')}`}
+                          className={`grid gap-1 px-3 border-b border-border last:border-b-0 items-center text-xs transition-colors
+                            ${isHeader ? 'py-1.5 bg-orange-500/10 border-l-2 border-l-orange-500' : ''}
+                            ${spacer ? 'py-2 bg-green-500/20' : ''}
+                            ${!isHeader && !spacer ? 'py-1.5' : ''}
+                            ${snapshot.isDragging ? 'bg-secondary/60' : (!isHeader && !spacer ? 'hover:bg-secondary/20' : '')}`}
                           style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px', ...drag.draggableProps.style}}
                         >
                           <div className="flex items-center" {...drag.dragHandleProps}>
                             <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
                           </div>
                           <div className={isHeader ? 'font-bold text-orange-400' : 'text-foreground'}>
-                            <EditableCell
-                              value={item.description}
-                              onChange={v => onUpdateItem(section.id, item.id, 'description', v)}
-                              className={`w-full ${isHeader ? 'text-orange-400 font-bold' : ''}`}
-                            />
+                            {!spacer && (
+                              <EditableCell
+                                value={item.description}
+                                onChange={v => onUpdateItem(section.id, item.id, 'description', v)}
+                                className={`w-full ${isHeader ? 'text-orange-400 font-bold' : ''}`}
+                              />
+                            )}
                           </div>
                           <div className="text-right">
-                            {!isHeader && <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />}
+                            {!isHeader && !spacer && <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />}
                           </div>
                           <div className="text-right">
-                            {!isHeader && <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />}
+                            {!isHeader && !spacer && <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />}
                           </div>
                           <div className="text-right">
-                            {!isHeader && <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />}
+                            {!isHeader && !spacer && <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />}
                           </div>
                           <div className={`text-right font-semibold ${isHeader ? 'text-orange-400' : 'text-foreground'}`}>
-                            {isHeader
+                            {!spacer && (isHeader
                               ? `$${(headerSubtotal || 0).toFixed(2)}`
                               : `$${(item.total || 0).toFixed(2)}`
-                            }
+                            )}
                           </div>
                           <div className="text-center text-muted-foreground font-mono truncate">
-                            {!isHeader && (() => {
+                            {!isHeader && !spacer && (() => {
                               const desc = (item.description || '').toLowerCase();
                               const match = inventory.find(i => (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc);
                               return match ? <span className="text-primary">{match.id.slice(-8)}</span> : <span className="opacity-30">—</span>;

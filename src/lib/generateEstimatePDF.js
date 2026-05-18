@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
+const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
 function buildSubtotals(items) {
   const map = {};
@@ -9,6 +10,7 @@ function buildSubtotals(items) {
       let sum = 0;
       for (let j = i + 1; j < items.length; j++) {
         if (isSubtotalHeader(items[j].description)) break;
+        if (isSpacer(items[j].description)) continue;
         sum += items[j].total || 0;
       }
       map[items[i].id] = sum;
@@ -152,7 +154,16 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     let regularRowIdx = 0;
     section.items.forEach((item) => {
       const isHeader = isSubtotalHeader(item.description);
+      const spacer = isSpacer(item.description);
       checkPage(18);
+
+      if (spacer) {
+        // Green-tinted blank spacer row
+        doc.setFillColor(220, 252, 231); // light green
+        doc.rect(margin, y - 6, contentW, 10, 'F');
+        y += 10;
+        return;
+      }
 
       if (isHeader) {
         // Subtotal header row — orange tinted background, left accent bar
