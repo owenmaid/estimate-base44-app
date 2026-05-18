@@ -118,6 +118,7 @@ export default function ProjectPlanning() {
     if (project && !form) {
       setForm({
         name: project.name || '',
+        project_number: project.project_number || '',
         client: project.client || '',
         status: project.status || 'planning',
         start_date: project.start_date || project.due || '',
@@ -343,6 +344,10 @@ export default function ProjectPlanning() {
             <div>
               <Label>Project Name *</Label>
               <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Project Number</Label>
+              <Input value={form.project_number} onChange={e => setForm(p => ({ ...p, project_number: e.target.value }))} placeholder="e.g. PR27001" />
             </div>
             <div>
               <Label>Client</Label>
