@@ -295,7 +295,7 @@ export default function CreateEstimatePanel() {
           sections={sections}
           onAddSection={addSection}
           onAddItemToSection={addItemToSection}
-          projectNumber={clientInfo.project_number}
+          projectNumber={clientInfo.project_name}
         />
 
         {/* RIGHT: Estimate Canvas */}
