@@ -53,11 +53,17 @@ function buildSubtotals(items, allItems) {
         sum += flatItems[j].total || 0;
       }
       headerSums[key] = sum;
+      console.log(`Header "${key}" subtotal: $${sum.toFixed(2)}`);
     }
   }
 
   // Step 2: compute aggregate total from the three named source headers
-  const aggregateTotal = AGGREGATE_SOURCES.reduce((sum, key) => sum + (headerSums[key] || 0), 0);
+  const indirectsTotal = headerSums['indirects total'] || 0;
+  const directsTotal = headerSums['directs total'] || 0;
+  const supportLogistics = headerSums['support and logistics'] || 0;
+  const aggregateTotal = indirectsTotal + directsTotal + supportLogistics;
+  
+  console.log(`Aggregate: ${indirectsTotal} + ${directsTotal} + ${supportLogistics} = ${aggregateTotal}`);
 
   // Step 3: build return map for items in this section
   const map = {};
@@ -66,6 +72,7 @@ function buildSubtotals(items, allItems) {
     const key = normalizeHeader(item.description);
     if (key === AGGREGATE_TARGET) {
       map[item.id] = aggregateTotal;
+      console.log(`Setting [Total Labour | Logistics Cost] to $${aggregateTotal.toFixed(2)}`);
     } else {
       map[item.id] = headerSums[key] || 0;
     }
