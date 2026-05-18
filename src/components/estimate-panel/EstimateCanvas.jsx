@@ -28,6 +28,13 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
+// Normalize a header description for matching (strip brackets, lowercase, trim)
+const normalizeHeader = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+
+// Labels whose subtotals feed into [Total Labour | Logistics Cost]
+const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
+const AGGREGATE_TARGET  = 'total labour | logistics cost';
+
 // For each subtotal-header item, compute the running sum of all non-header items
 // below it until the next header (or end of list).
 function buildSubtotals(items) {
@@ -35,15 +42,36 @@ function buildSubtotals(items) {
   const map = {};
   for (let i = 0; i < items.length; i++) {
     if (isSubtotalHeader(items[i].description)) {
+      const key = normalizeHeader(items[i].description);
+      if (key === AGGREGATE_TARGET) continue; // handled separately below
       let sum = 0;
       for (let j = i + 1; j < items.length; j++) {
-      if (isSubtotalHeader(items[j].description)) break;
-      if (isSpacer(items[j].description)) continue;
-      sum += items[j].total || 0;
+        if (isSubtotalHeader(items[j].description)) break;
+        if (isSpacer(items[j].description)) continue;
+        sum += items[j].total || 0;
       }
       map[items[i].id] = sum;
     }
   }
+
+  // Now compute the aggregate target by summing the subtotals of the source headers
+  const sourceSubtotals = {};
+  for (let i = 0; i < items.length; i++) {
+    if (!isSubtotalHeader(items[i].description)) continue;
+    const key = normalizeHeader(items[i].description);
+    if (AGGREGATE_SOURCES.includes(key)) {
+      sourceSubtotals[key] = map[items[i].id] || 0;
+    }
+  }
+  const aggregateTotal = AGGREGATE_SOURCES.reduce((s, k) => s + (sourceSubtotals[k] || 0), 0);
+
+  // Assign the aggregate total to any [Total Labour | Logistics Cost] header
+  for (let i = 0; i < items.length; i++) {
+    if (isSubtotalHeader(items[i].description) && normalizeHeader(items[i].description) === AGGREGATE_TARGET) {
+      map[items[i].id] = aggregateTotal;
+    }
+  }
+
   return map;
 }
 
