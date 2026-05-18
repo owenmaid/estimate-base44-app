@@ -214,7 +214,7 @@ export default function ProjectDetailsSetup() {
       });
     }, 1500);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [equipmentGrid, equipmentRows, typeGrid, selectedProjectId, projectNumber, rowSums, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
+  }, [equipmentGrid, equipmentRows, typeGrid, selectedProjectId, projectNumber]);
 
   const PAGE_SIZE = 15;
   const visibleDates = dates.slice(dateOffset, dateOffset + PAGE_SIZE);
