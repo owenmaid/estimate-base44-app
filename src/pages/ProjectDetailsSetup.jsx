@@ -477,11 +477,15 @@ const addEquipmentRow = () => {
       const col6 = isManpower ? (rowCol6[row.id] || 0) : 0;
       const col7 = isManpower ? (rowCol7[row.id] || 0) : 0;
       const col8 = isManpower ? (rowCol8[row.id] || 0) : 0;
-      calculationGrid[`${row.id}_col11`] = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
-      calculationGrid[`${row.id}_col12`] = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
-      calculationGrid[`${row.id}_col13`] = otRate != null
+      const c11 = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
+      const c12 = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
+      const c13 = otRate != null
         ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
         : 0;
+      calculationGrid[`${row.id}_col11`] = c11;
+      calculationGrid[`${row.id}_col12`] = c12;
+      calculationGrid[`${row.id}_col13`] = c13;
+      calculationGrid[`${row.id}_col14`] = c11 + c12 + c13;
     });
     return calculationGrid;
   };

@@ -52,9 +52,9 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
           // Match row by inventory item ID
           const matchingRow = equipmentRows.find(row => row.item_id === invItem.id);
           if (matchingRow) {
-            const col13 = calculationGrid[`${matchingRow.id}_col13`];
-            if (col13 != null && col13 > 0) {
-              unit_price = col13;
+            const col14 = calculationGrid[`${matchingRow.id}_col14`];
+            if (col14 != null && col14 > 0) {
+              unit_price = col14;
             }
           }
         }

@@ -385,6 +385,12 @@ export default function CalculationEngine() {
           : 0;
 
         calculationGrid[`${row.id}_col13`] = col13Value;
+
+        const col9Value = inventoryEntry?.reg ?? null;
+        const col4Value = rowCol4[row.id] || 0;
+        const col11Value = col9Value != null ? ((isManpower ? col4Value : (rowSums[row.id] || 0)) * col9Value) : 0;
+        const col12Value = col10Value != null ? ((effectiveCol5 + effectiveCol6 + effectiveCol7) * col10Value) : 0;
+        calculationGrid[`${row.id}_col14`] = col11Value + col12Value + col13Value;
       });
 
       await base44.entities.Project.update(activeProject.id, { calculation_grid: calculationGrid });
