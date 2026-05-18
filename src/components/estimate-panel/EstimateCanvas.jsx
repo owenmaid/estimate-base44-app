@@ -211,8 +211,8 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                           </div>
                           <div className={`text-right font-semibold ${isHeader ? 'text-orange-400' : 'text-foreground'}`}>
                             {!spacer && (isHeader
-                              ? `$${(headerSubtotal || 0).toFixed(2)}`
-                              : `$${(item.total || 0).toFixed(2)}`
+                              ? `$${Number(headerSubtotal || 0).toFixed(2)}`
+                              : `$${Number(item.total || 0).toFixed(2)}`
                             )}
                           </div>
                           <div className="text-center text-muted-foreground font-mono truncate">
