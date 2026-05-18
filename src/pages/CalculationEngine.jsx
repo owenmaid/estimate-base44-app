@@ -122,6 +122,9 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
           cellContent = activeCell(col12Value && col12Value > 0 ? col12Value : null, 'SUM(Col5:Col7)×Col10');
         } else if (isCol13) {
           cellContent = activeCell(col13Value && col13Value > 0 ? col13Value : null, 'Special Cost');
+        } else if (colIdx === 13) {
+          const col14Value = (col11Value || 0) + (col12Value || 0) + (col13Value || 0);
+          cellContent = activeCell(col14Value > 0 ? col14Value : null, 'Col11 + Col12 + Col13');
         } else {
           cellContent = (
             <input
@@ -433,7 +436,7 @@ export default function CalculationEngine() {
                   </th>
                   {COL_HEADERS.map((col, i) => (
                     <th key={i} className={`px-3 py-2.5 text-center font-semibold border-r border-border last:border-r-0 min-w-[70px] ${i <= 12 ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : i === 8 ? 'Col 9 (Reg Rate)' : i === 9 ? 'Col 10 (OT Rate)' : i === 10 ? 'Col 11 (Reg Cost)' : i === 11 ? 'Col 12 (OT Cost)' : i === 12 ? 'Col 13 (Special Cost)' : col}
+                      {i === 0 ? 'Col 1 (Σ)' : i === 1 ? 'Col 2 (hrs)' : i === 2 ? 'Col 3 (Total Hrs)' : i === 3 ? 'Col 4 (N×8+Sa×4)' : i === 4 ? 'Col 5 (N×OT hrs)' : i === 5 ? 'Col 6 (Sa×OT hrs)' : i === 6 ? 'Col 7 (Su×Shift)' : i === 7 ? 'Col 8 (St×Shift)' : i === 8 ? 'Col 9 (Reg Rate)' : i === 9 ? 'Col 10 (OT Rate)' : i === 10 ? 'Col 11 (Reg Cost)' : i === 11 ? 'Col 12 (OT Cost)' : i === 12 ? 'Col 13 (Special Cost)' : i === 13 ? 'Col 14 (Total Cost)' : col}
                     </th>
                   ))}
                 </tr>
