@@ -38,12 +38,22 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
     let unit_price = invItem.unit_cost || 0;
     const itemDescription = invItem.name || invItem.sku;
 
-    // If a project number is set, look up col13 from saved calculation_grid
+    // If a project number is set, look up col14 from saved calculation_grid
     if (projectNumber && invItem.id) {
       setSyncing(invItem.id);
       try {
-        const projects = await base44.entities.Project.filter({ project_number: projectNumber });
-        const matchingProject = projects?.[0];
+        // Try matching by project_number first, then fall back to project name
+        let byNumber = await base44.entities.Project.filter({ project_number: projectNumber });
+        let matchingProject = byNumber?.[0];
+
+        if (!matchingProject) {
+          // Fallback: match by project name
+          const allProjects = await base44.entities.Project.list();
+          matchingProject = allProjects.find(p =>
+            (p.project_number || '').toLowerCase() === projectNumber.toLowerCase() ||
+            (p.name || '').toLowerCase() === projectNumber.toLowerCase()
+          );
+        }
 
         if (matchingProject) {
           const equipmentRows = matchingProject.equipment_rows || [];
@@ -84,7 +94,10 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
   return (
     <div className="w-72 shrink-0 border-r border-border bg-card flex flex-col h-full overflow-hidden">
       <div className="px-3 py-2.5 border-b border-border">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tool Palette</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Tool Palette</p>
+        {projectNumber && (
+          <p className="text-xs text-primary mb-2">🔗 Project: <span className="font-semibold">{projectNumber}</span></p>
+        )}
 
         {/* Section selector */}
         <div className="mb-2">
