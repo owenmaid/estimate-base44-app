@@ -1,5 +1,22 @@
 import jsPDF from 'jspdf';
 
+const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
+
+function buildSubtotals(items) {
+  const map = {};
+  for (let i = 0; i < items.length; i++) {
+    if (isSubtotalHeader(items[i].description)) {
+      let sum = 0;
+      for (let j = i + 1; j < items.length; j++) {
+        if (isSubtotalHeader(items[j].description)) break;
+        sum += items[j].total || 0;
+      }
+      map[items[i].id] = sum;
+    }
+  }
+  return map;
+}
+
 export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -131,22 +148,50 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     // Items
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
-    section.items.forEach((item, idx) => {
-      checkPage(16);
-      if (idx % 2 === 0) {
-        doc.setFillColor(250, 249, 247);
-        doc.rect(margin, y - 9, contentW, 14, 'F');
+    const subtotalMap = buildSubtotals(section.items);
+    let regularRowIdx = 0;
+    section.items.forEach((item) => {
+      const isHeader = isSubtotalHeader(item.description);
+      checkPage(18);
+
+      if (isHeader) {
+        // Subtotal header row — orange tinted background, left accent bar
+        doc.setFillColor(255, 237, 213); // light orange
+        doc.rect(margin, y - 10, contentW, 16, 'F');
+        doc.setFillColor(...orange);
+        doc.rect(margin, y - 10, 3, 16, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...orange);
+        const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 12);
+        doc.text(descLines, colDesc + 6, y);
+
+        const headerSum = subtotalMap[item.id] || 0;
+        doc.text(`$${headerSum.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y, { align: 'right' });
+
+        doc.setFont('helvetica', 'normal');
+        y += descLines.length > 1 ? descLines.length * 11 : 16;
+        regularRowIdx = 0; // reset alternating for items after this header
+      } else {
+        // Normal item row — alternating shading
+        if (regularRowIdx % 2 === 0) {
+          doc.setFillColor(250, 249, 247);
+          doc.rect(margin, y - 9, contentW, 14, 'F');
+        }
+        doc.setTextColor(...dark);
+        doc.setFont('helvetica', 'normal');
+        const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 8);
+        doc.text(descLines, colDesc, y);
+        doc.text(String(item.quantity ?? 1), colQty, y, { align: 'right' });
+        doc.text(`$${(item.unit_price || 0).toFixed(2)}`, colUnit, y, { align: 'right' });
+        doc.text(`${item.markup || 0}%`, colMkup, y, { align: 'right' });
+        doc.setFont('helvetica', 'bold');
+        doc.text(`$${(item.total || 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        y += descLines.length > 1 ? descLines.length * 11 : 14;
+        regularRowIdx++;
       }
-      doc.setTextColor(...dark);
-      const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 8);
-      doc.text(descLines, colDesc, y);
-      doc.text(String(item.quantity ?? 1), colQty, y, { align: 'right' });
-      doc.text(`$${(item.unit_price || 0).toFixed(2)}`, colUnit, y, { align: 'right' });
-      doc.text(`${item.markup || 0}%`, colMkup, y, { align: 'right' });
-      doc.setFont('helvetica', 'bold');
-      doc.text(`$${(item.total || 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      y += descLines.length > 1 ? descLines.length * 11 : 14;
     });
 
     if (section.items.length === 0) {
