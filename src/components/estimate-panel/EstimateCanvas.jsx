@@ -25,12 +25,33 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
   );
 }
 
+const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
+
+// For each subtotal-header item, compute the running sum of all non-header items
+// below it until the next header (or end of list).
+function buildSubtotals(items) {
+  // subtotalMap[headerItemId] = sum of items below it until next header
+  const map = {};
+  for (let i = 0; i < items.length; i++) {
+    if (isSubtotalHeader(items[i].description)) {
+      let sum = 0;
+      for (let j = i + 1; j < items.length; j++) {
+        if (isSubtotalHeader(items[j].description)) break;
+        sum += items[j].total || 0;
+      }
+      map[items[i].id] = sum;
+    }
+  }
+  return map;
+}
+
 function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
   const sectionTotal = section.items.reduce((s, i) => s + (i.total || 0), 0);
+  const subtotalMap = buildSubtotals(section.items);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -100,45 +121,47 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
             <Droppable droppableId={`section-${section.id}`}>
               {(provided) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
-                  {section.items.map((item, idx) => (
+                  {section.items.map((item, idx) => {
+                    const isHeader = isSubtotalHeader(item.description);
+                    const headerSubtotal = isHeader ? subtotalMap[item.id] : null;
+                    return (
                     <Draggable key={String(item.id)} draggableId={String(item.id)} index={idx}>
                       {(drag, snapshot) => (
                         <div
                           ref={drag.innerRef}
                           {...drag.draggableProps}
-                          className={`grid gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors ${snapshot.isDragging ? 'bg-secondary/60' : 'hover:bg-secondary/20'}`}
+                          className={`grid gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors
+                            ${isHeader ? 'bg-orange-500/10 border-l-2 border-l-orange-500' : ''}
+                            ${snapshot.isDragging ? 'bg-secondary/60' : (!isHeader ? 'hover:bg-secondary/20' : '')}`}
                           style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px', ...drag.draggableProps.style}}
                         >
                           <div className="flex items-center" {...drag.dragHandleProps}>
                             <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
                           </div>
-                          <div className="text-foreground">
+                          <div className={isHeader ? 'font-bold text-orange-400' : 'text-foreground'}>
                             <EditableCell
                               value={item.description}
                               onChange={v => onUpdateItem(section.id, item.id, 'description', v)}
-                              className={`w-full ${item.description && item.description.startsWith('[') && item.description.endsWith(']') ? 'text-orange-500 font-bold' : ''}`}
+                              className={`w-full ${isHeader ? 'text-orange-400 font-bold' : ''}`}
                             />
                           </div>
                           <div className="text-right">
-                            <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
+                            {!isHeader && <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />}
                           </div>
                           <div className="text-right">
-                            <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />
+                            {!isHeader && <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />}
                           </div>
                           <div className="text-right">
-                            <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />
+                            {!isHeader && <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />}
                           </div>
-                          <div className="text-right font-semibold text-foreground">
-                            ${(item.total || 0).toFixed(2)}
+                          <div className={`text-right font-semibold ${isHeader ? 'text-orange-400' : 'text-foreground'}`}>
+                            {isHeader
+                              ? `$${(headerSubtotal || 0).toFixed(2)}`
+                              : `$${(item.total || 0).toFixed(2)}`
+                            }
                           </div>
-                          <div className="text-center text-muted-foreground font-mono truncate" title={
-                            (() => {
-                              const desc = (item.description || '').toLowerCase();
-                              const match = inventory.find(i => (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc);
-                              return match ? match.id : '—';
-                            })()
-                          }>
-                            {(() => {
+                          <div className="text-center text-muted-foreground font-mono truncate">
+                            {!isHeader && (() => {
                               const desc = (item.description || '').toLowerCase();
                               const match = inventory.find(i => (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc);
                               return match ? <span className="text-primary">{match.id.slice(-8)}</span> : <span className="opacity-30">—</span>;
@@ -152,7 +175,8 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                         </div>
                       )}
                     </Draggable>
-                  ))}
+                    );
+                  })}
                   {provided.placeholder}
                   {section.items.length === 0 && (
                     <div className="text-xs text-muted-foreground text-center py-4">
