@@ -42,29 +42,23 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
     if (projectNumber && invItem.id) {
       setSyncing(invItem.id);
       try {
-        // Try matching by project_number first, then fall back to project name
-        let byNumber = await base44.entities.Project.filter({ project_number: projectNumber });
-        let matchingProject = byNumber?.[0];
-
-        if (!matchingProject) {
-          // Fallback: match by project name
-          const allProjects = await base44.entities.Project.list();
-          matchingProject = allProjects.find(p =>
-            (p.project_number || '').toLowerCase() === projectNumber.toLowerCase() ||
-            (p.name || '').toLowerCase() === projectNumber.toLowerCase()
-          );
-        }
+        // Fetch all accessible projects and match by project_number
+        const allProjects = await base44.entities.Project.list();
+        const matchingProject = allProjects.find(p =>
+          (p.project_number || '').trim().toLowerCase() === projectNumber.trim().toLowerCase()
+        );
 
         if (matchingProject) {
-          const equipmentRows = matchingProject.equipment_rows || [];
+          const projRows = matchingProject.equipment_rows || [];
           const calculationGrid = matchingProject.calculation_grid || {};
 
-          // Match row by inventory item ID
-          const matchingRow = equipmentRows.find(row => row.item_id === invItem.id);
+          // Match row by inventory item ID (both are strings/IDs)
+          const matchingRow = projRows.find(row => String(row.item_id) === String(invItem.id));
           if (matchingRow) {
-            const col14 = calculationGrid[`${matchingRow.id}_col14`];
-            if (col14 != null && col14 > 0) {
-              unit_price = col14;
+            const col14Key = `${matchingRow.id}_col14`;
+            const col14 = calculationGrid[col14Key];
+            if (col14 != null && Number(col14) > 0) {
+              unit_price = Number(col14);
             }
           }
         }
