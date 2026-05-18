@@ -31,82 +31,35 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
   const toggleGroup = (key) => setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleAddInventoryItem = async (invItem) => {
-    if (!sections || sections.length === 0) {
-      console.error('No sections available');
-      return;
-    }
+    if (!sections || sections.length === 0) return;
     const targetSectionId = selectedSection || sections[0].id;
     if (!targetSectionId) return;
 
     let unit_price = invItem.unit_cost || 0;
     const itemDescription = invItem.name || invItem.sku;
 
-    // If project number exists, sync Col12 (regCost) from ProjectDetailsSetup
+    // If a project number is set, look up col13 from saved calculation_grid
     if (projectNumber && invItem.id) {
       setSyncing(invItem.id);
       try {
-        const [projects, allInventory] = await Promise.all([
-          base44.entities.Project.list(),
-          base44.entities.InventoryItem.list()
-        ]);
-        const matchingProject = projects.find(p => p.project_number === projectNumber);
-        
+        const projects = await base44.entities.Project.filter({ project_number: projectNumber });
+        const matchingProject = projects?.[0];
+
         if (matchingProject) {
           const equipmentRows = matchingProject.equipment_rows || [];
-          const equipmentGrid = matchingProject.equipment_grid || {};
-          const typeGrid = matchingProject.type_grid || {};
-          
-          // Match by inventory ID
+          const calculationGrid = matchingProject.calculation_grid || {};
+
+          // Match row by inventory item ID
           const matchingRow = equipmentRows.find(row => row.item_id === invItem.id);
-          
           if (matchingRow) {
-            // Get inventory entry for reg/ot rates
-            const inventoryEntry = allInventory.find(i => i.id === invItem.id);
-            const regRate = inventoryEntry?.reg_value || 0;
-            
-            // Calculate col1 (rowSum) - total of all daily entries
-            let rowSum = 0;
-            Object.entries(equipmentGrid).forEach(([key, value]) => {
-              if (key.startsWith(`${matchingRow.id}_`)) {
-                const num = parseInt(value, 10);
-                if (!isNaN(num)) rowSum += num;
-              }
-            });
-            
-            // Calculate col4: (N days × 8) + (Sa days × 4)
-            let col4 = 0;
-            Object.entries(equipmentGrid).forEach(([key, value]) => {
-              if (key.startsWith(`${matchingRow.id}_`)) {
-                const dateStr = key.slice(`${matchingRow.id}_`.length);
-                const type = typeGrid[dateStr];
-                const num = parseInt(value, 10);
-                if (!isNaN(num) && num > 0) {
-                  if (type === 'N') col4 += num * 8;
-                  else if (type === 'Sa') col4 += num * 4;
-                }
-              }
-            });
-            
-            // Col12 (regCost) = col4 × regRate (for manpower) or col1 × regRate (for non-manpower)
-            const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-            const regCost = (isManpower ? col4 : rowSum) * regRate;
-            
-            // Try to fetch Col13 from saved calculation_grid
-            let col13Value = regCost;
-            const calculationKey = `${matchingRow.id}_col13`;
-            if (matchingProject.calculation_grid && matchingProject.calculation_grid[calculationKey]) {
-              col13Value = matchingProject.calculation_grid[calculationKey];
-            }
-            
-            if (col13Value > 0) {
-              unit_price = col13Value;
-            } else if (regCost > 0) {
-              unit_price = regCost;
+            const col13 = calculationGrid[`${matchingRow.id}_col13`];
+            if (col13 != null && col13 > 0) {
+              unit_price = col13;
             }
           }
         }
       } catch (error) {
-        console.error('Error syncing project data:', error);
+        console.error('Error fetching project calculation data:', error);
       }
       setSyncing(null);
     }
