@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import PalettePanel from '@/components/estimate-panel/PalettePanel';
 import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
-import { X } from 'lucide-react';
+import { X, Download } from 'lucide-react';
+import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
@@ -240,6 +241,13 @@ export default function CreateEstimatePanel() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number })}
+            className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
+            title="Download PDF"
+          >
+            <Download className="h-3.5 w-3.5" /> PDF
+          </button>
           <EstimateSearchBar onLoad={loadEstimate} />
           <button
             onClick={handleCloseEstimate}
