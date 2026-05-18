@@ -28,22 +28,47 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
+const TOTAL_EQUIPMENT_PATTERN = /\[Total Equipment.*Cost\]/i;
+const SOURCE_HEADER_PATTERNS = [
+  /\[Indirects Total\]/i,
+  /\[Directs Total\]/i,
+  /\[Support and Logistics\]/i,
+];
+
 // For each subtotal-header item, compute the running sum of all non-header items
 // below it until the next header (or end of list).
+// Special case: [Total Equipment |Consumables Cost] = sum of the three named group subtotals.
 function buildSubtotals(items) {
-  // subtotalMap[headerItemId] = sum of items below it until next header
   const map = {};
+
+  // First pass: compute normal group subtotals keyed by item id
   for (let i = 0; i < items.length; i++) {
     if (isSubtotalHeader(items[i].description)) {
       let sum = 0;
       for (let j = i + 1; j < items.length; j++) {
-      if (isSubtotalHeader(items[j].description)) break;
-      if (isSpacer(items[j].description)) continue;
-      sum += items[j].total || 0;
+        if (isSubtotalHeader(items[j].description)) break;
+        if (isSpacer(items[j].description)) continue;
+        sum += items[j].total || 0;
       }
       map[items[i].id] = sum;
     }
   }
+
+  // Second pass: override [Total Equipment |Consumables Cost] with sum of the three source headers
+  for (let i = 0; i < items.length; i++) {
+    if (TOTAL_EQUIPMENT_PATTERN.test(items[i].description)) {
+      // Find the subtotals of the three named headers
+      let combinedSum = 0;
+      for (let k = 0; k < items.length; k++) {
+        const desc = items[k].description || '';
+        if (SOURCE_HEADER_PATTERNS.some(p => p.test(desc))) {
+          combinedSum += map[items[k].id] || 0;
+        }
+      }
+      map[items[i].id] = combinedSum;
+    }
+  }
+
   return map;
 }
 

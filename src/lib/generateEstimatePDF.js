@@ -3,8 +3,16 @@ import jsPDF from 'jspdf';
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
+const TOTAL_EQUIPMENT_PATTERN = /\[Total Equipment.*Cost\]/i;
+const SOURCE_HEADER_PATTERNS = [
+  /\[Indirects Total\]/i,
+  /\[Directs Total\]/i,
+  /\[Support and Logistics\]/i,
+];
+
 function buildSubtotals(items) {
   const map = {};
+  // First pass: normal group subtotals
   for (let i = 0; i < items.length; i++) {
     if (isSubtotalHeader(items[i].description)) {
       let sum = 0;
@@ -14,6 +22,19 @@ function buildSubtotals(items) {
         sum += items[j].total || 0;
       }
       map[items[i].id] = sum;
+    }
+  }
+  // Second pass: override [Total Equipment |Consumables Cost]
+  for (let i = 0; i < items.length; i++) {
+    if (TOTAL_EQUIPMENT_PATTERN.test(items[i].description)) {
+      let combinedSum = 0;
+      for (let k = 0; k < items.length; k++) {
+        const desc = items[k].description || '';
+        if (SOURCE_HEADER_PATTERNS.some(p => p.test(desc))) {
+          combinedSum += map[items[k].id] || 0;
+        }
+      }
+      map[items[i].id] = combinedSum;
     }
   }
   return map;
