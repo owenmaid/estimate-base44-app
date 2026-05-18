@@ -107,7 +107,7 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                           ref={drag.innerRef}
                           {...drag.draggableProps}
                           className={`grid gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors ${snapshot.isDragging ? 'bg-secondary/60' : 'hover:bg-secondary/20'}`}
-                          style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px'}}
+                          style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px', ...drag.draggableProps.style}}
                         >
                           <div className="flex items-center" {...drag.dragHandleProps}>
                             <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
