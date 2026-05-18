@@ -311,6 +311,7 @@ export default function CreateEstimatePanel() {
           subtotal={subtotal}
           taxAmount={taxAmount}
           total={total}
+          inventory={inventory}
         />
       </div>
     </div>

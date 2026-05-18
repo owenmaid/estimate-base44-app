@@ -25,7 +25,7 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
   );
 }
 
-function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems }) {
+function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -85,14 +85,15 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
       {!collapsed && (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-12 gap-1 px-3 py-1.5 bg-secondary/30 border-b border-border text-xs text-muted-foreground font-medium">
-            <div className="col-span-1"></div>
-            <div className="col-span-4">Description</div>
-            <div className="col-span-1 text-right">Qty</div>
-            <div className="col-span-2 text-right">Unit $</div>
-            <div className="col-span-1 text-right">Mkup%</div>
-            <div className="col-span-2 text-right">Total</div>
-            <div className="col-span-1"></div>
+          <div className="grid gap-1 px-3 py-1.5 bg-secondary/30 border-b border-border text-xs text-muted-foreground font-medium" style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px'}}>
+            <div></div>
+            <div>Description</div>
+            <div className="text-right">Qty</div>
+            <div className="text-right">Unit $</div>
+            <div className="text-right">Mkup%</div>
+            <div className="text-right">Total</div>
+            <div className="text-center">Item_ID</div>
+            <div></div>
           </div>
 
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -105,31 +106,45 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                         <div
                           ref={drag.innerRef}
                           {...drag.draggableProps}
-                          className={`grid grid-cols-12 gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors ${snapshot.isDragging ? 'bg-secondary/60' : 'hover:bg-secondary/20'}`}
+                          className={`grid gap-1 px-3 py-1.5 border-b border-border last:border-b-0 items-center text-xs transition-colors ${snapshot.isDragging ? 'bg-secondary/60' : 'hover:bg-secondary/20'}`}
+                          style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px'}}
                         >
-                          <div className="col-span-1 flex items-center" {...drag.dragHandleProps}>
+                          <div className="flex items-center" {...drag.dragHandleProps}>
                             <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
                           </div>
-                          <div className="col-span-4 text-foreground">
+                          <div className="text-foreground">
                             <EditableCell
                               value={item.description}
                               onChange={v => onUpdateItem(section.id, item.id, 'description', v)}
                               className={`w-full ${item.description && item.description.startsWith('[') && item.description.endsWith(']') ? 'text-orange-500 font-bold' : ''}`}
                             />
                           </div>
-                          <div className="col-span-1 text-right">
+                          <div className="text-right">
                             <EditableCell value={item.quantity} onChange={v => onUpdateItem(section.id, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
                           </div>
-                          <div className="col-span-2 text-right">
+                          <div className="text-right">
                             <EditableCell value={item.unit_price} onChange={v => onUpdateItem(section.id, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />
                           </div>
-                          <div className="col-span-1 text-right">
+                          <div className="text-right">
                             <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />
                           </div>
-                          <div className="col-span-2 text-right font-semibold text-foreground">
+                          <div className="text-right font-semibold text-foreground">
                             ${(item.total || 0).toFixed(2)}
                           </div>
-                          <div className="col-span-1 flex justify-end">
+                          <div className="text-center text-muted-foreground font-mono truncate" title={
+                            (() => {
+                              const desc = (item.description || '').toLowerCase();
+                              const match = inventory.find(i => (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc);
+                              return match ? match.id : '—';
+                            })()
+                          }>
+                            {(() => {
+                              const desc = (item.description || '').toLowerCase();
+                              const match = inventory.find(i => (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc);
+                              return match ? <span className="text-primary">{match.id.slice(-8)}</span> : <span className="opacity-30">—</span>;
+                            })()}
+                          </div>
+                          <div className="flex justify-end">
                             <button onClick={() => onRemoveItem(section.id, item.id)} className="text-muted-foreground hover:text-destructive transition-colors">
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -158,7 +173,7 @@ export default function EstimateCanvas({
   clientInfo, onClientInfoChange,
   sections, onRenameSection, onRemoveSection,
   onUpdateItem, onRemoveItem, onReorderItems,
-  subtotal, taxAmount, total,
+  subtotal, taxAmount, total, inventory = [],
 }) {
   const [showClient, setShowClient] = useState(true);
 
@@ -217,6 +232,7 @@ export default function EstimateCanvas({
           onUpdateItem={onUpdateItem}
           onRemoveItem={onRemoveItem}
           onReorderItems={onReorderItems}
+          inventory={inventory}
         />
       ))}
 
