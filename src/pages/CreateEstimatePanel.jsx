@@ -160,6 +160,10 @@ export default function CreateEstimatePanel() {
     setSections(prev => prev.map(s => s.id === sectionId ? { ...s, items: newItems } : s));
   };
 
+  const reorderSections = (newSections) => {
+    setSections(newSections);
+  };
+
   // ── Totals ─────────────────────────────────────────────────────────────────
   const subtotal = sections.reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
   const taxAmount = subtotal * (clientInfo.tax_rate / 100);
@@ -315,6 +319,7 @@ export default function CreateEstimatePanel() {
           onUpdateItem={updateItem}
           onRemoveItem={removeItem}
           onReorderItems={reorderItems}
+          onReorderSections={reorderSections}
           subtotal={subtotal}
           taxAmount={taxAmount}
           total={total}
