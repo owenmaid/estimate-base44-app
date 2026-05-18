@@ -21,7 +21,7 @@ export default function CreateEstimatePanel() {
 
   // Client info
   const [clientInfo, setClientInfo] = useState({
-    client_name: '', project_number: '', project_name: '', client_email: '',
+    client_name: '', project_number: '', client_email: '',
     client_phone: '', client_address: '', notes: '',
     tax_rate: 0, discount: 0,
   });
@@ -37,7 +37,6 @@ export default function CreateEstimatePanel() {
     setClientInfo({
       client_name: estimate.client_name || '',
       project_number: estimate.project_number || estimate.project_name || '',
-      project_name: estimate.project_name || '',
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
       client_address: estimate.client_address || '',
@@ -80,7 +79,7 @@ export default function CreateEstimatePanel() {
   const handleNew = () => {
     setActiveEstimate(null);
     setSections([{ id: Date.now(), title: 'Section 1', items: [] }]);
-    setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
+    setClientInfo({ client_name: '', project_number: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
   };
 
   const handleCloseEstimate = () => setShowCloseConfirm(true);
@@ -190,9 +189,9 @@ export default function CreateEstimatePanel() {
         return base44.entities.Estimate.update(activeEstimate.id, payload);
       }
 
-      // New save: if project_name is set, check for an existing record with that name first
-      if (clientInfo.project_name.trim()) {
-        const existing = await base44.entities.Estimate.filter({ project_name: clientInfo.project_name.trim() });
+      // New save: if project_number is set, check for an existing record with that number first
+      if (clientInfo.project_number.trim()) {
+        const existing = await base44.entities.Estimate.filter({ project_number: clientInfo.project_number.trim() });
         if (existing && existing.length > 0) {
           // Update the existing record instead of creating a duplicate
           const match = existing[0];
@@ -295,7 +294,7 @@ export default function CreateEstimatePanel() {
           sections={sections}
           onAddSection={addSection}
           onAddItemToSection={addItemToSection}
-          projectNumber={clientInfo.project_name}
+          projectNumber={clientInfo.project_number}
         />
 
         {/* RIGHT: Estimate Canvas */}
