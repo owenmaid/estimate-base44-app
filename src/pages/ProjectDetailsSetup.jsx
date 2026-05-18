@@ -208,7 +208,6 @@ export default function ProjectDetailsSetup() {
         equipment_grid: equipmentGrid,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
-        calculation_grid: buildCalculationGrid(),
       }).then(() => {
         queryClient.invalidateQueries({ queryKey: ['projects'] });
       });
@@ -502,7 +501,6 @@ const addEquipmentRow = () => {
         equipment_grid: equipmentGrid,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
-        calculation_grid: buildCalculationGrid(),
       },
     });
   };
