@@ -118,6 +118,7 @@ export default function Projects() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
+                  <th className="text-left px-4 py-3 font-medium">Project #</th>
                   <th className="text-left px-4 py-3 font-medium">Project Name</th>
                   <th className="text-left px-4 py-3 font-medium">Start Date</th>
                   <th className="text-left px-4 py-3 font-medium">End Date</th>
@@ -136,6 +137,7 @@ export default function Projects() {
                   return (
                     p.name?.toLowerCase().includes(q) ||
                     p.client?.toLowerCase().includes(q) ||
+                    p.project_number?.toLowerCase().includes(q) ||
                     STATUS_LABELS[p.status]?.toLowerCase().includes(q)
                   );
                 }).map(project => {
@@ -146,6 +148,7 @@ export default function Projects() {
                   const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' });
                   return (
                     <tr key={project.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{project.project_number || '—'}</td>
                       <td className="px-4 py-3 font-medium">{project.name}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{project.start_date || '—'}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{project.end_date || '—'}</td>
