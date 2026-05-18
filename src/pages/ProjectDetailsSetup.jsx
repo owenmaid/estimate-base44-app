@@ -128,7 +128,9 @@ export default function ProjectDetailsSetup() {
     setProjectNumber(project.project_number || '');
     setStartDate(project.start_date || '');
     setEndDate(project.end_date || '');
-    setEquipmentGrid(project.equipment_grid || {});
+    const rawGrid = project.equipment_grid;
+    const parsedGrid = (typeof rawGrid === 'string') ? {} : (rawGrid || {});
+    setEquipmentGrid(parsedGrid);
     setEquipmentRows(project.equipment_rows || []);
 
     const start = parseISO(project.start_date);
@@ -203,9 +205,10 @@ export default function ProjectDetailsSetup() {
     }
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
+      const gridToSave = (typeof equipmentGrid === 'object' && equipmentGrid !== null) ? equipmentGrid : {};
       base44.entities.Project.update(selectedProjectId, {
         project_number: projectNumber,
-        equipment_grid: equipmentGrid,
+        equipment_grid: gridToSave,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
       }).then(() => {
@@ -494,11 +497,12 @@ const addEquipmentRow = () => {
       toast.error('Please load a project first');
       return;
     }
+    const gridToSave = (typeof equipmentGrid === 'object' && equipmentGrid !== null) ? equipmentGrid : {};
     updateProjectMutation.mutate({
       id: selectedProjectId,
       data: {
         project_number: projectNumber,
-        equipment_grid: equipmentGrid,
+        equipment_grid: gridToSave,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
       },
