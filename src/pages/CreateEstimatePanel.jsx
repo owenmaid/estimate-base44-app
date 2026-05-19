@@ -429,7 +429,28 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 5: inject hour totals from the linked project's Calculation Engine
+  // Pass 5: Sum Total Labour Hours + Total Ventilation Labour Hours sections → [Total Project Labour Hours]
+  const isLabourHoursSection = (title) => {
+    const n = normalizeDesc(title);
+    return n === 'total labour hours' || n === 'total ventilation labour hours';
+  };
+
+  const totalProjectLabourHours = sectionsPass4
+    .filter(s => isLabourHoursSection(s.title))
+    .reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
+
+  const TOTAL_PROJECT_LABOUR_HOURS_TARGET = 'total project labour hours';
+
+  const sectionsPass5 = sectionsPass4.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === TOTAL_PROJECT_LABOUR_HOURS_TARGET
+        ? { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours }
+        : item
+    ),
+  }));
+
+  // Pass 6: inject hour totals from the linked project's Calculation Engine
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
   const VENT_HOURS_TARGET  = 'total ventilation labour hours'; // ventilation-only Col2 sum
 
@@ -468,7 +489,7 @@ export default function CreateEstimatePanel() {
     return value;
   }, [sectionsPass4, projectCol14Total]);
 
-  const sectionsWithAggregate = sectionsPass4.map(s => ({
+  const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
