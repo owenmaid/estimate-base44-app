@@ -187,7 +187,7 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
         {/* Add Spacer */}
         <button
           onClick={handleAddSpacer}
-          className="w-full flex items-center gap-1.5 text-xs px-2 py-1.5 rounded border border-dashed border-green-500/50 text-green-400 hover:bg-green-500/10 transition-colors mb-2"
+          className="w-full flex items-center gap-1.5 text-xs px-2 py-1.5 rounded border border-dashed border-gray-500/50 text-gray-400/50 hover:bg-gray-500/10 transition-colors mb-2"
         >
           <Minus className="h-3.5 w-3.5" /> Add Spacer Line
         </button>
