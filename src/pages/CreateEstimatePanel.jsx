@@ -164,8 +164,53 @@ export default function CreateEstimatePanel() {
     setSections(newSections);
   };
 
+  // ── Aggregate: map sum of named section totals → "Total Labour | Logistics Cost" items ──
+  const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
+  const AGGREGATE_TARGET  = 'total labour | logistics cost';
+
+  const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
+  const isSpacer = (desc) => (desc || '') === '__SPACER__';
+
+  // Compute the display total of a section (mirrors EstimateCanvas logic)
+  const getSectionTotal = (sectionItems) => {
+    const bracketItems = sectionItems.filter(i => isSubtotalHeader(i.description));
+    if (bracketItems.length > 0) {
+      // Build subtotal map for bracket rows
+      const map = {};
+      sectionItems.forEach((item, idx) => {
+        if (!isSubtotalHeader(item.description)) return;
+        let sum = 0;
+        for (let j = idx + 1; j < sectionItems.length; j++) {
+          if (isSubtotalHeader(sectionItems[j].description)) break;
+          if (isSpacer(sectionItems[j].description)) continue;
+          sum += sectionItems[j].total || 0;
+        }
+        map[item.id] = sum;
+      });
+      return bracketItems.reduce((s, i) => s + (map[i.id] || 0), 0);
+    }
+    return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
+  };
+
+  // Sum totals of sections whose titles match the aggregate source list
+  const aggregateTotal = sections.reduce((sum, s) => {
+    const title = (s.title || '').toLowerCase().trim();
+    return AGGREGATE_SOURCES.includes(title) ? sum + getSectionTotal(s.items) : sum;
+  }, 0);
+
+  // Inject aggregate total into any item matching the target description
+  const sectionsWithAggregate = sections.map(s => ({
+    ...s,
+    items: s.items.map(item => {
+      if ((item.description || '').toLowerCase().trim() === AGGREGATE_TARGET) {
+        return { ...item, total: aggregateTotal };
+      }
+      return item;
+    }),
+  }));
+
   // ── Totals ─────────────────────────────────────────────────────────────────
-  const subtotal = sections.reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
+  const subtotal = sectionsWithAggregate.reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
   const taxAmount = subtotal * (clientInfo.tax_rate / 100);
   const total = subtotal + taxAmount - (clientInfo.discount || 0);
 
@@ -173,7 +218,7 @@ export default function CreateEstimatePanel() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const lineItems = [];
-      sections.forEach(s => {
+      sectionsWithAggregate.forEach(s => {
         lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
           lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
@@ -246,7 +291,7 @@ export default function CreateEstimatePanel() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number })}
+            onClick={() => generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number })}
             className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
             title="Download PDF"
           >
@@ -313,7 +358,7 @@ export default function CreateEstimatePanel() {
         <EstimateCanvas
           clientInfo={clientInfo}
           onClientInfoChange={setClientInfo}
-          sections={sections}
+          sections={sectionsWithAggregate}
           onRenameSection={renameSection}
           onRemoveSection={removeSection}
           onUpdateItem={updateItem}
