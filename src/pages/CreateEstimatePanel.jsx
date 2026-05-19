@@ -477,6 +477,16 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
+  // Pass 5b: Inject "Total Project Labour Hours" (non-bracket version) with same value
+  const sectionsPass5b = sectionsPass5.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === 'total project labour hours' && !isSubtotalHeader(item.description)
+        ? { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours }
+        : item
+    ),
+  }));
+
   // Pass 6: inject hour totals from the linked project's Calculation Engine
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
   const VENT_HOURS_TARGET  = 'total ventilation labour hours'; // ventilation-only Col2 sum
@@ -504,7 +514,7 @@ export default function CreateEstimatePanel() {
   const projectCostValue = useMemo(() => {
     let value = 0;
     let found = false;
-    sectionsPass4.forEach(s => {
+    sectionsPass5b.forEach(s => {
       s.items.forEach((item) => {
         if (!isSubtotalHeader(item.description)) return;
         if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
@@ -514,9 +524,9 @@ export default function CreateEstimatePanel() {
     });
     console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', found, 'value:', value);
     return value;
-  }, [sectionsPass4, projectCol14Total]);
+  }, [sectionsPass5b, projectCol14Total]);
 
-  const sectionsWithAggregate = sectionsPass5.map(s => ({
+  const sectionsWithAggregate = sectionsPass5b.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
