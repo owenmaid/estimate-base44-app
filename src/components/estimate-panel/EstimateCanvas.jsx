@@ -155,17 +155,19 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
 
       {!collapsed && (
         <>
-          {/* Column headers */}
-          <div className="grid gap-1 px-3 py-1.5 bg-secondary/30 border-b border-border text-xs text-muted-foreground font-medium" style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px'}}>
-            <div></div>
-            <div>Description</div>
-            <div className="text-right">Qty</div>
-            <div className="text-right">Unit $</div>
-            <div className="text-right">Mkup%</div>
-            <div className="text-right">Total</div>
-            <div className="text-center">Item_ID</div>
-            <div></div>
-          </div>
+          {/* Column headers — only show if there are items */}
+          {section.items.length > 0 && (
+            <div className="grid gap-1 px-3 py-1.5 bg-secondary/30 border-b border-border text-xs text-muted-foreground font-medium" style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px'}}>
+              <div></div>
+              <div>Description</div>
+              <div className="text-right">Qty</div>
+              <div className="text-right">Unit $</div>
+              <div className="text-right">Mkup%</div>
+              <div className="text-right">Total</div>
+              <div className="text-center">Item_ID</div>
+              <div></div>
+            </div>
+          )}
 
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId={`section-${section.id}`}>
