@@ -28,7 +28,7 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
-const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours', 'total ventilation labour hours', 'total project labour hours', '[total project labour hours]'];
+const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours', 'total ventilation labour hours', 'total project labour hours'];
 const isHourItem = (desc) => HOUR_ITEMS.includes(normalizeDesc(desc));
 const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
 
@@ -185,15 +185,12 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                                 )}
                               </div>
                               <div className={`text-right font-semibold ${isHeader ? 'text-orange-400' : 'text-foreground'}`}>
-                               {!spacer && (isHeader
-                                 ? (isHourItem(item.description)
-                                     ? Math.round(headerSubtotal || 0).toLocaleString()
-                                     : isProjectCostBracket
-                                       ? `$${Number(displayTotal || 0).toFixed(2)}`
-                                       : `$${Number(headerSubtotal || 0).toFixed(2)}`)
-                                 : (isHourItem(item.description)
-                                     ? Math.round(item.total || 0).toLocaleString()
-                                     : `$${Number(item.total || 0).toFixed(2)}`)
+                               {!spacer && (
+                                 isHourItem(item.description)
+                                   ? Math.round(item.total || 0).toLocaleString()
+                                   : isProjectCostBracket
+                                     ? `$${Number(displayTotal || 0).toFixed(2)}`
+                                     : `$${Number(item.total || 0).toFixed(2)}`
                                )}
                               </div>
                               <div className="flex justify-end">
