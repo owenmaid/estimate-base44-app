@@ -252,6 +252,7 @@ export default function CreateEstimatePanel() {
   const DCSM_TARGET  = 'dcsm est total';
   const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
 
+
   const sectionsPass2 = sectionsPass1.map(s => ({
     ...s,
     items: s.items.map(item =>
@@ -261,9 +262,28 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 3: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
+  // Pass 3: inject "[Lead Ventilation Tech]" subtotal = "Lead Ventilation Tech Total" item value
+  // from the "Total Labour | Logistics Ventilation Cost" section
+  const LEAD_VENT_SOURCE_SECTION = 'total labour | logistics ventilation cost';
+  const LEAD_VENT_SOURCE_ITEM    = 'lead ventilation tech total';
+  const LEAD_VENT_TARGET         = 'lead ventilation tech';
+
+  const leadVentSection = sectionsPass2.find(s => normalizeDesc(s.title) === LEAD_VENT_SOURCE_SECTION);
+  const leadVentItem = leadVentSection?.items.find(i => normalizeDesc(i.description) === LEAD_VENT_SOURCE_ITEM);
+  const leadVentValue = leadVentItem?.total ?? 0;
+
+  const sectionsPass3 = sectionsPass2.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === LEAD_VENT_TARGET
+        ? { ...item, total: leadVentValue }
+        : item
+    ),
+  }));
+
+  // Pass 4: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
-  const sectionsWithAggregate = sectionsPass2.map(s => ({
+  const sectionsWithAggregate = sectionsPass3.map(s => ({
     ...s,
     items: s.items.map(item =>
       normalizeDesc(item.description) === DCSM_HOURS_TARGET
