@@ -466,42 +466,21 @@ export default function CreateEstimatePanel() {
   });
 
   const totalProjectLabourHours = totalLabourHoursValue + totalVentLabourHoursValue;
+  console.log('[CreateEstimatePanel] Total Project Labour Hours:', totalProjectLabourHours, '= Labour:', totalLabourHoursValue, '+ Vent:', totalVentLabourHoursValue);
 
-  // Pass 5: Inject "Total Project Labour Hours" (non-bracket row) with summed value
-  // First check if the row exists, if not and we have a value, auto-create it in Project Totals section
-  let hasTotalProjectLabourHours = false;
-  sectionsPass4.forEach(s => {
-    s.items.forEach(item => {
-      if (normalizeDesc(item.description) === 'total project labour hours') hasTotalProjectLabourHours = true;
-    });
-  });
-
+  // Pass 5: Inject "[Total Project Labour Hours]" bracket row with summed value
   const sectionsPass5 = sectionsPass4.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      if (n === 'total project labour hours' && !isSubtotalHeader(item.description)) {
+      // Inject into the bracket row [Total Project Labour Hours] in Project Totals section
+      if (isSubtotalHeader(item.description) && n === 'total project labour hours') {
+        console.log('[CreateEstimatePanel] Injecting into [Total Project Labour Hours] bracket:', totalProjectLabourHours);
         return { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours };
       }
       return item;
     }),
   }));
-
-  // Auto-create "Total Project Labour Hours" row in Project Totals section if missing
-  if (!hasTotalProjectLabourHours && totalProjectLabourHours > 0) {
-    console.log('[CreateEstimatePanel] Auto-creating Total Project Labour Hours row:', totalProjectLabourHours);
-    const projectTotalsIdx = sectionsPass5.findIndex(s => normalizeDesc(s.title) === 'project totals');
-    if (projectTotalsIdx !== -1) {
-      sectionsPass5[projectTotalsIdx].items.push({
-        id: Date.now(),
-        description: 'Total Project Labour Hours',
-        quantity: 1,
-        unit_price: totalProjectLabourHours,
-        markup: 0,
-        total: totalProjectLabourHours,
-      });
-    }
-  }
 
   // Pass 6: inject hour totals from the linked project's Calculation Engine
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
@@ -546,7 +525,7 @@ export default function CreateEstimatePanel() {
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      // Only inject into bracket rows for hour targets, not the non-bracket "Total Project Labour Hours"
+      // Inject additional bracket rows (DCSM hours, Ventilation hours, Total Project Cost)
       if (isSubtotalHeader(item.description)) {
         if (n === DCSM_HOURS_TARGET)
           return { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum };
@@ -558,9 +537,6 @@ export default function CreateEstimatePanel() {
       return item;
     }),
   }));
-
-  // Debug: log the final sections
-  console.log('[CreateEstimatePanel] sectionsWithAggregate:', JSON.stringify(sectionsWithAggregate, null, 2));
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   // Use [Total Project Cost] bracket value as the subtotal (not sum of all items)

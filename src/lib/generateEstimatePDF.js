@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
-const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours', 'total ventilation labour hours', 'total project labour hours'];
+const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours', 'total ventilation labour hours', 'total project labour hours', '[total project labour hours]'];
 const isHourItem = (desc) => HOUR_ITEMS.includes(normalizeDesc(desc));
 const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
 const isProjectTotalsSection = (title) => normalizeDesc(title) === 'project totals';
