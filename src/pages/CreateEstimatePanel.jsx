@@ -440,14 +440,58 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 5: Use col2Sum and ventCol2Sum (from linked project) as the source of truth for hours
+  // Pass 5: Auto-create brackets in Project Totals section first, then inject values
   const dcsmHoursValue = col2Sum;
   const ventHoursValue = ventCol2Sum;
   const totalProjectLabourHours = dcsmHoursValue + ventHoursValue;
   console.log('[CreateEstimatePanel] Total Project Labour Hours:', totalProjectLabourHours, '= DCSM:', dcsmHoursValue, '+ Vent:', ventHoursValue);
 
-  // Pass 5: Inject mirrored values into Project Totals section
-  const sectionsPass5 = sectionsPass4.map(s => ({
+  // Auto-create brackets in Project Totals section if missing (do this BEFORE injecting values)
+  const sectionsWithAutoBrackets = sectionsPass4.map(s => {
+    if (normalizeDesc(s.title) !== 'project totals') return s;
+    const existingDescs = s.items.map(i => normalizeDesc(i.description));
+    const newBrackets = [];
+    
+    if (!existingDescs.includes('dcsm est total hours') && dcsmHoursValue > 0) {
+      newBrackets.push({
+        id: Date.now() + 1,
+        description: '[DCSM Est Total Hours]',
+        quantity: 1,
+        unit_price: 0,
+        markup: 0,
+        total: 0,
+      });
+    }
+    if (!existingDescs.includes('total ventilation labour hours') && ventHoursValue > 0) {
+      newBrackets.push({
+        id: Date.now() + 2,
+        description: '[Total Ventilation Labour Hours]',
+        quantity: 1,
+        unit_price: 0,
+        markup: 0,
+        total: 0,
+      });
+    }
+    if (!existingDescs.includes('total project labour hours') && totalProjectLabourHours > 0) {
+      newBrackets.push({
+        id: Date.now() + 3,
+        description: '[Total Project Labour Hours]',
+        quantity: 1,
+        unit_price: 0,
+        markup: 0,
+        total: 0,
+      });
+    }
+    
+    if (newBrackets.length > 0) {
+      console.log('[CreateEstimatePanel] Auto-creating brackets:', newBrackets.map(b => b.description));
+      return { ...s, items: [...s.items, ...newBrackets] };
+    }
+    return s;
+  });
+
+  // Pass 5: Inject mirrored values into Project Totals section (now includes auto-created brackets)
+  const sectionsPass5 = sectionsWithAutoBrackets.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
@@ -466,49 +510,6 @@ export default function CreateEstimatePanel() {
       return item;
     }),
   }));
-
-  // Auto-create brackets in Project Totals section if missing
-  const projectTotalsSection = sectionsPass5.find(s => normalizeDesc(s.title) === 'project totals');
-  if (projectTotalsSection) {
-    const existingDescs = projectTotalsSection.items.map(i => normalizeDesc(i.description));
-    const newBrackets = [];
-    
-    if (!existingDescs.includes('dcsm est total hours') && dcsmHoursValue > 0) {
-      newBrackets.push({
-        id: Date.now() + 1,
-        description: '[DCSM Est Total Hours]',
-        quantity: 1,
-        unit_price: dcsmHoursValue,
-        markup: 0,
-        total: dcsmHoursValue,
-      });
-    }
-    if (!existingDescs.includes('total ventilation labour hours') && ventHoursValue > 0) {
-      newBrackets.push({
-        id: Date.now() + 2,
-        description: '[Total Ventilation Labour Hours]',
-        quantity: 1,
-        unit_price: ventHoursValue,
-        markup: 0,
-        total: ventHoursValue,
-      });
-    }
-    if (!existingDescs.includes('total project labour hours') && totalProjectLabourHours > 0) {
-      newBrackets.push({
-        id: Date.now() + 3,
-        description: '[Total Project Labour Hours]',
-        quantity: 1,
-        unit_price: totalProjectLabourHours,
-        markup: 0,
-        total: totalProjectLabourHours,
-      });
-    }
-    
-    if (newBrackets.length > 0) {
-      console.log('[CreateEstimatePanel] Auto-creating brackets:', newBrackets.map(b => b.description));
-      projectTotalsSection.items.push(...newBrackets);
-    }
-  }
 
   // Compute Col 14 total from the linked project's calculation_grid (sum of all Col14 values)
   const projectCol14Total = useMemo(() => {
@@ -549,6 +550,7 @@ export default function CreateEstimatePanel() {
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
+      // Preserve hour injections from Pass 5 (they were already set in sectionsPass5)
       // Inject Total Project Cost
       if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET) {
         return { ...item, total: projectCostValue };
