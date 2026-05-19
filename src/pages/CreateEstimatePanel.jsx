@@ -282,13 +282,33 @@ export default function CreateEstimatePanel() {
     });
   });
 
+  // Also inject "Ventilation Tech Total" = the bracketed [Ventilation Tech] subtotal
+  const VENT_TECH_BRACKET = 'ventilation tech';
+  const VENT_TECH_TARGET  = 'ventilation tech total';
+
+  let ventTechValue = 0;
+  sectionsPass2.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (normalizeDesc(item.description) !== VENT_TECH_BRACKET) return;
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      ventTechValue = sum;
+    });
+  });
+
   const sectionsPass3 = sectionsPass2.map(s => ({
     ...s,
-    items: s.items.map(item =>
-      normalizeDesc(item.description) === LEAD_VENT_TARGET
-        ? { ...item, total: leadVentValue }
-        : item
-    ),
+    items: s.items.map(item => {
+      if (normalizeDesc(item.description) === LEAD_VENT_TARGET)
+        return { ...item, total: leadVentValue };
+      if (normalizeDesc(item.description) === VENT_TECH_TARGET)
+        return { ...item, total: ventTechValue };
+      return item;
+    }),
   }));
 
   // Pass 4: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
