@@ -441,30 +441,25 @@ export default function CreateEstimatePanel() {
   }));
 
   // Pass 5: Sum [Total Labour Hours] + [Total Ventilation Labour Hours] bracket subtotals → [Total Project Labour Hours]
-  const isLabourHoursSection = (title) => {
-    const n = normalizeDesc(title);
-    return n === 'total labour hours' || n === 'total ventilation labour hours';
-  };
-
-  // Calculate bracket subtotals for labour hours sections
+  // Find the [Total Labour Hours] and [Total Ventilation Labour Hours] bracket rows anywhere in sections
   let totalLabourHoursValue = 0;
   let totalVentLabourHoursValue = 0;
   
   sectionsPass4.forEach(s => {
-    const n = normalizeDesc(s.title);
     s.items.forEach((item, idx) => {
       if (!isSubtotalHeader(item.description)) return;
       const itemN = normalizeDesc(item.description);
+      // Sum items below this bracket until the next bracket
       let sum = 0;
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
         if (isSpacer(s.items[j].description)) continue;
         sum += s.items[j].total || 0;
       }
-      if (n === 'total labour hours' && itemN === 'total labour hours') {
+      if (itemN === 'total labour hours') {
         totalLabourHoursValue = sum;
       }
-      if (n === 'total ventilation labour hours' && itemN === 'total ventilation labour hours') {
+      if (itemN === 'total ventilation labour hours') {
         totalVentLabourHoursValue = sum;
       }
     });
