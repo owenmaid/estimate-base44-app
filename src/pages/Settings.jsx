@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sun, Moon, Bell, Globe, Shield, User, Palette, Save } from 'lucide-react';
+import { Sun, Moon, Bell, Globe, Shield, User, Palette, Save, Upload, Image } from 'lucide-react';
 import { useTheme } from '@/lib/ThemeContext';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -26,12 +26,28 @@ export default function Settings() {
 
   const [profile, setProfile] = useState({ displayName: '', company: '', currency: 'USD', language: 'en' });
   const [saving, setSaving] = useState(false);
+  const [logoUrls, setLogoUrls] = useState({ infoSignalLogo: '', dynaVentLogo: '' });
+  const [uploadingLogo, setUploadingLogo] = useState(null);
 
   const handleSaveProfile = async () => {
     setSaving(true);
     await new Promise(r => setTimeout(r, 600));
     setSaving(false);
     toast.success('Settings saved successfully');
+  };
+
+  const handleLogoUpload = async (logoType, file) => {
+    if (!file) return;
+    setUploadingLogo(logoType);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setLogoUrls(prev => ({ ...prev, [logoType]: file_url }));
+      toast.success('Logo uploaded!');
+    } catch (error) {
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploadingLogo(null);
+    }
   };
 
   return (
@@ -140,6 +156,57 @@ export default function Settings() {
                   <SelectItem value="AUD">AUD — Australian Dollar</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Company Logos */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Image className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Company Logos</CardTitle>
+          </div>
+          <CardDescription>Upload logos for estimate PDF headers</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div>
+              <Label>InfoSignal Logo</Label>
+              <div className="flex items-center gap-3 mt-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleLogoUpload('infoSignalLogo', e.target.files[0])}
+                  disabled={uploadingLogo === 'infoSignalLogo'}
+                  className="text-xs"
+                />
+                {logoUrls.infoSignalLogo && (
+                  <img src={logoUrls.infoSignalLogo} alt="InfoSignal" className="h-8 w-auto object-contain border rounded px-2 py-1" />
+                )}
+                {uploadingLogo === 'infoSignalLogo' && (
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
+            </div>
+            <div>
+              <Label>DynaVent Logo</Label>
+              <div className="flex items-center gap-3 mt-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleLogoUpload('dynaVentLogo', e.target.files[0])}
+                  disabled={uploadingLogo === 'dynaVentLogo'}
+                  className="text-xs"
+                />
+                {logoUrls.dynaVentLogo && (
+                  <img src={logoUrls.dynaVentLogo} alt="DynaVent" className="h-8 w-auto object-contain border rounded px-2 py-1" />
+                )}
+                {uploadingLogo === 'dynaVentLogo' && (
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
