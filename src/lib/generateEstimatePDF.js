@@ -123,51 +123,6 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
   
   y += 10;
 
-  // ── Client & Project Info ───────────────────────────────────────────────────
-  doc.setTextColor(...dark);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CLIENT INFORMATION', margin, y);
-  y += 4;
-  doc.setDrawColor(...orange);
-  doc.setLineWidth(1);
-  doc.line(margin, y, margin + 140, y);
-  y += 12;
-
-  const infoFields = [
-    ['Client', clientInfo.client_name],
-    ['Project #', clientInfo.project_number],
-    ['Email', clientInfo.client_email],
-    ['Phone', clientInfo.client_phone],
-    ['Address', clientInfo.client_address],
-  ].filter(([, v]) => v && v.trim());
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  infoFields.forEach(([label, value]) => {
-    doc.setTextColor(...muted);
-    doc.text(`${label}:`, margin, y);
-    doc.setTextColor(...dark);
-    doc.text(value, margin + 60, y);
-    y += 14;
-  });
-
-  if (clientInfo.notes && clientInfo.notes.trim()) {
-    y += 4;
-    doc.setTextColor(...muted);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('Notes:', margin, y);
-    y += 12;
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...dark);
-    const noteLines = doc.splitTextToSize(clientInfo.notes, contentW);
-    doc.text(noteLines, margin, y);
-    y += noteLines.length * 12;
-  }
-
-  y += 16;
-
   // ── Column layout ───────────────────────────────────────────────────────────
   const colDesc  = margin;
   const colQty   = margin + contentW * 0.52;
