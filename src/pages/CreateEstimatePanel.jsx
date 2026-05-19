@@ -440,16 +440,37 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 5: Sum Total Labour Hours + Total Ventilation Labour Hours sections → [Total Project Labour Hours]
+  // Pass 5: Sum [Total Labour Hours] + [Total Ventilation Labour Hours] bracket subtotals → [Total Project Labour Hours]
   const isLabourHoursSection = (title) => {
     const n = normalizeDesc(title);
     return n === 'total labour hours' || n === 'total ventilation labour hours';
   };
 
-  const totalProjectLabourHours = sectionsPass4
-    .filter(s => isLabourHoursSection(s.title))
-    .reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
+  // Calculate bracket subtotals for labour hours sections
+  let totalLabourHoursValue = 0;
+  let totalVentLabourHoursValue = 0;
+  
+  sectionsPass4.forEach(s => {
+    const n = normalizeDesc(s.title);
+    s.items.forEach((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return;
+      const itemN = normalizeDesc(item.description);
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      if (n === 'total labour hours' && itemN === 'total labour hours') {
+        totalLabourHoursValue = sum;
+      }
+      if (n === 'total ventilation labour hours' && itemN === 'total ventilation labour hours') {
+        totalVentLabourHoursValue = sum;
+      }
+    });
+  });
 
+  const totalProjectLabourHours = totalLabourHoursValue + totalVentLabourHoursValue;
   const TOTAL_PROJECT_LABOUR_HOURS_TARGET = 'total project labour hours';
 
   const sectionsPass5 = sectionsPass4.map(s => ({
