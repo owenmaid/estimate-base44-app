@@ -12,14 +12,14 @@ const fmtVal = (val, isHour) =>
   isHour ? Math.round(val).toLocaleString('en-CA') : `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`;
 
 // For each [bracket] row, sum all regular items below it until the next [bracket] row.
-// Exception: [Total Project Labour Hours] uses its injected item.total directly (sum of DCSM + Vent hours).
+// Exception: Hour-based brackets and [Total Project Labour Hours] use their injected item.total directly.
 function buildSubtotals(items) {
   const map = {};
   items.forEach((item, idx) => {
     if (!isSubtotalHeader(item.description)) return;
     const n = normalizeDesc(item.description);
-    // [Total Project Labour Hours] uses injected total, not sum of items below
-    if (n === 'total project labour hours') {
+    // Hour-based brackets and [Total Project Labour Hours] use injected total, not sum of items below
+    if (n === 'total project labour hours' || n === 'dcsm est total hours' || n === 'total ventilation labour hours') {
       map[item.id] = item.total || 0;
       return;
     }
@@ -227,9 +227,11 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
         const descLines = doc.splitTextToSize(item.description || '', isProjTotals ? contentW - 100 : colQty - colDesc - 12);
         doc.text(descLines, colDesc + 6, y);
 
-        // For [Total Project Cost], use item.total directly; otherwise use subtotalMap
+        // For hour-based brackets and [Total Project Cost], use item.total directly; otherwise use subtotalMap
         const isProjectCostBracket = normalizeDesc(item.description) === 'total project cost';
-        const displayTotal = isProjectCostBracket ? (item.total || 0) : (subtotalMap[item.id] || 0);
+        const itemN = normalizeDesc(item.description);
+        const isHourBracket = itemN === 'total project labour hours' || itemN === 'dcsm est total hours' || itemN === 'total ventilation labour hours';
+        const displayTotal = (isProjectCostBracket || isHourBracket) ? (item.total || 0) : (subtotalMap[item.id] || 0);
         
         doc.text(fmtVal(displayTotal, isHourItem(item.description)), colTotal, y, { align: 'right' });
 
