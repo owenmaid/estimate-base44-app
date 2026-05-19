@@ -472,10 +472,11 @@ export default function CalculationEngine() {
             Define custom formula multipliers that are automatically applied in the Manpower Estimation module.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col items-end gap-1">
           <Button onClick={saveCalculationGrid} variant="outline" disabled={!activeProject}>
-            Save Calculation Grid
+            Save Calculation Grid to Project
           </Button>
+          <p className="text-xs text-muted-foreground">Save Calculated Data to Estimate Panel from Linked Project</p>
           <Button onClick={() => setShowNew(true)} disabled={showNew}>
             <Plus className="h-4 w-4 mr-1.5" /> New Formula
           </Button>
