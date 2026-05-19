@@ -109,7 +109,9 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-semibold text-primary">
-            {isHourSection(section.title) ? Math.round(sectionTotal).toLocaleString() : `$${sectionTotal.toFixed(2)}`}
+            {(isHourSection(section.title) || section.items.some(i => isHourItem(i.description)))
+              ? Math.round(sectionTotal).toLocaleString()
+              : `$${sectionTotal.toFixed(2)}`}
           </span>
           <button onClick={() => onRemove(section.id)} className="text-muted-foreground hover:text-destructive transition-colors">
             <Trash2 className="h-3 w-3" />
