@@ -189,8 +189,8 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
       checkPage(18);
 
       if (spacer) {
-        // Green-tinted blank spacer row
-        doc.setFillColor(220, 252, 231); // light green
+        // Dark grey 50% opacity spacer row (approximated as mid-grey fill)
+        doc.setFillColor(180, 180, 180); // ~50% grey
         doc.rect(margin, y - 6, contentW, 10, 'F');
         y += 10;
         return;
