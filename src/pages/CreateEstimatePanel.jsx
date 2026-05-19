@@ -428,7 +428,7 @@ export default function CreateEstimatePanel() {
 
   // Pass 5: inject hour totals from the linked project's Calculation Engine
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
-  const VENT_HOURS_TARGET  = 'vent est total hours'; // ventilation-only Col2 sum
+  const VENT_HOURS_TARGET  = 'total ventilation labour hours'; // ventilation-only Col2 sum
   const sectionsWithAggregate = sectionsPass4.map(s => ({
     ...s,
     items: s.items.map(item => {
