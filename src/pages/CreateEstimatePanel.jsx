@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -31,6 +31,43 @@ export default function CreateEstimatePanel() {
     queryKey: ['inventory'],
     queryFn: () => base44.entities.InventoryItem.list(),
   });
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
+  // Find the project matching the linked project number
+  const linkedProject = useMemo(() => {
+    const pn = (clientInfo.project_number || '').trim().toLowerCase();
+    if (!pn) return null;
+    return projects.find(p => (p.project_number || '').trim().toLowerCase() === pn) || null;
+  }, [projects, clientInfo.project_number]);
+
+  // Compute sum of Col2 (Col1 × shiftHrs) for Manpower rows only — mirrors CalculationEngine logic
+  const col2Sum = useMemo(() => {
+    if (!linkedProject) return 0;
+    const rows = linkedProject.equipment_rows || [];
+    const eGrid = linkedProject.equipment_grid || {};
+    // Build manpower lookup by item_id
+    const manpowerIds = new Set(
+      inventory.filter(i => i.item_group === 'Manpower Group').map(i => String(i.id))
+    );
+    return rows.reduce((sum, row) => {
+      // Only Manpower rows contribute to Col2
+      if (!manpowerIds.has(String(row.item_id))) return sum;
+      const label = (row.label || '').toLowerCase();
+      const isSpecial = label.includes('pre-work') || label.includes('post-work');
+      const shiftHrs = isSpecial ? 10 : 12;
+      let col1 = 0;
+      Object.entries(eGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const num = parseInt(value, 10);
+        if (!isNaN(num) && num > 0) col1 += num;
+      });
+      return sum + col1 * shiftHrs;
+    }, 0);
+  }, [linkedProject, inventory]);
 
   // ── Load an existing estimate into the canvas ──────────────────────────────
   const loadEstimate = (estimate) => {
@@ -216,11 +253,22 @@ export default function CreateEstimatePanel() {
   const DCSM_TARGET  = 'dcsm est total';
   const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
 
-  const sectionsWithAggregate = sectionsPass1.map(s => ({
+  const sectionsPass2 = sectionsPass1.map(s => ({
     ...s,
     items: s.items.map(item =>
       normalizeDesc(item.description) === DCSM_TARGET
         ? { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal }
+        : item
+    ),
+  }));
+
+  // Pass 3: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
+  const DCSM_HOURS_TARGET = 'dcsm est total hours';
+  const sectionsWithAggregate = sectionsPass2.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === DCSM_HOURS_TARGET
+        ? { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum }
         : item
     ),
   }));
