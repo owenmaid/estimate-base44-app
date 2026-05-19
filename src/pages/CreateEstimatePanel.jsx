@@ -504,7 +504,8 @@ export default function CreateEstimatePanel() {
   }));
 
   // ── Totals ─────────────────────────────────────────────────────────────────
-  const subtotal = sectionsWithAggregate.reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
+  // Use [Total Project Cost] bracket value as the subtotal (not sum of all items)
+  const subtotal = projectCostValue;
   const taxAmount = subtotal * (clientInfo.tax_rate / 100);
   const total = subtotal + taxAmount - (clientInfo.discount || 0);
 
