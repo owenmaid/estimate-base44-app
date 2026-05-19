@@ -220,7 +220,7 @@ export default function CreateEstimatePanel() {
     ...s,
     items: s.items.map(item =>
       normalizeDesc(item.description) === DCSM_TARGET
-        ? { ...item, total: dcsmTotal }
+        ? { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal }
         : item
     ),
   }));
