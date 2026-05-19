@@ -58,28 +58,37 @@ export default function CreateEstimatePanel() {
     return col1 * shiftHrs;
   };
 
-  // Compute sum of Col2 for ALL Manpower rows — mirrors the CalculationEngine totals row
+  // Keywords that identify labour-hour rows
+  const LABOUR_HOUR_KEYWORDS = ['pre-work', 'post-work', 'day shift', 'night shift'];
+
+  // Compute sum of Col2 only for rows whose label matches the labour-hour keywords
   const col2Sum = useMemo(() => {
     if (!linkedProject) return 0;
     const rows = linkedProject.equipment_rows || [];
     const eGrid = linkedProject.equipment_grid || {};
     return rows.reduce((sum, row) => {
+      const label = (row.label || '').toLowerCase();
+      const isLabourHour = LABOUR_HOUR_KEYWORDS.some(kw => label.includes(kw));
+      if (!isLabourHour) return sum;
       const invEntry = inventory.find(i => String(i.id) === String(row.item_id))
-        || inventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+        || inventory.find(i => (i.name || '').toLowerCase() === label)
         || null;
       if (invEntry?.item_group !== 'Manpower Group') return sum;
       return sum + computeRowCol2(row, eGrid);
     }, 0);
   }, [linkedProject, inventory]);
 
-  // Compute sum of Col2 for Ventilation Labour rows only (category contains "ventilation")
+  // Compute sum of Col2 for Ventilation Labour rows only (category contains "ventilation" AND label matches labour-hour keywords)
   const ventCol2Sum = useMemo(() => {
     if (!linkedProject) return 0;
     const rows = linkedProject.equipment_rows || [];
     const eGrid = linkedProject.equipment_grid || {};
     return rows.reduce((sum, row) => {
+      const label = (row.label || '').toLowerCase();
+      const isLabourHour = LABOUR_HOUR_KEYWORDS.some(kw => label.includes(kw));
+      if (!isLabourHour) return sum;
       const invEntry = inventory.find(i => String(i.id) === String(row.item_id))
-        || inventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+        || inventory.find(i => (i.name || '').toLowerCase() === label)
         || null;
       if (invEntry?.item_group !== 'Manpower Group') return sum;
       const category = (invEntry?.category || '').toLowerCase();
