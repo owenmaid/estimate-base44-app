@@ -41,23 +41,19 @@ function computeCol14(row, equipmentGrid, typeGrid, inventoryItems) {
     else if (dayType === 'St') stDays += num;
   });
 
-  // Col4: (N×8) + (Sa×4)
-  const col4 = (nDays * 8) + (saDays * 4);
-  // Col5: N × (shiftHrs - 8)
+  // Col4–Col8: Manpower only (non-Manpower rows are zeroed)
+  const col4 = isManpower ? (nDays * 8) + (saDays * 4) : 0;
   const col5 = isManpower ? nDays * Math.max(0, shiftHrs - 8) : 0;
-  // Col6: Sa × max(shiftHrs - 4, 0)
   const col6 = isManpower ? saDays * Math.max(shiftHrs - 4, 0) : 0;
-  // Col7: Su × shiftHrs
   const col7 = isManpower ? suDays * shiftHrs : 0;
-  // Col8: St × shiftHrs
   const col8 = isManpower ? stDays * shiftHrs : 0;
 
   // Col11: Manpower = col4 × regRate, non-Manpower = col1 × regRate
   const col11 = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
-  // Col12: (col5 + col6 + col7) × otRate  (Manpower only)
+  // Col12: (col5 + col6 + col7) × otRate (Manpower only)
   const col12 = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
-  // Col13: St special cost
-  const col13 = otRate != null
+  // Col13: St special cost (Manpower only)
+  const col13 = (isManpower && otRate != null)
     ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
     : 0;
 
