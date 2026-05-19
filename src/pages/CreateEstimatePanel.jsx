@@ -432,6 +432,32 @@ export default function CreateEstimatePanel() {
   // Pass 5: inject hour totals from the linked project's Calculation Engine
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
   const VENT_HOURS_TARGET  = 'total ventilation labour hours'; // ventilation-only Col2 sum
+
+  // Compute Col 14 total from the linked project's calculation_grid (sum of all Col14 values)
+  const projectCol14Total = useMemo(() => {
+    if (!linkedProject) return 0;
+    const calcGrid = linkedProject.calculation_grid || {};
+    let total = 0;
+    Object.entries(calcGrid).forEach(([key, value]) => {
+      if (key.includes('_col14')) {
+        total += (value || 0);
+      }
+    });
+    return total;
+  }, [linkedProject]);
+
+  // Inject "[Total Project Cost]" = Col 14 total from Calculation Engine
+  const PROJECT_COST_BRACKET = 'total project cost';
+  let projectCostValue = 0;
+  sectionsPass4.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return;
+      if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
+      // Sum items below this bracket until the next bracket (or use Col14 total directly)
+      projectCostValue = projectCol14Total;
+    });
+  });
+
   const sectionsWithAggregate = sectionsPass4.map(s => ({
     ...s,
     items: s.items.map(item => {
@@ -440,6 +466,8 @@ export default function CreateEstimatePanel() {
         return { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum };
       if (n === VENT_HOURS_TARGET)
         return { ...item, unit_price: ventCol2Sum, quantity: 1, markup: 0, total: ventCol2Sum };
+      if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET)
+        return { ...item, total: projectCostValue };
       return item;
     }),
   }));
