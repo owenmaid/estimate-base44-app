@@ -477,6 +477,75 @@ export default function CalculationEngine() {
                     </tr>
                   ))
                 )}
+                {equipmentRows.length > 0 && (() => {
+                  // Compute totals for each column across all rows
+                  const totals = {
+                    col1: equipmentRows.reduce((s, r) => s + (rowSums[r.id] || 0), 0),
+                    col2: equipmentRows.reduce((s, r) => s + (rowHours[r.id] || 0), 0),
+                    col3: equipmentRows.reduce((s, r) => s + (rowCol3[r.id] || 0), 0),
+                    col4: equipmentRows.reduce((s, r) => s + (rowCol4[r.id] || 0), 0),
+                    col5: equipmentRows.reduce((s, r) => s + (rowCol5[r.id] || 0), 0),
+                    col6: equipmentRows.reduce((s, r) => s + (rowCol6[r.id] || 0), 0),
+                    col7: equipmentRows.reduce((s, r) => s + (rowCol7[r.id] || 0), 0),
+                    col8: equipmentRows.reduce((s, r) => s + (rowCol8[r.id] || 0), 0),
+                  };
+                  // Col11/12/13/14 per row
+                  const col11Total = equipmentRows.reduce((s, r) => {
+                    const inv = inventoryValueMap.byId[r.item_id] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+                    const isManpower = inv?.item_group === 'Manpower Group';
+                    const col9 = inv?.reg ?? null;
+                    if (col9 == null) return s;
+                    return s + (isManpower ? rowCol4[r.id] : rowSums[r.id]) * col9;
+                  }, 0);
+                  const col12Total = equipmentRows.reduce((s, r) => {
+                    const inv = inventoryValueMap.byId[r.item_id] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+                    const isManpower = inv?.item_group === 'Manpower Group';
+                    if (!isManpower) return s;
+                    const col10 = inv?.ot ?? null;
+                    if (col10 == null) return s;
+                    return s + ((rowCol5[r.id] || 0) + (rowCol6[r.id] || 0) + (rowCol7[r.id] || 0)) * col10;
+                  }, 0);
+                  const col13Total = equipmentRows.reduce((s, r) => {
+                    const inv = inventoryValueMap.byId[r.item_id] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+                    const isManpower = inv?.item_group === 'Manpower Group';
+                    if (!isManpower) return s;
+                    const col10 = inv?.ot ?? null;
+                    if (col10 == null) return s;
+                    const label = (r.label || '').toLowerCase();
+                    const isSpecial = label.includes('pre-work') || label.includes('post-work');
+                    const shiftHrs = isSpecial ? 10 : 12;
+                    const col8 = rowCol8[r.id] || 0;
+                    return s + (col8 * 2 * (4 / (shiftHrs * 2)) * col10) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * col10);
+                  }, 0);
+                  const col14Total = col11Total + col12Total + col13Total;
+
+                  const colValues = [
+                    totals.col1, totals.col2, totals.col3, totals.col4,
+                    totals.col5, totals.col6, totals.col7, totals.col8,
+                    null, null, // Col9, Col10 — rates, no sum
+                    col11Total, col12Total, col13Total, col14Total,
+                    null, null, null, // Col15-17
+                  ];
+
+                  const fmt = (v) => v !== null && v !== 0
+                    ? (Number.isInteger(v) ? v : v.toFixed(2))
+                    : '—';
+
+                  return (
+                    <tr className="border-t-2 border-primary/40 bg-primary/5 font-bold text-xs">
+                      <td className="sticky left-0 z-10 bg-primary/10 px-4 py-2 border-r border-border text-primary font-bold">
+                        TOTALS
+                      </td>
+                      {/* Shift Hrs — no total */}
+                      <td className="px-1 py-2 border-r border-border text-center text-muted-foreground/40">—</td>
+                      {colValues.map((val, i) => (
+                        <td key={i} className="px-1 py-2 border-r border-border last:border-r-0 text-center text-primary">
+                          {fmt(val)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })()}
               </tbody>
             </table>
           </div>
