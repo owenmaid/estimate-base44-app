@@ -440,27 +440,9 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 5: Mirror "DCSM Est Total Hours" from Total Labour Hours section → Project Totals
-  // Mirror "Total Ventilation Labour Hours" from Total Ventilation Labour Hours section → Project Totals
-  const DCSM_HOURS_SOURCE = 'dcsm est total hours';
-  const VENT_HOURS_SOURCE = 'total ventilation labour hours';
-  
-  let dcsmHoursValue = 0;
-  let ventHoursValue = 0;
-  
-  sectionsPass4.forEach(s => {
-    const titleN = normalizeDesc(s.title);
-    s.items.forEach(item => {
-      const itemN = normalizeDesc(item.description);
-      if (titleN === 'total labour hours' && itemN === DCSM_HOURS_SOURCE) {
-        dcsmHoursValue = item.total || 0;
-      }
-      if (titleN === 'total ventilation labour hours' && itemN === VENT_HOURS_SOURCE) {
-        ventHoursValue = item.total || 0;
-      }
-    });
-  });
-
+  // Pass 5: Use col2Sum and ventCol2Sum (from linked project) as the source of truth for hours
+  const dcsmHoursValue = col2Sum;
+  const ventHoursValue = ventCol2Sum;
   const totalProjectLabourHours = dcsmHoursValue + ventHoursValue;
   console.log('[CreateEstimatePanel] Total Project Labour Hours:', totalProjectLabourHours, '= DCSM:', dcsmHoursValue, '+ Vent:', ventHoursValue);
 
@@ -528,10 +510,6 @@ export default function CreateEstimatePanel() {
     }
   }
 
-  // Pass 6: inject hour totals from the linked project's Calculation Engine
-  const DCSM_HOURS_TARGET = 'dcsm est total hours';
-  const VENT_HOURS_TARGET  = 'total ventilation labour hours'; // ventilation-only Col2 sum
-
   // Compute Col 14 total from the linked project's calculation_grid (sum of all Col14 values)
   const projectCol14Total = useMemo(() => {
     if (!linkedProject) {
@@ -571,14 +549,9 @@ export default function CreateEstimatePanel() {
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      // Inject additional bracket rows (DCSM hours, Ventilation hours, Total Project Cost)
-      if (isSubtotalHeader(item.description)) {
-        if (n === DCSM_HOURS_TARGET)
-          return { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum };
-        if (n === VENT_HOURS_TARGET)
-          return { ...item, unit_price: ventCol2Sum, quantity: 1, markup: 0, total: ventCol2Sum };
-        if (n === PROJECT_COST_BRACKET)
-          return { ...item, total: projectCostValue };
+      // Inject Total Project Cost
+      if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET) {
+        return { ...item, total: projectCostValue };
       }
       return item;
     }),
