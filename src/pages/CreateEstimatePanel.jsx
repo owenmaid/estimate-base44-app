@@ -440,13 +440,14 @@ export default function CreateEstimatePanel() {
       return 0;
     }
     const calcGrid = linkedProject.calculation_grid || {};
+    console.log('[CreateEstimatePanel] Full calculation_grid:', calcGrid);
     let total = 0;
     Object.entries(calcGrid).forEach(([key, value]) => {
       if (key.includes('_col14')) {
         total += (value || 0);
       }
     });
-    console.log('[CreateEstimatePanel] Col14 total:', total, 'from keys:', Object.keys(calcGrid).filter(k => k.includes('_col14')));
+    console.log('[CreateEstimatePanel] Col14 total:', total, 'from keys:', Object.keys(calcGrid).filter(k => k.includes('_col14')), 'calcGrid keys count:', Object.keys(calcGrid).length);
     return total;
   }, [linkedProject]);
 
