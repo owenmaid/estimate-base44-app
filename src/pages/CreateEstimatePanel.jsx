@@ -44,18 +44,12 @@ export default function CreateEstimatePanel() {
     return projects.find(p => (p.project_number || '').trim().toLowerCase() === pn) || null;
   }, [projects, clientInfo.project_number]);
 
-  // Compute sum of Col2 (Col1 × shiftHrs) for Manpower rows only — mirrors CalculationEngine logic
+  // Compute sum of Col2 (Col1 × shiftHrs) for ALL rows — mirrors the CalculationEngine totals row
   const col2Sum = useMemo(() => {
     if (!linkedProject) return 0;
     const rows = linkedProject.equipment_rows || [];
     const eGrid = linkedProject.equipment_grid || {};
-    // Build manpower lookup by item_id
-    const manpowerIds = new Set(
-      inventory.filter(i => i.item_group === 'Manpower Group').map(i => String(i.id))
-    );
     return rows.reduce((sum, row) => {
-      // Only Manpower rows contribute to Col2
-      if (!manpowerIds.has(String(row.item_id))) return sum;
       const label = (row.label || '').toLowerCase();
       const isSpecial = label.includes('pre-work') || label.includes('post-work');
       const shiftHrs = isSpecial ? 10 : 12;
@@ -67,7 +61,7 @@ export default function CreateEstimatePanel() {
       });
       return sum + col1 * shiftHrs;
     }, 0);
-  }, [linkedProject, inventory]);
+  }, [linkedProject]);
 
   // ── Load an existing estimate into the canvas ──────────────────────────────
   const loadEstimate = (estimate) => {
