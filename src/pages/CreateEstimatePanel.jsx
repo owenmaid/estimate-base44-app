@@ -452,17 +452,20 @@ export default function CreateEstimatePanel() {
 
   // Inject "[Total Project Cost]" = Col 14 total from Calculation Engine
   const PROJECT_COST_BRACKET = 'total project cost';
-  let projectCostValue = 0;
-  let foundBracket = false;
-  sectionsPass4.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (!isSubtotalHeader(item.description)) return;
-      if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
-      foundBracket = true;
-      projectCostValue = projectCol14Total;
+  const projectCostValue = useMemo(() => {
+    let value = 0;
+    let found = false;
+    sectionsPass4.forEach(s => {
+      s.items.forEach((item) => {
+        if (!isSubtotalHeader(item.description)) return;
+        if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
+        found = true;
+        value = projectCol14Total;
+      });
     });
-  });
-  console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', foundBracket, 'value:', projectCostValue);
+    console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', found, 'value:', value);
+    return value;
+  }, [sectionsPass4, projectCol14Total]);
 
   const sectionsWithAggregate = sectionsPass4.map(s => ({
     ...s,
