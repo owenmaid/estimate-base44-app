@@ -387,9 +387,28 @@ export default function CreateEstimatePanel() {
     }),
   }));
 
-  // Pass 4: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
+  // Pass 4: Sum all item totals from "Ventilation" section + "Total Ventilation Equipment | Consumables Cost" section
+  // and mirror into the target line item in "Total Cost for Ventilation" section
+  const TOTAL_COST_VENT_TARGET = 'total cost for ventilation';
+
+  const isSectionMatch = (title, keywords) => keywords.some(kw => (title || '').toLowerCase().includes(kw));
+
+  const ventilationSectionTotal = sectionsPass3
+    .filter(s => isSectionMatch(s.title, ['ventilation']) && !isSectionMatch(s.title, ['total cost for ventilation']))
+    .reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
+
+  const sectionsPass4 = sectionsPass3.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === TOTAL_COST_VENT_TARGET
+        ? { ...item, total: ventilationSectionTotal }
+        : item
+    ),
+  }));
+
+  // Pass 5: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
-  const sectionsWithAggregate = sectionsPass3.map(s => ({
+  const sectionsWithAggregate = sectionsPass4.map(s => ({
     ...s,
     items: s.items.map(item =>
       normalizeDesc(item.description) === DCSM_HOURS_TARGET
