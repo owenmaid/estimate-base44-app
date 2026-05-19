@@ -168,12 +168,12 @@ export default function CalculationEngine() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
-  // Map by id, name, and sku for flexible lookup (reg, OT values, and item_group)
+  // Map by id, name, and sku for flexible lookup (reg, OT values, item_group, category)
   const inventoryValueMap = useMemo(() => {
     const byId = {};
     const byName = {};
     inventoryItems.forEach(item => {
-      const entry = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group };
+      const entry = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group, category: item.category || '' };
       if (item.id) byId[item.id] = entry;
       if (item.name) byName[item.name.toLowerCase()] = entry;
       if (item.sku) byName[item.sku.toLowerCase()] = entry;
@@ -364,6 +364,29 @@ export default function CalculationEngine() {
     });
     return result;
   }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
+
+  // Ventilation Man Hours: Col2 for Manpower rows whose inventory category is "Ventilation Labour"
+  const ventilationManHours = useMemo(() => {
+    return equipmentRows.reduce((sum, row) => {
+      const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+      if (inv?.item_group !== 'Manpower Group') return sum;
+      if ((inv.category || '').toLowerCase() !== 'ventilation labour') return sum;
+      return sum + (rowHours[row.id] || 0);
+    }, 0);
+  }, [equipmentRows, rowHours, inventoryValueMap]);
+
+  // DCSM Man Hours: Col2 for Manpower rows whose label contains "DCSM", "Superintendent", or "On-Site Admin"
+  const DCSM_KEYWORDS = ['dcsm', 'superintendent', 'on-site admin'];
+  const dcsmManHours = useMemo(() => {
+    return equipmentRows.reduce((sum, row) => {
+      const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+      if (inv?.item_group !== 'Manpower Group') return sum;
+      const label = (row.label || '').toLowerCase();
+      const matches = DCSM_KEYWORDS.some(kw => label.includes(kw.toLowerCase()));
+      if (!matches) return sum;
+      return sum + (rowHours[row.id] || 0);
+    }, 0);
+  }, [equipmentRows, rowHours, inventoryValueMap]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
@@ -587,6 +610,32 @@ export default function CalculationEngine() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Man Hours Summary Widget */}
+      {equipmentRows.length > 0 && (
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="border border-border">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ventilation Man Hours</span>
+                <span className="text-xs text-muted-foreground">Col 2 · Ventilation Labour</span>
+              </div>
+              <div className="text-3xl font-bold text-primary">{ventilationManHours.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground mt-1">hrs</div>
+            </CardContent>
+          </Card>
+          <Card className="border border-border">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">DCSM Man Hours</span>
+                <span className="text-xs text-muted-foreground">Col 2 · DCSM / Superintendent / On-Site Admin</span>
+              </div>
+              <div className="text-3xl font-bold text-primary">{dcsmManHours.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground mt-1">hrs</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Status Banner */}
       {formulas.length > 0 && (
