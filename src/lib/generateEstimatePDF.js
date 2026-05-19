@@ -163,20 +163,22 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     doc.text(`$${secTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y + 10, { align: 'right' });
     y += 22;
 
-    // Column headers
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...muted);
-    doc.text('DESCRIPTION', colDesc, y);
-    doc.text('QTY', colQty, y, { align: 'right' });
-    doc.text('UNIT $', colUnit, y, { align: 'right' });
-    doc.text('MKP%', colMkup, y, { align: 'right' });
-    doc.text('TOTAL', colTotal, y, { align: 'right' });
-    y += 4;
-    doc.setDrawColor(...muted);
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, margin + contentW, y);
-    y += 10;
+    // Column headers — only if section has items
+    if (section.items.length > 0) {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...muted);
+      doc.text('DESCRIPTION', colDesc, y);
+      doc.text('QTY', colQty, y, { align: 'right' });
+      doc.text('UNIT $', colUnit, y, { align: 'right' });
+      doc.text('MKP%', colMkup, y, { align: 'right' });
+      doc.text('TOTAL', colTotal, y, { align: 'right' });
+      y += 4;
+      doc.setDrawColor(...muted);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, margin + contentW, y);
+      y += 10;
+    }
 
     // Items
     doc.setFont('helvetica', 'normal');
@@ -235,13 +237,6 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
         regularRowIdx++;
       }
     });
-
-    if (section.items.length === 0) {
-      doc.setTextColor(...muted);
-      doc.setFontSize(8);
-      doc.text('(no items)', colDesc, y);
-      y += 14;
-    }
 
     y += 8;
   });
