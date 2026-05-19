@@ -262,15 +262,25 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 3: inject "[Lead Ventilation Tech]" subtotal = "Lead Ventilation Tech Total" item value
-  // from the "Total Labour | Logistics Ventilation Cost" section
-  const LEAD_VENT_SOURCE_SECTION = 'total labour | logistics ventilation cost';
-  const LEAD_VENT_SOURCE_ITEM    = 'lead ventilation tech total';
-  const LEAD_VENT_TARGET         = 'lead ventilation tech';
+  // Pass 3: inject "Lead Ventilation Tech Total" = the bracketed [Lead Ventilation Tech] subtotal
+  // Find the [Lead Ventilation Tech] bracket row in any section and compute its subtotal
+  const LEAD_VENT_BRACKET = 'lead ventilation tech';
+  const LEAD_VENT_TARGET  = 'lead ventilation tech total';
 
-  const leadVentSection = sectionsPass2.find(s => normalizeDesc(s.title) === LEAD_VENT_SOURCE_SECTION);
-  const leadVentItem = leadVentSection?.items.find(i => normalizeDesc(i.description) === LEAD_VENT_SOURCE_ITEM);
-  const leadVentValue = leadVentItem?.total ?? 0;
+  let leadVentValue = 0;
+  sectionsPass2.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (normalizeDesc(item.description) !== LEAD_VENT_BRACKET) return;
+      // Sum items below this bracket until the next bracket
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      leadVentValue = sum;
+    });
+  });
 
   const sectionsPass3 = sectionsPass2.map(s => ({
     ...s,
