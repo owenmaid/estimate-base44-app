@@ -34,7 +34,7 @@ function buildSubtotals(items) {
   return map;
 }
 
-export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {} }) {
+export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {} }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -59,22 +59,35 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
   doc.setFillColor(...orange);
   doc.rect(0, 0, pageW, 70, 'F');
 
-  // Left logo (InfoSignal)
-  if (logoUrls.infoSignalLogo) {
+  // Helper to load image from URL as data URL
+  const loadImage = async (url) => {
+    if (!url) return null;
     try {
-      doc.addImage(logoUrls.infoSignalLogo, 'JPEG', margin, 15, 50, 20);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
     } catch (e) {
-      // Logo failed to load, skip
+      return null;
     }
+  };
+
+  // Load logos
+  const infoSignalImg = logoUrls.infoSignalLogo ? await loadImage(logoUrls.infoSignalLogo) : null;
+  const dynaVentImg = logoUrls.dynaVentLogo ? await loadImage(logoUrls.dynaVentLogo) : null;
+
+  // Left logo (InfoSignal)
+  if (infoSignalImg) {
+    doc.addImage(infoSignalImg, 'JPEG', margin, 15, 50, 20);
   }
 
   // Center logo (DynaVent)
-  if (logoUrls.dynaVentLogo) {
-    try {
-      doc.addImage(logoUrls.dynaVentLogo, 'JPEG', pageW / 2 - 25, 15, 50, 20);
-    } catch (e) {
-      // Logo failed to load, skip
-    }
+  if (dynaVentImg) {
+    doc.addImage(dynaVentImg, 'JPEG', pageW / 2 - 25, 15, 50, 20);
   }
 
   // Right side - Title

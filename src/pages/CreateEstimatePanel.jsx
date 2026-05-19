@@ -602,7 +602,9 @@ export default function CreateEstimatePanel() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls })}
+            onClick={async () => {
+              await generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls });
+            }}
             className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
             title="Download PDF"
           >
