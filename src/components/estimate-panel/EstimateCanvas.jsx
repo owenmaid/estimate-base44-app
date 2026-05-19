@@ -143,6 +143,9 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                     const isHeader = isSubtotalHeader(item.description);
                     const spacer = isSpacer(item.description);
                     const headerSubtotal = isHeader ? subtotalMap[item.id] : null;
+                    // For [Total Project Cost] bracket, use the injected item.total directly instead of summing below items
+                    const isProjectCostBracket = isHeader && normalizeDesc(item.description) === 'total project cost';
+                    const displayTotal = isProjectCostBracket ? (item.total || 0) : (headerSubtotal || 0);
                     return (
                     <Draggable key={String(item.id)} draggableId={String(item.id)} index={idx}>
                       {(drag, snapshot) => (
@@ -181,7 +184,9 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                            {!spacer && (isHeader
                              ? (isHourItem(item.description)
                                  ? Math.round(headerSubtotal || 0).toLocaleString()
-                                 : `$${Number(headerSubtotal || 0).toFixed(2)}`)
+                                 : isProjectCostBracket
+                                   ? `$${Number(displayTotal || 0).toFixed(2)}`
+                                   : `$${Number(headerSubtotal || 0).toFixed(2)}`)
                              : (isHourItem(item.description)
                                  ? Math.round(item.total || 0).toLocaleString()
                                  : `$${Number(item.total || 0).toFixed(2)}`)
