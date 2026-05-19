@@ -44,27 +44,47 @@ export default function CreateEstimatePanel() {
     return projects.find(p => (p.project_number || '').trim().toLowerCase() === pn) || null;
   }, [projects, clientInfo.project_number]);
 
-  // Compute sum of Col2 (Col1 × shiftHrs) for Manpower rows only — mirrors the CalculationEngine totals row
+  // Helper: compute Col2 (Col1 × shiftHrs) for a single project row
+  const computeRowCol2 = (row, eGrid) => {
+    const label = (row.label || '').toLowerCase();
+    const isSpecial = label.includes('pre-work') || label.includes('post-work');
+    const shiftHrs = isSpecial ? 10 : 12;
+    let col1 = 0;
+    Object.entries(eGrid).forEach(([key, value]) => {
+      if (!key.startsWith(`${row.id}_`)) return;
+      const num = parseInt(value, 10);
+      if (!isNaN(num) && num > 0) col1 += num;
+    });
+    return col1 * shiftHrs;
+  };
+
+  // Compute sum of Col2 for ALL Manpower rows — mirrors the CalculationEngine totals row
   const col2Sum = useMemo(() => {
     if (!linkedProject) return 0;
     const rows = linkedProject.equipment_rows || [];
     const eGrid = linkedProject.equipment_grid || {};
     return rows.reduce((sum, row) => {
-      // Match inventory entry to determine item_group
       const invEntry = inventory.find(i => String(i.id) === String(row.item_id))
         || inventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
         || null;
       if (invEntry?.item_group !== 'Manpower Group') return sum;
-      const label = (row.label || '').toLowerCase();
-      const isSpecial = label.includes('pre-work') || label.includes('post-work');
-      const shiftHrs = isSpecial ? 10 : 12;
-      let col1 = 0;
-      Object.entries(eGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const num = parseInt(value, 10);
-        if (!isNaN(num) && num > 0) col1 += num;
-      });
-      return sum + col1 * shiftHrs;
+      return sum + computeRowCol2(row, eGrid);
+    }, 0);
+  }, [linkedProject, inventory]);
+
+  // Compute sum of Col2 for Ventilation Labour rows only (category contains "ventilation")
+  const ventCol2Sum = useMemo(() => {
+    if (!linkedProject) return 0;
+    const rows = linkedProject.equipment_rows || [];
+    const eGrid = linkedProject.equipment_grid || {};
+    return rows.reduce((sum, row) => {
+      const invEntry = inventory.find(i => String(i.id) === String(row.item_id))
+        || inventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+        || null;
+      if (invEntry?.item_group !== 'Manpower Group') return sum;
+      const category = (invEntry?.category || '').toLowerCase();
+      if (!category.includes('ventilation')) return sum;
+      return sum + computeRowCol2(row, eGrid);
     }, 0);
   }, [linkedProject, inventory]);
 
@@ -406,15 +426,19 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 5: inject "DCSM Est Total Hours" = sum of Col2 (shift-hours) from the linked project's Manpower rows
+  // Pass 5: inject hour totals from the linked project's Calculation Engine
   const DCSM_HOURS_TARGET = 'dcsm est total hours';
+  const VENT_HOURS_TARGET  = 'vent est total hours'; // ventilation-only Col2 sum
   const sectionsWithAggregate = sectionsPass4.map(s => ({
     ...s,
-    items: s.items.map(item =>
-      normalizeDesc(item.description) === DCSM_HOURS_TARGET
-        ? { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum }
-        : item
-    ),
+    items: s.items.map(item => {
+      const n = normalizeDesc(item.description);
+      if (n === DCSM_HOURS_TARGET)
+        return { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum };
+      if (n === VENT_HOURS_TARGET)
+        return { ...item, unit_price: ventCol2Sum, quantity: 1, markup: 0, total: ventCol2Sum };
+      return item;
+    }),
   }));
 
   // ── Totals ─────────────────────────────────────────────────────────────────
