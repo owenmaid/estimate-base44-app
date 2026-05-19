@@ -183,7 +183,7 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                           {...drag.draggableProps}
                           className={`grid gap-1 px-3 border-b border-border last:border-b-0 items-center text-xs transition-colors
                             ${isHeader ? 'py-1.5 bg-orange-500/10 border-l-2 border-l-orange-500' : ''}
-                            ${spacer ? 'py-2 bg-green-500/20' : ''}
+                            ${spacer ? 'py-2 bg-gray-500/20' : ''}
                             ${!isHeader && !spacer ? 'py-1.5' : ''}
                             ${snapshot.isDragging ? 'bg-secondary/60' : (!isHeader && !spacer ? 'hover:bg-secondary/20' : '')}`}
                           style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px', ...drag.draggableProps.style}}
