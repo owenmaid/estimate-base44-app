@@ -27,7 +27,7 @@ function buildSubtotals(items) {
   return map;
 }
 
-export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber }) {
+export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {} }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -48,25 +48,80 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     }
   };
 
-  // ── Header bar ──────────────────────────────────────────────────────────────
+  // ── Header bar with logos ───────────────────────────────────────────────────
   doc.setFillColor(...orange);
   doc.rect(0, 0, pageW, 70, 'F');
 
-  doc.setTextColor(...white);
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.text('ESTIMATE', margin, 42);
+  // Left logo (InfoSignal)
+  if (logoUrls.infoSignalLogo) {
+    try {
+      doc.addImage(logoUrls.infoSignalLogo, 'JPEG', margin, 15, 50, 20);
+    } catch (e) {
+      // Logo failed to load, skip
+    }
+  }
 
+  // Center logo (DynaVent)
+  if (logoUrls.dynaVentLogo) {
+    try {
+      doc.addImage(logoUrls.dynaVentLogo, 'JPEG', pageW / 2 - 25, 15, 50, 20);
+    } catch (e) {
+      // Logo failed to load, skip
+    }
+  }
+
+  // Right side - Title
+  doc.setTextColor(...white);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('DCSM Project Budgetary Estimate', pageW - margin, 25, { align: 'right' });
+  
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  if (estimateNumber) doc.text(`#${estimateNumber}`, margin, 58);
+  if (estimateNumber) doc.text(`#${estimateNumber}`, pageW - margin, 40, { align: 'right' });
 
-  // Date top-right
+  // Date top-right (below estimate number)
   doc.setFontSize(9);
   const dateStr = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
-  doc.text(dateStr, pageW - margin, 42, { align: 'right' });
+  doc.text(dateStr, pageW - margin, 52, { align: 'right' });
 
   y = 90;
+
+  // ── Customer Details Section ───────────────────────────────────────────────
+  doc.setTextColor(...dark);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Customer Details:', margin, y);
+  y += 8;
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...muted);
+  
+  // Site/Location/Plant
+  if (clientInfo.client_address) {
+    doc.text(`Site/Location/Plant: ${clientInfo.client_address}`, margin, y);
+    y += 12;
+  }
+  
+  // Attention
+  if (clientInfo.client_name) {
+    doc.text(`Attention: ${clientInfo.client_name}`, margin, y);
+    y += 12;
+  }
+  
+  // Project
+  if (clientInfo.project_name) {
+    doc.text(`Project: ${clientInfo.project_name}`, margin, y);
+    y += 12;
+  }
+  
+  // Project location code (E2) - center
+  doc.setFontSize(8);
+  doc.setTextColor(150);
+  doc.text('E2', pageW / 2, 85, { align: 'center' });
+  
+  y += 10;
 
   // ── Client & Project Info ───────────────────────────────────────────────────
   doc.setTextColor(...dark);

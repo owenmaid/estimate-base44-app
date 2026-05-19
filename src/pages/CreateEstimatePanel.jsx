@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import PalettePanel from '@/components/estimate-panel/PalettePanel';
 import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
-import { X, Download } from 'lucide-react';
+import { X, Download, Upload, Image } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 
 export default function CreateEstimatePanel() {
@@ -26,6 +26,13 @@ export default function CreateEstimatePanel() {
     client_phone: '', client_address: '', notes: '',
     tax_rate: 0, discount: 0,
   });
+
+  // Logo URLs
+  const [logoUrls, setLogoUrls] = useState({
+    infoSignalLogo: '',
+    dynaVentLogo: '',
+  });
+  const [uploadingLogo, setUploadingLogo] = useState(null);
 
   const { data: inventory = [] } = useQuery({
     queryKey: ['inventory'],
@@ -104,6 +111,10 @@ export default function CreateEstimatePanel() {
       tax_rate: estimate.tax_rate || 0,
       discount: estimate.discount || 0,
     });
+    setLogoUrls({
+      infoSignalLogo: estimate.info_signal_logo || '',
+      dynaVentLogo: estimate.dyna_vent_logo || '',
+    });
 
     // Reconstruct sections from line_items
     const lineItems = estimate.line_items || [];
@@ -140,6 +151,7 @@ export default function CreateEstimatePanel() {
     setActiveEstimate(null);
     setSections([{ id: Date.now(), title: 'Section 1', items: [] }]);
     setClientInfo({ client_name: '', project_number: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
+    setLogoUrls({ infoSignalLogo: '', dynaVentLogo: '' });
   };
 
   const handleCloseEstimate = () => setShowCloseConfirm(true);
@@ -509,6 +521,21 @@ export default function CreateEstimatePanel() {
   const taxAmount = subtotal * (clientInfo.tax_rate / 100);
   const total = subtotal + taxAmount - (clientInfo.discount || 0);
 
+  // ── Logo Upload ──────────────────────────────────────────────────────────
+  const handleLogoUpload = async (logoType, file) => {
+    if (!file) return;
+    setUploadingLogo(logoType);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setLogoUrls(prev => ({ ...prev, [logoType]: file_url }));
+      toast.success('Logo uploaded!');
+    } catch (error) {
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploadingLogo(null);
+    }
+  };
+
   // ── Save / Update ──────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -530,6 +557,8 @@ export default function CreateEstimatePanel() {
           total,
           status: activeEstimate.status,
           estimate_number: activeEstimate.estimate_number,
+          info_signal_logo: logoUrls.infoSignalLogo,
+          dyna_vent_logo: logoUrls.dynaVentLogo,
         };
         return base44.entities.Estimate.update(activeEstimate.id, payload);
       }
@@ -562,6 +591,8 @@ export default function CreateEstimatePanel() {
         total,
         status: 'draft',
         estimate_number: `EST-${Date.now().toString().slice(-6)}`,
+        info_signal_logo: logoUrls.infoSignalLogo,
+        dyna_vent_logo: logoUrls.dynaVentLogo,
       };
       return base44.entities.Estimate.create(payload);
     },
@@ -584,9 +615,44 @@ export default function CreateEstimatePanel() {
             </span>
           )}
         </div>
+        {/* Logo Upload Section */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground">InfoSignal Logo:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleLogoUpload('infoSignalLogo', e.target.files[0])}
+              disabled={uploadingLogo === 'infoSignalLogo'}
+              className="text-xs"
+            />
+            {logoUrls.infoSignalLogo && (
+              <img src={logoUrls.infoSignalLogo} alt="InfoSignal" className="h-6 w-auto object-contain" />
+            )}
+            {uploadingLogo === 'infoSignalLogo' && (
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground">DynaVent Logo:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleLogoUpload('dynaVentLogo', e.target.files[0])}
+              disabled={uploadingLogo === 'dynaVentLogo'}
+              className="text-xs"
+            />
+            {logoUrls.dynaVentLogo && (
+              <img src={logoUrls.dynaVentLogo} alt="DynaVent" className="h-6 w-auto object-contain" />
+            )}
+            {uploadingLogo === 'dynaVentLogo' && (
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number })}
+            onClick={() => generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls })}
             className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
             title="Download PDF"
           >
