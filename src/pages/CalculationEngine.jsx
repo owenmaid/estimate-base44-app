@@ -215,16 +215,21 @@ export default function CalculationEngine() {
     return sums;
   }, [equipmentRows, equipmentGrid]);
 
-  // Col 2: Col1 × shiftHrs
+  // Col 2: Col1 × shiftHrs (Manpower only — non-Manpower rows are zeroed out to match cell display)
   const rowHours = useMemo(() => {
     const hours = {};
     equipmentRows.forEach(row => {
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      if (!isManpower) { hours[row.id] = 0; return; }
       const label = (row.label || '').toLowerCase();
-      const isSpecial = label.includes('(pre-work)') || label.includes('(post-work)');
+      const isSpecial = label.includes('pre-work') || label.includes('post-work');
       hours[row.id] = (rowSums[row.id] || 0) * (isSpecial ? 10 : 12);
     });
     return hours;
-  }, [equipmentRows, rowSums]);
+  }, [equipmentRows, rowSums, inventoryValueMap]);
 
   // Col 4: (N days × 8) + (Sa days × 4)
   const rowCol4 = useMemo(() => {
