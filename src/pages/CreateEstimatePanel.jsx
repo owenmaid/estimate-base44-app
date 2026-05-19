@@ -328,6 +328,29 @@ export default function CreateEstimatePanel() {
     });
   });
 
+  // Sum of [Ventilation Equipment - (Exp. Blowers. Duct, Hose)] + [Ventilation Equipment - (Blowers, Duct, Hose)] bracket subtotals
+  // Use flexible matching since the bracket names contain special chars and may vary slightly
+  const isVentEquipBracket = (desc) => {
+    const n = normalizeDesc(desc);
+    return n.startsWith('ventilation equipment');
+  };
+  const VENT_EQUIP_TOTAL_TARGET = 'ventilation equipment total cost';
+
+  let ventEquipValue = 0;
+  sectionsPass2.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return;
+      if (!isVentEquipBracket(item.description)) return;
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      ventEquipValue += sum; // accumulate both brackets
+    });
+  });
+
   const sectionsPass3 = sectionsPass2.map(s => ({
     ...s,
     items: s.items.map(item => {
@@ -337,6 +360,8 @@ export default function CreateEstimatePanel() {
         return { ...item, total: ventTechValue };
       if (isLogisticsTarget(item.description))
         return { ...item, total: logisticsValue };
+      if (normalizeDesc(item.description) === VENT_EQUIP_TOTAL_TARGET)
+        return { ...item, total: ventEquipValue };
       return item;
     }),
   }));
