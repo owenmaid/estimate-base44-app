@@ -2,6 +2,14 @@ import jsPDF from 'jspdf';
 
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
+const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours'];
+const isHourItem = (desc) => HOUR_ITEMS.includes(normalizeDesc(desc));
+const isHourSection = (title, items = []) =>
+  HOUR_ITEMS.includes(normalizeDesc(title)) || items.some(i => isHourItem(i.description));
+
+const fmtVal = (val, isHour) =>
+  isHour ? Math.round(val).toLocaleString('en-CA') : `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`;
 
 // For each [bracket] row, sum all regular items below it until the next [bracket] row.
 function buildSubtotals(items) {
@@ -132,8 +140,9 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     doc.setFontSize(9);
     doc.setTextColor(...dark);
     doc.text(section.title, margin + 10, y + 10);
+    const sectionIsHour = isHourSection(section.title, section.items);
     doc.setTextColor(...orange);
-    doc.text(`$${secTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y + 10, { align: 'right' });
+    doc.text(fmtVal(secTotal, sectionIsHour), colTotal, y + 10, { align: 'right' });
     y += 22;
 
     // Column headers — only if section has items
@@ -184,7 +193,7 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
         doc.text(descLines, colDesc + 6, y);
 
         const headerSum = subtotalMap[item.id] || 0;
-        doc.text(`$${headerSum.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y, { align: 'right' });
+        doc.text(fmtVal(headerSum, isHourItem(item.description)), colTotal, y, { align: 'right' });
 
         doc.setFont('helvetica', 'normal');
         y += descLines.length > 1 ? descLines.length * 11 : 16;
@@ -203,7 +212,7 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
         doc.text(`$${(item.unit_price || 0).toFixed(2)}`, colUnit, y, { align: 'right' });
         doc.text(`${item.markup || 0}%`, colMkup, y, { align: 'right' });
         doc.setFont('helvetica', 'bold');
-        doc.text(`$${(item.total || 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y, { align: 'right' });
+        doc.text(fmtVal(item.total || 0, isHourItem(item.description)), colTotal, y, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         y += descLines.length > 1 ? descLines.length * 11 : 14;
         regularRowIdx++;
