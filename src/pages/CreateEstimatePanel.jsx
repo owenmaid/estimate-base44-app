@@ -520,12 +520,15 @@ export default function CreateEstimatePanel() {
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      if (n === DCSM_HOURS_TARGET)
-        return { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum };
-      if (n === VENT_HOURS_TARGET)
-        return { ...item, unit_price: ventCol2Sum, quantity: 1, markup: 0, total: ventCol2Sum };
-      if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET)
-        return { ...item, total: projectCostValue };
+      // Only inject into bracket rows for hour targets, not the non-bracket "Total Project Labour Hours"
+      if (isSubtotalHeader(item.description)) {
+        if (n === DCSM_HOURS_TARGET)
+          return { ...item, unit_price: col2Sum, quantity: 1, markup: 0, total: col2Sum };
+        if (n === VENT_HOURS_TARGET)
+          return { ...item, unit_price: ventCol2Sum, quantity: 1, markup: 0, total: ventCol2Sum };
+        if (n === PROJECT_COST_BRACKET)
+          return { ...item, total: projectCostValue };
+      }
       return item;
     }),
   }));
