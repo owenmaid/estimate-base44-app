@@ -336,6 +336,25 @@ export default function CreateEstimatePanel() {
   };
   const VENT_EQUIP_TOTAL_TARGET = 'ventilation equipment total cost';
 
+  // Mirror [Ventilation Consumables] bracket subtotal → "Consumables | Securement Total Cost"
+  const VENT_CONSUMABLES_BRACKET = 'ventilation consumables';
+  const VENT_CONSUMABLES_TARGET  = 'consumables | securement total cost';
+
+  let ventConsumablesValue = 0;
+  sectionsPass2.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return;
+      if (normalizeDesc(item.description) !== VENT_CONSUMABLES_BRACKET) return;
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      ventConsumablesValue = sum;
+    });
+  });
+
   let ventEquipValue = 0;
   sectionsPass2.forEach(s => {
     s.items.forEach((item, idx) => {
@@ -362,6 +381,8 @@ export default function CreateEstimatePanel() {
         return { ...item, total: logisticsValue };
       if (normalizeDesc(item.description) === VENT_EQUIP_TOTAL_TARGET)
         return { ...item, total: ventEquipValue };
+      if (normalizeDesc(item.description) === VENT_CONSUMABLES_TARGET)
+        return { ...item, total: ventConsumablesValue };
       return item;
     }),
   }));
