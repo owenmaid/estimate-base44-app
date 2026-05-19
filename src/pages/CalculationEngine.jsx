@@ -477,9 +477,6 @@ export default function CalculationEngine() {
             Save Calculation Grid to Project
           </Button>
           <p className="text-xs text-muted-foreground">Save Calculated Data to Estimate Panel from Linked Project</p>
-          <Button onClick={() => setShowNew(true)} disabled={showNew}>
-            <Plus className="h-4 w-4 mr-1.5" /> New Formula
-          </Button>
         </div>
       </div>
 
@@ -640,6 +637,13 @@ export default function CalculationEngine() {
           </Card>
         </div>
       )}
+
+      {/* New Formula Button */}
+      <div className="flex justify-center">
+        <Button onClick={() => setShowNew(true)} disabled={showNew} variant="outline">
+          <Plus className="h-4 w-4 mr-1.5" /> New Formula
+        </Button>
+      </div>
 
       {/* Status Banner */}
       {formulas.length > 0 && (
