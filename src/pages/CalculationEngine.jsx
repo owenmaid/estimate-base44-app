@@ -473,6 +473,9 @@ export default function CalculationEngine() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={saveCalculationGrid} variant="outline" disabled={!activeProject}>
+            Save Calculation Grid
+          </Button>
           <Button onClick={() => setShowNew(true)} disabled={showNew}>
             <Plus className="h-4 w-4 mr-1.5" /> New Formula
           </Button>
