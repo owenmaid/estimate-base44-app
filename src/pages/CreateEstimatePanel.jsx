@@ -435,7 +435,10 @@ export default function CreateEstimatePanel() {
 
   // Compute Col 14 total from the linked project's calculation_grid (sum of all Col14 values)
   const projectCol14Total = useMemo(() => {
-    if (!linkedProject) return 0;
+    if (!linkedProject) {
+      console.log('[CreateEstimatePanel] No linked project');
+      return 0;
+    }
     const calcGrid = linkedProject.calculation_grid || {};
     let total = 0;
     Object.entries(calcGrid).forEach(([key, value]) => {
@@ -443,20 +446,23 @@ export default function CreateEstimatePanel() {
         total += (value || 0);
       }
     });
+    console.log('[CreateEstimatePanel] Col14 total:', total, 'from keys:', Object.keys(calcGrid).filter(k => k.includes('_col14')));
     return total;
   }, [linkedProject]);
 
   // Inject "[Total Project Cost]" = Col 14 total from Calculation Engine
   const PROJECT_COST_BRACKET = 'total project cost';
   let projectCostValue = 0;
+  let foundBracket = false;
   sectionsPass4.forEach(s => {
     s.items.forEach((item, idx) => {
       if (!isSubtotalHeader(item.description)) return;
       if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
-      // Sum items below this bracket until the next bracket (or use Col14 total directly)
+      foundBracket = true;
       projectCostValue = projectCol14Total;
     });
   });
+  console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', foundBracket, 'value:', projectCostValue);
 
   const sectionsWithAggregate = sectionsPass4.map(s => ({
     ...s,
