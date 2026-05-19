@@ -164,18 +164,15 @@ export default function CreateEstimatePanel() {
     setSections(newSections);
   };
 
-  // ── Aggregate: map sum of named section totals → "Total Labour | Logistics Cost" items ──
-  const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
-  const AGGREGATE_TARGET  = 'total labour | logistics cost';
-
+  // ── Aggregate helpers ──────────────────────────────────────────────────────
   const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
   const isSpacer = (desc) => (desc || '') === '__SPACER__';
+  const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
   // Compute the display total of a section (mirrors EstimateCanvas logic)
   const getSectionTotal = (sectionItems) => {
     const bracketItems = sectionItems.filter(i => isSubtotalHeader(i.description));
     if (bracketItems.length > 0) {
-      // Build subtotal map for bracket rows
       const map = {};
       sectionItems.forEach((item, idx) => {
         if (!isSubtotalHeader(item.description)) return;
@@ -192,23 +189,40 @@ export default function CreateEstimatePanel() {
     return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
   };
 
-  // Sum totals of sections whose titles match the aggregate source list (strip brackets)
-  const aggregateTotal = sections.reduce((sum, s) => {
-    const title = (s.title || '').replace(/[\[\]]/g, '').toLowerCase().trim();
-    return AGGREGATE_SOURCES.includes(title) ? sum + getSectionTotal(s.items) : sum;
-  }, 0);
+  // Helper: sum section totals by matching section titles
+  const sumSectionsByTitle = (sectionList, titleList) =>
+    sectionList.reduce((sum, s) => {
+      const title = normalizeDesc(s.title);
+      return titleList.includes(title) ? sum + getSectionTotal(s.items) : sum;
+    }, 0);
 
-  // Inject aggregate total into any item matching the target description (strip brackets before comparing)
-  const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+  // Pass 1: inject "Total Labour | Logistics Cost" = sum of Indirects + Directs + Support & Logistics
+  const LABOUR_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
+  const LABOUR_TARGET  = 'total labour | logistics cost';
+  const labourTotal = sumSectionsByTitle(sections, LABOUR_SOURCES);
 
-  const sectionsWithAggregate = sections.map(s => ({
+  const sectionsPass1 = sections.map(s => ({
     ...s,
-    items: s.items.map(item => {
-      if (normalizeDesc(item.description) === AGGREGATE_TARGET) {
-        return { ...item, total: aggregateTotal };
-      }
-      return item;
-    }),
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === LABOUR_TARGET
+        ? { ...item, total: labourTotal }
+        : item
+    ),
+  }));
+
+  // Pass 2: inject "DCSM Est Total" = sum of "Total Labour | Logistics Cost" + "Total Equipment | Consumables Cost" sections
+  // Use sectionsPass1 so the Labour value is already updated
+  const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
+  const DCSM_TARGET  = 'dcsm est total';
+  const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
+
+  const sectionsWithAggregate = sectionsPass1.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === DCSM_TARGET
+        ? { ...item, total: dcsmTotal }
+        : item
+    ),
   }));
 
   // ── Totals ─────────────────────────────────────────────────────────────────
