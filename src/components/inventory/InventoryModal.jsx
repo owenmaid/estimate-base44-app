@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const ITEM_GROUPS = ['Service Group', 'Equipment Group', 'Manpower Group'];
+const ITEM_GROUPS = ['Service Group', 'Equipment Group', 'Manpower Group', 'Totals Group'];
 
 const EMPTY_FORM = {
   name: '', sku: '', category: '', item_group: '', quantity: 0, unit: 'pcs',

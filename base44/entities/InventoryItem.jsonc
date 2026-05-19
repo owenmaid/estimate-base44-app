@@ -19,7 +19,8 @@
       "enum": [
         "Service Group",
         "Equipment Group",
-        "Manpower Group"
+        "Manpower Group",
+        "Totals Group"
       ],
       "description": "High-level group classification for the inventory item"
     },
