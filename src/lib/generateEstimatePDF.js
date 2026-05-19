@@ -12,10 +12,17 @@ const fmtVal = (val, isHour) =>
   isHour ? Math.round(val).toLocaleString('en-CA') : `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`;
 
 // For each [bracket] row, sum all regular items below it until the next [bracket] row.
+// Exception: [Total Project Labour Hours] uses its injected item.total directly.
 function buildSubtotals(items) {
   const map = {};
   items.forEach((item, idx) => {
     if (!isSubtotalHeader(item.description)) return;
+    const n = normalizeDesc(item.description);
+    // [Total Project Labour Hours] uses injected total, not sum of items below
+    if (n === 'total project labour hours') {
+      map[item.id] = item.total || 0;
+      return;
+    }
     let sum = 0;
     for (let j = idx + 1; j < items.length; j++) {
       if (isSubtotalHeader(items[j].description)) break;
@@ -152,9 +159,12 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     doc.setFontSize(9);
     doc.setTextColor(...dark);
     doc.text(section.title, margin + 10, y + 10);
-    const sectionIsHour = isHourSection(section.title);
-    doc.setTextColor(...orange);
-    doc.text(fmtVal(secTotal, sectionIsHour), colTotal, y + 10, { align: 'right' });
+    // Don't show totals value for Project Totals section header
+    if (!isProjTotals) {
+      const sectionIsHour = isHourSection(section.title);
+      doc.setTextColor(...orange);
+      doc.text(fmtVal(secTotal, sectionIsHour), colTotal, y + 10, { align: 'right' });
+    }
     y += 22;
 
     // Column headers — only if section has items AND is not Project Totals
