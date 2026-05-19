@@ -466,19 +466,9 @@ export default function CreateEstimatePanel() {
   });
 
   const totalProjectLabourHours = totalLabourHoursValue + totalVentLabourHoursValue;
-  const TOTAL_PROJECT_LABOUR_HOURS_TARGET = 'total project labour hours';
 
+  // Pass 5: Inject "Total Project Labour Hours" (non-bracket row) with summed value
   const sectionsPass5 = sectionsPass4.map(s => ({
-    ...s,
-    items: s.items.map(item =>
-      normalizeDesc(item.description) === TOTAL_PROJECT_LABOUR_HOURS_TARGET
-        ? { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours }
-        : item
-    ),
-  }));
-
-  // Pass 5b: Inject "Total Project Labour Hours" (non-bracket version) with same value
-  const sectionsPass5b = sectionsPass5.map(s => ({
     ...s,
     items: s.items.map(item =>
       normalizeDesc(item.description) === 'total project labour hours' && !isSubtotalHeader(item.description)
@@ -514,7 +504,7 @@ export default function CreateEstimatePanel() {
   const projectCostValue = useMemo(() => {
     let value = 0;
     let found = false;
-    sectionsPass5b.forEach(s => {
+    sectionsPass5.forEach(s => {
       s.items.forEach((item) => {
         if (!isSubtotalHeader(item.description)) return;
         if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
@@ -524,9 +514,9 @@ export default function CreateEstimatePanel() {
     });
     console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', found, 'value:', value);
     return value;
-  }, [sectionsPass5b, projectCol14Total]);
+  }, [sectionsPass5, projectCol14Total]);
 
-  const sectionsWithAggregate = sectionsPass5b.map(s => ({
+  const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
