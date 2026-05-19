@@ -231,10 +231,15 @@ export default function CalculationEngine() {
     return hours;
   }, [equipmentRows, rowSums, inventoryValueMap]);
 
-  // Col 4: (N days × 8) + (Sa days × 4)
+  // Col 4: (N days × 8) + (Sa days × 4) (Manpower only)
   const rowCol4 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      if (!isManpower) { result[row.id] = 0; return; }
       let nSum = 0, saSum = 0;
       Object.entries(equipmentGrid).forEach(([key, value]) => {
         if (!key.startsWith(`${row.id}_`)) return;
@@ -247,12 +252,17 @@ export default function CalculationEngine() {
       result[row.id] = (nSum * 8) + (saSum * 4);
     });
     return result;
-  }, [equipmentRows, equipmentGrid, typeGrid]);
+  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
 
-  // Col 5: N days × (shiftHrs - 8)
+  // Col 5: N days × (shiftHrs - 8) (Manpower only)
   const rowCol5 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      if (!isManpower) { result[row.id] = 0; return; }
       const label = (row.label || '').toLowerCase();
       const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
       let nSum = 0;
@@ -266,12 +276,17 @@ export default function CalculationEngine() {
       result[row.id] = nSum * Math.max(0, shiftHrs - 8);
     });
     return result;
-  }, [equipmentRows, equipmentGrid, typeGrid]);
+  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
 
-  // Col 6: Sa days × max(shiftHrs - 4, 0)
+  // Col 6: Sa days × max(shiftHrs - 4, 0) (Manpower only)
   const rowCol6 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      if (!isManpower) { result[row.id] = 0; return; }
       const label = (row.label || '').toLowerCase();
       const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
       let saSum = 0;
@@ -285,12 +300,17 @@ export default function CalculationEngine() {
       result[row.id] = saSum * Math.max(shiftHrs - 4, 0);
     });
     return result;
-  }, [equipmentRows, equipmentGrid, typeGrid]);
+  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
 
-  // Col 7: Su days × shiftHrs
+  // Col 7: Su days × shiftHrs (Manpower only)
   const rowCol7 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      if (!isManpower) { result[row.id] = 0; return; }
       const label = (row.label || '').toLowerCase();
       const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
       let suSum = 0;
@@ -304,12 +324,17 @@ export default function CalculationEngine() {
       result[row.id] = suSum * shiftHrs;
     });
     return result;
-  }, [equipmentRows, equipmentGrid, typeGrid]);
+  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
 
-  // Col 8: St days × shiftHrs
+  // Col 8: St days × shiftHrs (Manpower only)
   const rowCol8 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      if (!isManpower) { result[row.id] = 0; return; }
       const label = (row.label || '').toLowerCase();
       const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
       let stSum = 0;
@@ -323,16 +348,22 @@ export default function CalculationEngine() {
       result[row.id] = stSum * shiftHrs;
     });
     return result;
-  }, [equipmentRows, equipmentGrid, typeGrid]);
+  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
 
-  // Col 3: Total Hrs = Col4 + Col5 + Col6 + Col7 + Col8
+  // Col 3: Total Hrs = Col4 + Col5 + Col6 + Col7 + Col8 (Manpower only)
   const rowCol3 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      result[row.id] = (rowCol4[row.id] || 0) + (rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0) + (rowCol8[row.id] || 0);
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
+        ?? null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      result[row.id] = isManpower
+        ? (rowCol4[row.id] || 0) + (rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0) + (rowCol8[row.id] || 0)
+        : 0;
     });
     return result;
-  }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8]);
+  }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
