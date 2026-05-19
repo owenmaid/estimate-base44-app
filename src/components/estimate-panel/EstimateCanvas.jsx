@@ -27,6 +27,10 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
+const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours'];
+const isHourItem = (desc) => HOUR_ITEMS.includes(normalizeDesc(desc));
+const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
 
 // For each [bracket] row, sum all regular items below it until the next [bracket] row.
 // Uses only the items within the same section (no cross-section aggregation needed).
@@ -104,7 +108,9 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-semibold text-primary">${sectionTotal.toFixed(2)}</span>
+          <span className="text-xs font-semibold text-primary">
+            {isHourSection(section.title) ? Math.round(sectionTotal).toLocaleString() : `$${sectionTotal.toFixed(2)}`}
+          </span>
           <button onClick={() => onRemove(section.id)} className="text-muted-foreground hover:text-destructive transition-colors">
             <Trash2 className="h-3 w-3" />
           </button>
@@ -170,10 +176,14 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                             {!isHeader && !spacer && <EditableCell value={item.markup} onChange={v => onUpdateItem(section.id, item.id, 'markup', v)} type="number" className="w-14 text-right" />}
                           </div>
                           <div className={`text-right font-semibold ${isHeader ? 'text-orange-400' : 'text-foreground'}`}>
-                            {!spacer && (isHeader
-                              ? `$${Number(headerSubtotal || 0).toFixed(2)}`
-                              : `$${Number(item.total || 0).toFixed(2)}`
-                            )}
+                           {!spacer && (isHeader
+                             ? (isHourItem(item.description)
+                                 ? Math.round(headerSubtotal || 0).toLocaleString()
+                                 : `$${Number(headerSubtotal || 0).toFixed(2)}`)
+                             : (isHourItem(item.description)
+                                 ? Math.round(item.total || 0).toLocaleString()
+                                 : `$${Number(item.total || 0).toFixed(2)}`)
+                           )}
                           </div>
                           <div className="text-center text-muted-foreground font-mono truncate">
                             {!isHeader && !spacer && (() => {
