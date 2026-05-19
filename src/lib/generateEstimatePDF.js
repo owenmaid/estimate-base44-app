@@ -3,10 +3,10 @@ import jsPDF from 'jspdf';
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
-const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours'];
+const HOUR_ITEMS = ['total labour | logistics cost', 'dcsm est total hours', 'total ventilation labour hours'];
 const isHourItem = (desc) => HOUR_ITEMS.includes(normalizeDesc(desc));
-const isHourSection = (title, items = []) =>
-  HOUR_ITEMS.includes(normalizeDesc(title)) || items.some(i => isHourItem(i.description));
+const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
+const isProjectTotalsSection = (title) => normalizeDesc(title) === 'project totals';
 
 const fmtVal = (val, isHour) =>
   isHour ? Math.round(val).toLocaleString('en-CA') : `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`;
@@ -140,6 +140,8 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
       ? bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0)
       : section.items.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
 
+    const isProjTotals = isProjectTotalsSection(section.title);
+
     // Section header
     doc.setFillColor(...light);
     doc.rect(margin, y - 2, contentW, 18, 'F');
@@ -150,13 +152,13 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     doc.setFontSize(9);
     doc.setTextColor(...dark);
     doc.text(section.title, margin + 10, y + 10);
-    const sectionIsHour = isHourSection(section.title, section.items);
+    const sectionIsHour = isHourSection(section.title);
     doc.setTextColor(...orange);
     doc.text(fmtVal(secTotal, sectionIsHour), colTotal, y + 10, { align: 'right' });
     y += 22;
 
-    // Column headers — only if section has items
-    if (section.items.length > 0) {
+    // Column headers — only if section has items AND is not Project Totals
+    if (section.items.length > 0 && !isProjTotals) {
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...muted);
@@ -182,8 +184,8 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
       checkPage(18);
 
       if (spacer) {
-        // Dark grey 50% opacity spacer row (approximated as mid-grey fill)
-        doc.setFillColor(180, 180, 180); // ~50% grey
+        // Dark grey 50% opacity spacer row
+        doc.setFillColor(180, 180, 180);
         doc.rect(margin, y - 6, contentW, 10, 'F');
         y += 10;
         return;
@@ -191,7 +193,7 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
 
       if (isHeader) {
         // Subtotal header row — orange tinted background, left accent bar
-        doc.setFillColor(255, 237, 213); // light orange
+        doc.setFillColor(255, 237, 213);
         doc.rect(margin, y - 10, contentW, 16, 'F');
         doc.setFillColor(...orange);
         doc.rect(margin, y - 10, 3, 16, 'F');
@@ -199,31 +201,44 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(...orange);
-        const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 12);
+        const descLines = doc.splitTextToSize(item.description || '', isProjTotals ? contentW - 100 : colQty - colDesc - 12);
         doc.text(descLines, colDesc + 6, y);
 
-        const headerSum = subtotalMap[item.id] || 0;
-        doc.text(fmtVal(headerSum, isHourItem(item.description)), colTotal, y, { align: 'right' });
+        // For [Total Project Cost], use item.total directly; otherwise use subtotalMap
+        const isProjectCostBracket = normalizeDesc(item.description) === 'total project cost';
+        const displayTotal = isProjectCostBracket ? (item.total || 0) : (subtotalMap[item.id] || 0);
+        
+        doc.text(fmtVal(displayTotal, isHourItem(item.description)), colTotal, y, { align: 'right' });
 
         doc.setFont('helvetica', 'normal');
         y += descLines.length > 1 ? descLines.length * 11 : 16;
-        regularRowIdx = 0; // reset alternating for items after this header
+        regularRowIdx = 0;
       } else {
-        // Normal item row — alternating shading
-        if (regularRowIdx % 2 === 0) {
+        // Normal item row
+        if (!isProjTotals && regularRowIdx % 2 === 0) {
           doc.setFillColor(250, 249, 247);
           doc.rect(margin, y - 9, contentW, 14, 'F');
         }
         doc.setTextColor(...dark);
         doc.setFont('helvetica', 'normal');
-        const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 8);
+        const descLines = doc.splitTextToSize(item.description || '', isProjTotals ? contentW - 100 : colQty - colDesc - 8);
         doc.text(descLines, colDesc, y);
-        doc.text(String(item.quantity ?? 1), colQty, y, { align: 'right' });
-        doc.text(`$${(item.unit_price || 0).toFixed(2)}`, colUnit, y, { align: 'right' });
-        doc.text(`${item.markup || 0}%`, colMkup, y, { align: 'right' });
-        doc.setFont('helvetica', 'bold');
-        doc.text(fmtVal(item.total || 0, isHourItem(item.description)), colTotal, y, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
+        
+        if (isProjTotals) {
+          // Project Totals: only Description and Total columns
+          doc.setFont('helvetica', 'bold');
+          doc.text(fmtVal(item.total || 0, isHourItem(item.description)), colTotal, y, { align: 'right' });
+          doc.setFont('helvetica', 'normal');
+        } else {
+          // Regular section: all columns
+          doc.text(String(item.quantity ?? 1), colQty, y, { align: 'right' });
+          doc.text(`$${(item.unit_price || 0).toFixed(2)}`, colUnit, y, { align: 'right' });
+          doc.text(`${item.markup || 0}%`, colMkup, y, { align: 'right' });
+          doc.setFont('helvetica', 'bold');
+          doc.text(fmtVal(item.total || 0, isHourItem(item.description)), colTotal, y, { align: 'right' });
+          doc.setFont('helvetica', 'normal');
+        }
+        
         y += descLines.length > 1 ? descLines.length * 11 : 14;
         regularRowIdx++;
       }
