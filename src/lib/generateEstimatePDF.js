@@ -12,7 +12,7 @@ const fmtVal = (val, isHour) =>
   isHour ? Math.round(val).toLocaleString('en-CA') : `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`;
 
 // For each [bracket] row, sum all regular items below it until the next [bracket] row.
-// Exception: [Total Project Labour Hours] uses its injected item.total directly.
+// Exception: [Total Project Labour Hours] uses its injected item.total directly (sum of DCSM + Vent hours).
 function buildSubtotals(items) {
   const map = {};
   items.forEach((item, idx) => {

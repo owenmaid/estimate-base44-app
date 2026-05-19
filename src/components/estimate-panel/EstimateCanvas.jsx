@@ -33,12 +33,17 @@ const isHourItem = (desc) => HOUR_ITEMS.includes(normalizeDesc(desc));
 const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
 
 // For each [bracket] row, sum all regular items below it until the next [bracket] row.
-// Uses only the items within the same section (no cross-section aggregation needed).
+// Exception: [Total Project Labour Hours] uses its injected item.total directly (sum of DCSM + Vent hours).
 function buildSubtotals(items) {
   const map = {};
   items.forEach((item, idx) => {
     if (!isSubtotalHeader(item.description)) return;
     const n = normalizeDesc(item.description);
+    // [Total Project Labour Hours] uses injected total, not sum of items below
+    if (n === 'total project labour hours') {
+      map[item.id] = item.total || 0;
+      return;
+    }
     let sum = 0;
     for (let j = idx + 1; j < items.length; j++) {
       if (isSubtotalHeader(items[j].description)) break;

@@ -440,25 +440,44 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Pass 5: Sum "Total Labour Hours" section + "Total Ventilation Labour Hours" section → [Total Project Labour Hours]
-  // Sum all items in sections whose titles match
-  const totalLabourHoursSection = sectionsPass4
-    .filter(s => normalizeDesc(s.title) === 'total labour hours')
-    .reduce((sum, s) => sum + s.items.filter(i => !isSpacer(i.description)).reduce((a, i) => a + (i.total || 0), 0), 0);
+  // Pass 5: Mirror "DCSM Est Total Hours" from Total Labour Hours section → Project Totals
+  // Mirror "Total Ventilation Labour Hours" from Total Ventilation Labour Hours section → Project Totals
+  const DCSM_HOURS_SOURCE = 'dcsm est total hours';
+  const VENT_HOURS_SOURCE = 'total ventilation labour hours';
   
-  const totalVentLabourHoursSection = sectionsPass4
-    .filter(s => normalizeDesc(s.title) === 'total ventilation labour hours')
-    .reduce((sum, s) => sum + s.items.filter(i => !isSpacer(i.description)).reduce((a, i) => a + (i.total || 0), 0), 0);
+  let dcsmHoursValue = 0;
+  let ventHoursValue = 0;
+  
+  sectionsPass4.forEach(s => {
+    const titleN = normalizeDesc(s.title);
+    s.items.forEach(item => {
+      const itemN = normalizeDesc(item.description);
+      if (titleN === 'total labour hours' && itemN === DCSM_HOURS_SOURCE) {
+        dcsmHoursValue = item.total || 0;
+      }
+      if (titleN === 'total ventilation labour hours' && itemN === VENT_HOURS_SOURCE) {
+        ventHoursValue = item.total || 0;
+      }
+    });
+  });
 
-  const totalProjectLabourHours = totalLabourHoursSection + totalVentLabourHoursSection;
-  console.log('[CreateEstimatePanel] Total Project Labour Hours:', totalProjectLabourHours, '= Labour Section:', totalLabourHoursSection, '+ Vent Section:', totalVentLabourHoursSection);
+  const totalProjectLabourHours = dcsmHoursValue + ventHoursValue;
+  console.log('[CreateEstimatePanel] Total Project Labour Hours:', totalProjectLabourHours, '= DCSM:', dcsmHoursValue, '+ Vent:', ventHoursValue);
 
-  // Pass 5: Inject "[Total Project Labour Hours]" bracket row with summed value
+  // Pass 5: Inject mirrored values into Project Totals section
   const sectionsPass5 = sectionsPass4.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      // Inject into the bracket row [Total Project Labour Hours] in Project Totals section
+      // Inject DCSM Est Total Hours
+      if (isSubtotalHeader(item.description) && n === 'dcsm est total hours') {
+        return { ...item, unit_price: dcsmHoursValue, quantity: 1, markup: 0, total: dcsmHoursValue };
+      }
+      // Inject Total Ventilation Labour Hours
+      if (isSubtotalHeader(item.description) && n === 'total ventilation labour hours') {
+        return { ...item, unit_price: ventHoursValue, quantity: 1, markup: 0, total: ventHoursValue };
+      }
+      // Inject [Total Project Labour Hours] (sum of the two above)
       if (isSubtotalHeader(item.description) && n === 'total project labour hours') {
         return { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours };
       }
@@ -466,21 +485,46 @@ export default function CreateEstimatePanel() {
     }),
   }));
 
-  // Auto-create [Total Project Labour Hours] bracket in Project Totals section if missing
+  // Auto-create brackets in Project Totals section if missing
   const projectTotalsSection = sectionsPass5.find(s => normalizeDesc(s.title) === 'project totals');
-  const hasBracket = projectTotalsSection?.items.some(i => isSubtotalHeader(i.description) && normalizeDesc(i.description) === 'total project labour hours');
-  if (!hasBracket && totalProjectLabourHours > 0) {
-    console.log('[CreateEstimatePanel] Auto-creating [Total Project Labour Hours] bracket:', totalProjectLabourHours);
-    const ptIdx = sectionsPass5.findIndex(s => normalizeDesc(s.title) === 'project totals');
-    if (ptIdx !== -1) {
-      sectionsPass5[ptIdx].items.push({
-        id: Date.now(),
+  if (projectTotalsSection) {
+    const existingDescs = projectTotalsSection.items.map(i => normalizeDesc(i.description));
+    const newBrackets = [];
+    
+    if (!existingDescs.includes('dcsm est total hours') && dcsmHoursValue > 0) {
+      newBrackets.push({
+        id: Date.now() + 1,
+        description: '[DCSM Est Total Hours]',
+        quantity: 1,
+        unit_price: dcsmHoursValue,
+        markup: 0,
+        total: dcsmHoursValue,
+      });
+    }
+    if (!existingDescs.includes('total ventilation labour hours') && ventHoursValue > 0) {
+      newBrackets.push({
+        id: Date.now() + 2,
+        description: '[Total Ventilation Labour Hours]',
+        quantity: 1,
+        unit_price: ventHoursValue,
+        markup: 0,
+        total: ventHoursValue,
+      });
+    }
+    if (!existingDescs.includes('total project labour hours') && totalProjectLabourHours > 0) {
+      newBrackets.push({
+        id: Date.now() + 3,
         description: '[Total Project Labour Hours]',
         quantity: 1,
         unit_price: totalProjectLabourHours,
         markup: 0,
         total: totalProjectLabourHours,
       });
+    }
+    
+    if (newBrackets.length > 0) {
+      console.log('[CreateEstimatePanel] Auto-creating brackets:', newBrackets.map(b => b.description));
+      projectTotalsSection.items.push(...newBrackets);
     }
   }
 
