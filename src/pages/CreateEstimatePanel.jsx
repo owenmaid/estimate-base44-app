@@ -301,13 +301,23 @@ export default function CreateEstimatePanel() {
   });
 
   // Also inject "Logistic / Shipping Total" = the bracketed [Logistics / Shipping] subtotal
-  const LOGISTICS_BRACKET = 'logistics / shipping';
-  const LOGISTICS_TARGET  = 'logistic / shipping total';
+  // Use flexible matching to handle spacing variations around '/'
+  const LOGISTICS_TARGET = 'logistic / shipping total';
+
+  const isLogisticsBracket = (desc) => {
+    const n = normalizeDesc(desc);
+    return n === 'logistics / shipping' || n === 'logistics/shipping' || n === 'logistic / shipping' || n === 'logistic/shipping';
+  };
+  const isLogisticsTarget = (desc) => {
+    const n = normalizeDesc(desc);
+    return n === 'logistic / shipping total' || n === 'logistics / shipping total' || n === 'logistic/shipping total' || n === 'logistics/shipping total';
+  };
 
   let logisticsValue = 0;
   sectionsPass2.forEach(s => {
     s.items.forEach((item, idx) => {
-      if (normalizeDesc(item.description) !== LOGISTICS_BRACKET) return;
+      if (!isSubtotalHeader(item.description)) return;
+      if (!isLogisticsBracket(item.description)) return;
       let sum = 0;
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
@@ -325,7 +335,7 @@ export default function CreateEstimatePanel() {
         return { ...item, total: leadVentValue };
       if (normalizeDesc(item.description) === VENT_TECH_TARGET)
         return { ...item, total: ventTechValue };
-      if (normalizeDesc(item.description) === LOGISTICS_TARGET)
+      if (isLogisticsTarget(item.description))
         return { ...item, total: logisticsValue };
       return item;
     }),
