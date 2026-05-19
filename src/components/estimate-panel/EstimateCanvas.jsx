@@ -28,77 +28,35 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
 
-// Normalize a header description for matching (strip brackets, lowercase, trim)
-const normalizeHeader = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
-
-// Labels whose subtotals feed into [Total Labour | Logistics Cost]
-const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
-const AGGREGATE_TARGET  = 'total labour | logistics cost';
-
-// For each subtotal-header item, compute the sum of section totals.
-// allItems is the flat list across ALL sections (for cross-section aggregation).
-function buildSubtotals(items, allItems) {
-  const flatItems = allItems || items;
-
-  // Step 1: Find all section totals by summing items between headers
-  const sectionTotals = [];
-  let currentSectionSum = 0;
-  let inSection = false;
-
-  for (let i = 0; i < flatItems.length; i++) {
-    if (isSubtotalHeader(flatItems[i].description)) {
-      // Save previous section total if we were in a section
-      if (inSection && currentSectionSum > 0) {
-        sectionTotals.push(currentSectionSum);
-      }
-      // Reset for next section
-      currentSectionSum = 0;
-      inSection = true;
-    } else if (inSection && !isSpacer(flatItems[i].description)) {
-      currentSectionSum += flatItems[i].total || 0;
-    }
-  }
-
-  // Step 2: [Total Labour | Logistics Cost] = sum of all section totals
-  const aggregateTotal = sectionTotals.reduce((sum, val) => sum + val, 0);
-  
-  console.log(`Section totals: [${sectionTotals.map(t => `$${t.toFixed(2)}`).join(', ')}]`);
-  console.log(`Aggregate total (sum of section totals): $${aggregateTotal.toFixed(2)}`);
-
-  // Step 3: build return map for items in this section
+// For each [bracket] row, sum all regular items below it until the next [bracket] row.
+// Uses only the items within the same section (no cross-section aggregation needed).
+function buildSubtotals(items) {
   const map = {};
-  items.forEach(item => {
+  items.forEach((item, idx) => {
     if (!isSubtotalHeader(item.description)) return;
-    const key = normalizeHeader(item.description);
-    if (key === AGGREGATE_TARGET) {
-      map[item.id] = aggregateTotal;
-    } else {
-      // For other headers, just sum items below until next header
-      const idx = flatItems.findIndex(f => f.id === item.id);
-      let sum = 0;
-      for (let j = idx + 1; j < flatItems.length; j++) {
-        if (isSubtotalHeader(flatItems[j].description)) break;
-        if (isSpacer(flatItems[j].description)) continue;
-        sum += flatItems[j].total || 0;
-      }
-      map[item.id] = sum;
+    let sum = 0;
+    for (let j = idx + 1; j < items.length; j++) {
+      if (isSubtotalHeader(items[j].description)) break;
+      if (isSpacer(items[j].description)) continue;
+      sum += items[j].total || 0;
     }
+    map[item.id] = sum;
   });
   return map;
 }
 
-function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory, allItems, dragHandleProps }) {
+function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory, dragHandleProps }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
-  const subtotalMap = buildSubtotals(section.items, allItems);
-  
-  // Find if this section has a subtotal header and use its aggregated value
-  const subtotalHeaderItem = section.items.find(i => isSubtotalHeader(i.description));
-  const sectionTotal = subtotalHeaderItem && subtotalMap[subtotalHeaderItem.id] !== undefined
-    ? subtotalMap[subtotalHeaderItem.id]
-    : section.items.reduce((s, i) => s + (i.total || 0), 0);
+  const subtotalMap = buildSubtotals(section.items);
+
+  // Section total = sum of all [bracket] row values if any exist, otherwise sum all line items
+  const bracketItems = section.items.filter(i => isSubtotalHeader(i.description));
+  const sectionTotal = bracketItems.length > 0
+    ? bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0)
+    : section.items.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -260,9 +218,6 @@ export default function EstimateCanvas({
 
   const update = (field, value) => onClientInfoChange(prev => ({ ...prev, [field]: value }));
 
-  // Flat list of all items across all sections for cross-section aggregation
-  const allItems = sections.flatMap(s => s.items);
-
   const handleSectionDragEnd = (result) => {
     if (!result.destination) return;
     const reordered = Array.from(sections);
@@ -331,7 +286,6 @@ export default function EstimateCanvas({
                         onRemoveItem={onRemoveItem}
                         onReorderItems={onReorderItems}
                         inventory={inventory}
-                        allItems={allItems}
                         dragHandleProps={drag.dragHandleProps}
                       />
                     </div>

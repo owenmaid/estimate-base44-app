@@ -2,50 +2,20 @@ import jsPDF from 'jspdf';
 
 const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
 const isSpacer = (desc) => (desc || '') === '__SPACER__';
-const normalizeHeader = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
-const AGGREGATE_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
-const AGGREGATE_TARGET  = 'total labour | logistics cost';
-
-// allItems = flat list across ALL sections for cross-section aggregation
-function buildSubtotals(items, allItems) {
-  const flatItems = allItems || items;
-
-  // Step 1: per-header sums across the full flat list
-  const globalMap = {};
-  for (let i = 0; i < flatItems.length; i++) {
-    if (isSubtotalHeader(flatItems[i].description)) {
-      const key = normalizeHeader(flatItems[i].description);
-      if (key === AGGREGATE_TARGET) continue;
-      let sum = 0;
-      for (let j = i + 1; j < flatItems.length; j++) {
-        if (isSubtotalHeader(flatItems[j].description)) break;
-        if (isSpacer(flatItems[j].description)) continue;
-        sum += flatItems[j].total || 0;
-      }
-      globalMap[flatItems[i].id] = sum;
-    }
-  }
-
-  // Step 2: aggregate total from three named sources
-  const sourceSubtotals = {};
-  for (let i = 0; i < flatItems.length; i++) {
-    if (!isSubtotalHeader(flatItems[i].description)) continue;
-    const key = normalizeHeader(flatItems[i].description);
-    if (AGGREGATE_SOURCES.includes(key)) sourceSubtotals[key] = globalMap[flatItems[i].id] || 0;
-  }
-  const aggregateTotal = AGGREGATE_SOURCES.reduce((s, k) => s + (sourceSubtotals[k] || 0), 0);
-
-  // Step 3: assign to [Total Labour | Logistics Cost]
-  for (let i = 0; i < flatItems.length; i++) {
-    if (isSubtotalHeader(flatItems[i].description) && normalizeHeader(flatItems[i].description) === AGGREGATE_TARGET) {
-      globalMap[flatItems[i].id] = aggregateTotal;
-    }
-  }
-
-  // Return only entries relevant to the requested items list
+// For each [bracket] row, sum all regular items below it until the next [bracket] row.
+function buildSubtotals(items) {
   const map = {};
-  items.forEach(item => { if (globalMap[item.id] !== undefined) map[item.id] = globalMap[item.id]; });
+  items.forEach((item, idx) => {
+    if (!isSubtotalHeader(item.description)) return;
+    let sum = 0;
+    for (let j = idx + 1; j < items.length; j++) {
+      if (isSubtotalHeader(items[j].description)) break;
+      if (isSpacer(items[j].description)) continue;
+      sum += items[j].total || 0;
+    }
+    map[item.id] = sum;
+  });
   return map;
 }
 
@@ -143,9 +113,14 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
   const colTotal = margin + contentW;
 
   // ── Sections ────────────────────────────────────────────────────────────────
-  const allItems = sections.flatMap(s => s.items);
   sections.forEach((section) => {
     checkPage(40);
+
+    const subtotalMap = buildSubtotals(section.items);
+    const bracketItems = section.items.filter(i => isSubtotalHeader(i.description));
+    const secTotal = bracketItems.length > 0
+      ? bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0)
+      : section.items.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
 
     // Section header
     doc.setFillColor(...light);
@@ -157,8 +132,6 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     doc.setFontSize(9);
     doc.setTextColor(...dark);
     doc.text(section.title, margin + 10, y + 10);
-
-    const secTotal = section.items.reduce((s, i) => s + (i.total || 0), 0);
     doc.setTextColor(...orange);
     doc.text(`$${secTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, colTotal, y + 10, { align: 'right' });
     y += 22;
@@ -183,7 +156,6 @@ export function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount,
     // Items
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
-    const subtotalMap = buildSubtotals(section.items, allItems);
     let regularRowIdx = 0;
     section.items.forEach((item) => {
       const isHeader = isSubtotalHeader(item.description);
