@@ -192,17 +192,19 @@ export default function CreateEstimatePanel() {
     return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
   };
 
-  // Sum totals of sections whose titles match the aggregate source list
+  // Sum totals of sections whose titles match the aggregate source list (strip brackets)
   const aggregateTotal = sections.reduce((sum, s) => {
-    const title = (s.title || '').toLowerCase().trim();
+    const title = (s.title || '').replace(/[\[\]]/g, '').toLowerCase().trim();
     return AGGREGATE_SOURCES.includes(title) ? sum + getSectionTotal(s.items) : sum;
   }, 0);
 
-  // Inject aggregate total into any item matching the target description
+  // Inject aggregate total into any item matching the target description (strip brackets before comparing)
+  const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+
   const sectionsWithAggregate = sections.map(s => ({
     ...s,
     items: s.items.map(item => {
-      if ((item.description || '').toLowerCase().trim() === AGGREGATE_TARGET) {
+      if (normalizeDesc(item.description) === AGGREGATE_TARGET) {
         return { ...item, total: aggregateTotal };
       }
       return item;
