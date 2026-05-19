@@ -300,6 +300,24 @@ export default function CreateEstimatePanel() {
     });
   });
 
+  // Also inject "Logistic / Shipping Total" = the bracketed [Logistics / Shipping] subtotal
+  const LOGISTICS_BRACKET = 'logistics / shipping';
+  const LOGISTICS_TARGET  = 'logistic / shipping total';
+
+  let logisticsValue = 0;
+  sectionsPass2.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (normalizeDesc(item.description) !== LOGISTICS_BRACKET) return;
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      logisticsValue = sum;
+    });
+  });
+
   const sectionsPass3 = sectionsPass2.map(s => ({
     ...s,
     items: s.items.map(item => {
@@ -307,6 +325,8 @@ export default function CreateEstimatePanel() {
         return { ...item, total: leadVentValue };
       if (normalizeDesc(item.description) === VENT_TECH_TARGET)
         return { ...item, total: ventTechValue };
+      if (normalizeDesc(item.description) === LOGISTICS_TARGET)
+        return { ...item, total: logisticsValue };
       return item;
     }),
   }));
