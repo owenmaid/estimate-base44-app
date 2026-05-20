@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, CheckCircle2, Circle, LayoutTemplate, Pencil, X, Save } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Circle, LayoutTemplate, Pencil, X, Save, FileText, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const TASK_TYPES = ['Manpower', 'Equipment', 'Logistics'];
 
@@ -84,7 +85,6 @@ function TemplateEditor({ template, onClose, onSaved }) {
             </Select>
           </div>
 
-          {/* Tasks */}
           <div>
             <Label className="mb-2 block">Preset Tasks</Label>
             <div className="flex gap-2 mb-3">
@@ -141,14 +141,67 @@ function TemplateEditor({ template, onClose, onSaved }) {
   );
 }
 
+// ── Estimate Template Card ────────────────────────────────────────────────────
+function EstimateTemplateCard({ tmpl, onDelete, onLoad }) {
+  const sectionCount = (tmpl.line_items || []).filter(i => (i.description || '').startsWith('__SECTION__:')).length;
+  const lineCount = (tmpl.line_items || []).filter(i => !(i.description || '').startsWith('__SECTION__:') && i.description !== '__SPACER__').length;
+
+  return (
+    <Card className="hover:shadow-lg transition-shadow border-primary/20">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+              <CardTitle className="text-base truncate">{tmpl.name}</CardTitle>
+            </div>
+            {tmpl.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2">{tmpl.description}</p>
+            )}
+          </div>
+          <Badge className="text-xs border flex-shrink-0 bg-primary/10 text-primary border-primary/30">
+            Estimate
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="text-xs text-muted-foreground space-y-0.5">
+          {tmpl.source_estimate_number && (
+            <p>Source: <span className="text-foreground font-medium">{tmpl.source_estimate_number}</span></p>
+          )}
+          {tmpl.client_info?.client_name && (
+            <p>Client: <span className="text-foreground">{tmpl.client_info.client_name}</span></p>
+          )}
+          <p>{sectionCount} sections · {lineCount} line items</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => onLoad(tmpl)}>
+            <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Load in Panel
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(tmpl.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ProjectTemplates() {
   const queryClient = useQueryClient();
-  const [editing, setEditing] = useState(null); // null = closed, false = new, or template object
+  const navigate = useNavigate();
+  const [editing, setEditing] = useState(null);
+  const [activeTab, setActiveTab] = useState('project');
   const isOpen = editing !== null;
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['projectTemplates'],
     queryFn: () => base44.entities.ProjectTemplate.list('-created_date'),
+  });
+
+  const { data: estimateTemplates = [], isLoading: etLoading } = useQuery({
+    queryKey: ['estimateTemplates'],
+    queryFn: () => base44.entities.EstimateTemplate.list('-created_date'),
   });
 
   const deleteMutation = useMutation({
@@ -158,6 +211,21 @@ export default function ProjectTemplates() {
       toast.success('Template deleted');
     },
   });
+
+  const deleteEtMutation = useMutation({
+    mutationFn: (id) => base44.entities.EstimateTemplate.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimateTemplates'] });
+      toast.success('Estimate template deleted');
+    },
+  });
+
+  // Navigate to CreateEstimatePanel with template data stored in sessionStorage
+  const handleLoadEstimateTemplate = (tmpl) => {
+    sessionStorage.setItem('estimateTemplateToLoad', JSON.stringify(tmpl));
+    navigate('/create-estimate-panel');
+    toast.success(`Opening "${tmpl.name}" in Estimate Panel…`);
+  };
 
   const STATUS_LABELS = { planning: 'Planning', active: 'Active', on_hold: 'On Hold', completed: 'Completed' };
   const STATUS_STYLES = {
@@ -171,70 +239,124 @@ export default function ProjectTemplates() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Project Templates</h1>
-          <p className="text-sm text-muted-foreground mt-1">Define reusable task structures for new projects</p>
+          <h1 className="text-2xl font-bold">Templates</h1>
+          <p className="text-sm text-muted-foreground mt-1">Reusable project task structures and estimate snapshots</p>
         </div>
-        <Button size="sm" onClick={() => setEditing(false)}>
-          <Plus className="h-4 w-4 mr-1.5" /> New Template
-        </Button>
+        {activeTab === 'project' && (
+          <Button size="sm" onClick={() => setEditing(false)}>
+            <Plus className="h-4 w-4 mr-1.5" /> New Project Template
+          </Button>
+        )}
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <Card key={i} className="h-40 animate-pulse bg-muted" />)}
-        </div>
-      ) : templates.length === 0 ? (
-        <Card className="py-16 text-center">
-          <CardContent>
-            <LayoutTemplate className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">No templates yet. Create your first one!</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {templates.map(tmpl => (
-            <Card key={tmpl.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <CardTitle className="text-base truncate">{tmpl.name}</CardTitle>
-                    {tmpl.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tmpl.description}</p>
-                    )}
-                  </div>
-                  <Badge className={`text-xs border flex-shrink-0 ${STATUS_STYLES[tmpl.default_status]}`}>
-                    {STATUS_LABELS[tmpl.default_status]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {(tmpl.task_list || []).length === 0 && (
-                    <p className="text-xs text-muted-foreground">No preset tasks</p>
-                  )}
-                  {(tmpl.task_list || []).map(task => (
-                    <div key={task.id} className="flex items-center gap-2">
-                      <Circle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                      <span className="text-xs flex-1 truncate">{task.name}</span>
-                      {task.type && (
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{task.type}</span>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-border">
+        {[
+          { key: 'project', label: 'Project Templates', count: templates.length },
+          { key: 'estimate', label: 'Estimate Templates', count: estimateTemplates.length },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === tab.key
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.label}
+            <span className="ml-1.5 text-xs bg-secondary px-1.5 py-0.5 rounded-full">{tab.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Project Templates Tab */}
+      {activeTab === 'project' && (
+        isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[1,2,3].map(i => <Card key={i} className="h-40 animate-pulse bg-muted" />)}
+          </div>
+        ) : templates.length === 0 ? (
+          <Card className="py-16 text-center">
+            <CardContent>
+              <LayoutTemplate className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No project templates yet. Create your first one!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {templates.map(tmpl => (
+              <Card key={tmpl.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <CardTitle className="text-base truncate">{tmpl.name}</CardTitle>
+                      {tmpl.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tmpl.description}</p>
                       )}
                     </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">{(tmpl.task_list || []).length} preset tasks</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(tmpl)}>
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(tmpl.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <Badge className={`text-xs border flex-shrink-0 ${STATUS_STYLES[tmpl.default_status]}`}>
+                      {STATUS_LABELS[tmpl.default_status]}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {(tmpl.task_list || []).length === 0 && (
+                      <p className="text-xs text-muted-foreground">No preset tasks</p>
+                    )}
+                    {(tmpl.task_list || []).map(task => (
+                      <div key={task.id} className="flex items-center gap-2">
+                        <Circle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs flex-1 truncate">{task.name}</span>
+                        {task.type && (
+                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{task.type}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{(tmpl.task_list || []).length} preset tasks</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(tmpl)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(tmpl.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* Estimate Templates Tab */}
+      {activeTab === 'estimate' && (
+        etLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[1,2,3].map(i => <Card key={i} className="h-40 animate-pulse bg-muted" />)}
+          </div>
+        ) : estimateTemplates.length === 0 ? (
+          <Card className="py-16 text-center">
+            <CardContent>
+              <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No estimate templates yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">Use "Save as Template" in the Estimate Panel to create one.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {estimateTemplates.map(tmpl => (
+              <EstimateTemplateCard
+                key={tmpl.id}
+                tmpl={tmpl}
+                onDelete={(id) => deleteEtMutation.mutate(id)}
+                onLoad={handleLoadEstimateTemplate}
+              />
+            ))}
+          </div>
+        )
       )}
 
       {isOpen && (

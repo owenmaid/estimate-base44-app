@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import PalettePanel from '@/components/estimate-panel/PalettePanel';
 import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
-import { X, Download } from 'lucide-react';
+import { X, Download, BookmarkPlus } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 
 export default function CreateEstimatePanel() {
@@ -14,6 +14,10 @@ export default function CreateEstimatePanel() {
   // The estimate being edited (null = new)
   const [activeEstimate, setActiveEstimate] = useState(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateDesc, setTemplateDesc] = useState('');
+  const [templateSaving, setTemplateSaving] = useState(false);
 
   // Sections: [{id, title, items:[{id,description,quantity,unit_price,total,markup}]}]
   const [sections, setSections] = useState([
@@ -39,6 +43,61 @@ export default function CreateEstimatePanel() {
       infoSignalLogo: user.settings.logoUrls.infoSignalLogo || prev.infoSignalLogo,
       dynaVentLogo: user.settings.logoUrls.dynaVentLogo || prev.dynaVentLogo,
     }));
+  }, [user]);
+
+  // Auto-load an estimate template if one was queued from the Templates page
+  useEffect(() => {
+    const raw = sessionStorage.getItem('estimateTemplateToLoad');
+    if (!raw) return;
+    sessionStorage.removeItem('estimateTemplateToLoad');
+    try {
+      const tmpl = JSON.parse(raw);
+      const info = tmpl.client_info || {};
+      setActiveEstimate(null);
+      setClientInfo({
+        client_name: info.client_name || '',
+        project_number: info.project_number || '',
+        client_email: info.client_email || '',
+        client_phone: info.client_phone || '',
+        client_address: info.client_address || '',
+        notes: info.notes || '',
+        tax_rate: info.tax_rate || 0,
+        discount: info.discount || 0,
+      });
+      const savedLogos = user?.settings?.logoUrls || {};
+      setLogoUrls({
+        infoSignalLogo: tmpl.logo_urls?.infoSignalLogo || savedLogos.infoSignalLogo || '',
+        dynaVentLogo: tmpl.logo_urls?.dynaVentLogo || savedLogos.dynaVentLogo || '',
+      });
+      // Reconstruct sections from line_items
+      const lineItems = tmpl.line_items || [];
+      const rebuilt = [];
+      let current = null;
+      lineItems.forEach((item) => {
+        if (item.description && item.description.startsWith('__SECTION__:')) {
+          const title = item.description.slice('__SECTION__:'.length);
+          current = { id: Date.now() + Math.random(), title, items: [] };
+          rebuilt.push(current);
+        } else {
+          if (!current) {
+            current = { id: Date.now() + Math.random(), title: 'Section 1', items: [] };
+            rebuilt.push(current);
+          }
+          current.items.push({
+            id: Date.now() + Math.random(),
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            markup: item.markup || 0,
+            total: item.total,
+          });
+        }
+      });
+      setSections(rebuilt.length > 0 ? rebuilt : [{ id: Date.now(), title: 'Section 1', items: [] }]);
+      toast.success(`Template "${tmpl.name}" loaded — ready to save as new estimate.`);
+    } catch (e) {
+      // ignore parse errors
+    }
   }, [user]);
 
   const { data: inventory = [] } = useQuery({
@@ -166,6 +225,43 @@ export default function CreateEstimatePanel() {
   };
 
   const handleCloseEstimate = () => setShowCloseConfirm(true);
+
+  // ── Save as Estimate Template ──────────────────────────────────────────────
+  const handleSaveTemplate = async () => {
+    const trimmed = templateName.trim();
+    if (!trimmed) return;
+    if (trimmed.toLowerCase() === 'est_template') {
+      toast.error('"Est_Template" is a reserved name. Please choose a different name.');
+      return;
+    }
+    setTemplateSaving(true);
+    try {
+      // Build line items the same way as the save mutation
+      const lineItems = [];
+      sectionsWithAggregate.forEach(s => {
+        lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
+        s.items.forEach(item => {
+          lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
+        });
+      });
+      await base44.entities.EstimateTemplate.create({
+        name: trimmed,
+        description: templateDesc.trim() || `Template from ${activeEstimate?.estimate_number || 'estimate'}`,
+        source_estimate_number: activeEstimate?.estimate_number || '',
+        client_info: { ...clientInfo },
+        line_items: lineItems,
+        logo_urls: { ...logoUrls },
+      });
+      toast.success(`Template "${trimmed}" saved!`);
+      setShowSaveTemplate(false);
+      setTemplateName('');
+      setTemplateDesc('');
+    } catch (e) {
+      toast.error('Failed to save template');
+    } finally {
+      setTemplateSaving(false);
+    }
+  };
 
   const handleCloseNo = () => {
     setShowCloseConfirm(false);
@@ -659,6 +755,13 @@ export default function CreateEstimatePanel() {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => { setTemplateName(''); setTemplateDesc(''); setShowSaveTemplate(true); }}
+            className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
+            title="Save as Estimate Template"
+          >
+            <BookmarkPlus className="h-3.5 w-3.5" /> Save as Template
+          </button>
+          <button
             onClick={async () => {
               await generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls });
             }}
@@ -707,6 +810,56 @@ export default function CreateEstimatePanel() {
                 className="px-4 py-2 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
               >
                 {saveMutation.isPending ? 'Saving…' : 'Yes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save as Template Modal */}
+      {showSaveTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
+            <h2 className="text-base font-bold text-foreground mb-1">Save as Estimate Template</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              This snapshot will be saved to the Templates page and can be reopened in the Estimate Panel anytime.
+              <span className="block mt-1 text-destructive font-medium">Note: "Est_Template" is a reserved name and cannot be used.</span>
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Template Name *</label>
+                <input
+                  autoFocus
+                  className="w-full text-sm bg-secondary border border-border rounded px-3 py-1.5 text-foreground outline-none focus:border-primary transition-colors"
+                  placeholder="e.g. KEYERA FT SASK Standard"
+                  value={templateName}
+                  onChange={e => setTemplateName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSaveTemplate()}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
+                <textarea
+                  className="w-full text-sm bg-secondary border border-border rounded px-3 py-1.5 text-foreground outline-none focus:border-primary transition-colors resize-none h-16"
+                  placeholder="What is this template for?"
+                  value={templateDesc}
+                  onChange={e => setTemplateDesc(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-4">
+              <button
+                onClick={() => setShowSaveTemplate(false)}
+                className="px-4 py-2 text-sm rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveTemplate}
+                disabled={!templateName.trim() || templateSaving}
+                className="px-4 py-2 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50"
+              >
+                {templateSaving ? 'Saving…' : 'Save Template'}
               </button>
             </div>
           </div>

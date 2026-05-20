@@ -1,0 +1,55 @@
+{
+  "name": "EstimateTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name \u2014 must be unique and not 'Est_Template'"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of this estimate template"
+    },
+    "source_estimate_number": {
+      "type": "string",
+      "description": "The estimate number this template was created from"
+    },
+    "client_info": {
+      "type": "object",
+      "description": "Snapshot of client/project metadata (client_name, project_number, etc.)",
+      "additionalProperties": true
+    },
+    "line_items": {
+      "type": "array",
+      "description": "Full list of line items including __SECTION__ markers and bracket headers",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "markup": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "logo_urls": {
+      "type": "object",
+      "description": "Logo URLs at time of template creation",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
