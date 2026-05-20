@@ -162,48 +162,21 @@ export default function EstimateCanvas({
         </Droppable>
       </DragDropContext>
 
-      {/* Summary Sections inside Budgetary Comparison */}
-      <div className="border border-border rounded-lg p-4 bg-card space-y-2">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Summary</h3>
-        <div className="grid grid-cols-2 gap-4">
-          {/* Left Summary */}
-          <div className="border border-border rounded-lg p-3 bg-secondary/30 space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
-              <span>Tax %</span>
-              <input
-                type="number" min="0" max="100"
-                className="w-16 text-xs bg-secondary border border-border rounded px-2 py-0.5 text-foreground outline-none text-right"
-                value={clientInfo.tax_rate}
-                onChange={e => update('tax_rate', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Tax Amount</span>
-              <span>${taxAmount.toFixed(2)}</span>
-            </div>
-          </div>
-          {/* Right Summary */}
-          <div className="border border-border rounded-lg p-3 bg-secondary/30 space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
-              <span>Discount $</span>
-              <input
-                type="number" min="0"
-                className="w-24 text-xs bg-secondary border border-border rounded px-2 py-0.5 text-foreground outline-none text-right"
-                value={clientInfo.discount}
-                onChange={e => update('discount', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
-              <span>Total</span>
-              <span className="text-primary">${total.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Summary Sections - rendered with SectionBlock */}
+      {sections.filter(s => s._isSummary).map((section, idx) => (
+        <SectionBlock
+          key={section.id}
+          section={section}
+          onRename={onRenameSection}
+          onRemove={onRemoveSection}
+          onSplit={handleSplit}
+          onUpdateItem={onUpdateItem}
+          onRemoveItem={onRemoveItem}
+          onReorderItems={onReorderItems}
+          inventory={inventory}
+          dragHandleProps={{}}
+        />
+      ))}
 
       {/* Totals */}
       <div className="border border-border rounded-lg p-4 bg-card ml-auto max-w-xs space-y-2">

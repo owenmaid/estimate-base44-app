@@ -162,6 +162,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
+  const isSummarySection = section._isSummary === true;
   const isProjectTotalsSection = normalizeDesc(section.title) === 'project totals';
   const itemsToRender = section.items;
 
@@ -182,7 +183,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
   return (
     <div className="border border-border rounded-lg overflow-hidden mb-3">
       {/* Section header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-secondary/60">
+      <div className={`flex items-center justify-between px-3 py-2 ${isSummarySection ? 'bg-blue-500/20 border-b border-blue-500/30' : 'bg-secondary/60'}`}>
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
             <GripVertical className="h-3.5 w-3.5" />
@@ -208,7 +209,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
             </div>
           ) : (
             <span
-              className="text-xs font-semibold text-foreground truncate cursor-text hover:text-primary transition-colors"
+              className={`text-xs font-semibold truncate cursor-text hover:text-primary transition-colors ${isSummarySection ? 'text-blue-400' : 'text-foreground'}`}
               onClick={() => { setTitleVal(section.title); setEditingTitle(true); }}
               title="Click to rename section"
             >
@@ -217,19 +218,23 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!isProjectTotalsSection && (
+          {!isProjectTotalsSection && !isSummarySection && (
             <span className="text-xs font-semibold text-primary">
               {(isHourSection(section.title) || itemsToRender.some(i => isHourItem(i.description)))
                 ? Math.round(sectionTotal).toLocaleString()
                 : `$${sectionTotal.toFixed(2)}`}
             </span>
           )}
-          <button onClick={() => onSplit(section.id)} className="text-muted-foreground hover:text-primary transition-colors" title="Split section into two">
-            <Columns className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={() => onRemove(section.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-            <Trash2 className="h-3 w-3" />
-          </button>
+          {!isSummarySection && (
+            <>
+              <button onClick={() => onSplit(section.id)} className="text-muted-foreground hover:text-primary transition-colors" title="Split section into two">
+                <Columns className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => onRemove(section.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
