@@ -31,6 +31,8 @@ export default function ProjectDetailsSetup() {
   const [projectSite, setProjectSite] = useState('');
   const [projectLocation, setProjectLocation] = useState('');
   const [projectPlant, setProjectPlant] = useState('');
+  const [projectPhone, setProjectPhone] = useState('');
+  const [projectNotes, setProjectNotes] = useState('');
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
   const [newEquipmentCategory, setNewEquipmentCategory] = useState('');
   const [statHolidays, setStatHolidays] = useState([]);
@@ -106,6 +108,8 @@ export default function ProjectDetailsSetup() {
     setProjectSite('');
     setProjectLocation('');
     setProjectPlant('');
+    setProjectPhone('');
+    setProjectNotes('');
     setStartDate('');
     setEndDate('');
     setDates([]);
@@ -135,6 +139,8 @@ export default function ProjectDetailsSetup() {
     setProjectSite(project.site || '');
     setProjectLocation(project.location || '');
     setProjectPlant(project.plant || '');
+    setProjectPhone(project.phone || '');
+    setProjectNotes(project.notes || '');
     setStartDate(project.start_date || '');
     setEndDate(project.end_date || '');
     const rawGrid = project.equipment_grid;
@@ -220,6 +226,8 @@ export default function ProjectDetailsSetup() {
         site: projectSite,
         location: projectLocation,
         plant: projectPlant,
+        phone: projectPhone,
+        notes: projectNotes,
         equipment_grid: gridToSave,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
@@ -519,6 +527,8 @@ const addEquipmentRow = () => {
         site: projectSite,
         location: projectLocation,
         plant: projectPlant,
+        phone: projectPhone,
+        notes: projectNotes,
         equipment_grid: gridToSave,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
@@ -774,7 +784,7 @@ const addEquipmentRow = () => {
             </p>
           )}
 
-          {/* Site / Location / Plant fields */}
+          {/* Site / Location / Plant / Phone / Notes fields */}
           <div className="flex flex-wrap items-end gap-4 mt-4 pt-4 border-t border-border">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">Site</label>
@@ -801,6 +811,24 @@ const addEquipmentRow = () => {
                 onChange={e => setProjectPlant(e.target.value)}
                 placeholder="Plant…"
                 className="w-44 h-9"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Phone</label>
+              <Input
+                value={projectPhone}
+                onChange={e => setProjectPhone(e.target.value)}
+                placeholder="Phone…"
+                className="w-44 h-9"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1 min-w-48">
+              <label className="text-xs font-medium text-muted-foreground">Notes</label>
+              <Input
+                value={projectNotes}
+                onChange={e => setProjectNotes(e.target.value)}
+                placeholder="Notes…"
+                className="w-full h-9"
               />
             </div>
           </div>

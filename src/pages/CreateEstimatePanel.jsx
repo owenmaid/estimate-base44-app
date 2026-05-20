@@ -27,7 +27,7 @@ export default function CreateEstimatePanel() {
 
   // Client info
   const [clientInfo, setClientInfo] = useState({
-    client_name: '', project_number: '', client_email: '',
+    client_name: '', project_number: '', project_name: '', client_email: '',
     client_phone: '', client_address: '', notes: '',
     tax_rate: 0, discount: 0,
   });
@@ -146,12 +146,12 @@ export default function CreateEstimatePanel() {
             return { ...item, unit_price: 0, total: 0 };
           }),
         })));
-        setClientInfo(prev => ({ ...prev, client_name: '', client_address: '', client_email: '', project_name: '' }));
+        setClientInfo(prev => ({ ...prev, client_name: '', client_address: '', client_email: '', project_name: '', client_phone: '', notes: '' }));
       }
       return;
     }
 
-    // Populate customer name, site/location/plant, attention, and project name from the linked project
+    // Populate customer name, site/location/plant, attention, project name, phone, and notes from the linked project
     const siteParts = [linkedProject.site, linkedProject.location, linkedProject.plant].filter(Boolean);
     setClientInfo(prev => ({
       ...prev,
@@ -159,6 +159,8 @@ export default function CreateEstimatePanel() {
       client_address: siteParts.join(' / '),
       client_email: linkedProject.name || '',
       project_name: linkedProject.name || '',
+      client_phone: linkedProject.phone || '',
+      notes: linkedProject.notes || '',
     }));
 
     if (inventory.length === 0) return;
@@ -247,7 +249,7 @@ export default function CreateEstimatePanel() {
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
       client_address: estimate.client_address || '',
-      notes: '',
+      notes: estimate.notes || '',
       tax_rate: estimate.tax_rate || 0,
       discount: estimate.discount || 0,
     });

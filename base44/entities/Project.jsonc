@@ -26,6 +26,14 @@
       "type": "string",
       "description": "Plant name"
     },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
     "status": {
       "type": "string",
       "enum": [
