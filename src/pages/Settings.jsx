@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -6,34 +6,63 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sun, Moon, Bell, Globe, Shield, User, Palette, Save, Upload, Image } from 'lucide-react';
+import { Sun, Moon, Bell, Globe, Shield, User, Palette, Save, Image } from 'lucide-react';
 import { useTheme } from '@/lib/ThemeContext';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+
+const DEFAULT_PROFILE = { displayName: '', company: '', currency: 'USD', language: 'en' };
+const DEFAULT_NOTIFICATIONS = { emailEstimates: true, emailReminders: true, browserAlerts: false };
+const DEFAULT_LOGOS = { infoSignalLogo: '', dynaVentLogo: '' };
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const isDark = theme === 'dark';
+  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
 
-  const [notifications, setNotifications] = useState({
-    emailEstimates: true,
-    emailReminders: true,
-    browserAlerts: false,
-  });
-
-  const [profile, setProfile] = useState({ displayName: '', company: '', currency: 'USD', language: 'en' });
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
+  const [logoUrls, setLogoUrls] = useState(DEFAULT_LOGOS);
   const [saving, setSaving] = useState(false);
-  const [logoUrls, setLogoUrls] = useState({ infoSignalLogo: '', dynaVentLogo: '' });
   const [uploadingLogo, setUploadingLogo] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
-  const handleSaveProfile = async () => {
+  // Populate state from saved user settings once user data arrives
+  useEffect(() => {
+    if (!user || loaded) return;
+    const s = user.settings || {};
+    setProfile({ ...DEFAULT_PROFILE, ...(s.profile || {}) });
+    setNotifications({ ...DEFAULT_NOTIFICATIONS, ...(s.notifications || {}) });
+    setLogoUrls({ ...DEFAULT_LOGOS, ...(s.logoUrls || {}) });
+    setLoaded(true);
+  }, [user, loaded]);
+
+  const persistSettings = async (overrides = {}) => {
+    const payload = {
+      settings: {
+        profile,
+        notifications,
+        logoUrls,
+        ...overrides,
+      },
+    };
+    await base44.auth.updateMe(payload);
+    queryClient.invalidateQueries({ queryKey: ['me'] });
+  };
+
+  const handleSave = async () => {
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
-    setSaving(false);
-    toast.success('Settings saved successfully');
+    try {
+      await persistSettings();
+      toast.success('Settings saved successfully');
+    } catch (e) {
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleLogoUpload = async (logoType, file) => {
@@ -41,8 +70,10 @@ export default function Settings() {
     setUploadingLogo(logoType);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setLogoUrls(prev => ({ ...prev, [logoType]: file_url }));
-      toast.success('Logo uploaded!');
+      const updatedLogos = { ...logoUrls, [logoType]: file_url };
+      setLogoUrls(updatedLogos);
+      await persistSettings({ logoUrls: updatedLogos });
+      toast.success('Logo uploaded and saved!');
     } catch (error) {
       toast.error('Failed to upload logo');
     } finally {
@@ -67,7 +98,6 @@ export default function Settings() {
           <CardDescription>Customize how InfoSignal looks for you</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* Theme toggle */}
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium">Theme</Label>
@@ -75,15 +105,10 @@ export default function Settings() {
             </div>
             <div className="flex items-center gap-3">
               <Sun className={`h-4 w-4 transition-colors ${!isDark ? 'text-primary' : 'text-muted-foreground'}`} />
-              <Switch
-                checked={isDark}
-                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-              />
+              <Switch checked={isDark} onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} />
               <Moon className={`h-4 w-4 transition-colors ${isDark ? 'text-primary' : 'text-muted-foreground'}`} />
             </div>
           </div>
-
-          {/* Visual preview */}
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setTheme('light')}
@@ -171,44 +196,29 @@ export default function Settings() {
           <CardDescription>Upload logos for estimate PDF headers</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div>
-              <Label>InfoSignal Logo</Label>
+          {[
+            { key: 'infoSignalLogo', label: 'InfoSignal Logo', alt: 'InfoSignal' },
+            { key: 'dynaVentLogo', label: 'DynaVent Logo', alt: 'DynaVent' },
+          ].map(({ key, label, alt }) => (
+            <div key={key}>
+              <Label>{label}</Label>
               <div className="flex items-center gap-3 mt-2">
                 <input
                   type="file"
-                  accept="image/*"
-                  onChange={(e) => handleLogoUpload('infoSignalLogo', e.target.files[0])}
-                  disabled={uploadingLogo === 'infoSignalLogo'}
+                  accept="image/png,image/jpeg,image/jpg,image/gif,image/svg+xml"
+                  onChange={e => handleLogoUpload(key, e.target.files[0])}
+                  disabled={uploadingLogo === key}
                   className="text-xs"
                 />
-                {logoUrls.infoSignalLogo && (
-                  <img src={logoUrls.infoSignalLogo} alt="InfoSignal" className="h-8 w-auto object-contain border rounded px-2 py-1" />
+                {logoUrls[key] && (
+                  <img src={logoUrls[key]} alt={alt} className="h-10 w-auto object-contain border rounded px-2 py-1 bg-white" />
                 )}
-                {uploadingLogo === 'infoSignalLogo' && (
+                {uploadingLogo === key && (
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
             </div>
-            <div>
-              <Label>DynaVent Logo</Label>
-              <div className="flex items-center gap-3 mt-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleLogoUpload('dynaVentLogo', e.target.files[0])}
-                  disabled={uploadingLogo === 'dynaVentLogo'}
-                  className="text-xs"
-                />
-                {logoUrls.dynaVentLogo && (
-                  <img src={logoUrls.dynaVentLogo} alt="DynaVent" className="h-8 w-auto object-contain border rounded px-2 py-1" />
-                )}
-                {uploadingLogo === 'dynaVentLogo' && (
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                )}
-              </div>
-            </div>
-          </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -290,7 +300,7 @@ export default function Settings() {
       <Separator />
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveProfile} disabled={saving} className="px-8">
+        <Button onClick={handleSave} disabled={saving} className="px-8">
           <Save className="h-4 w-4 mr-2" />
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>
