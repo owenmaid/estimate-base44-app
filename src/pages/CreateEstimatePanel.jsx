@@ -722,6 +722,7 @@ export default function CreateEstimatePanel() {
           onAddSection={addSection}
           onAddItemToSection={addItemToSection}
           projectNumber={clientInfo.project_number}
+          onProjectSelect={(pn) => setClientInfo(prev => ({ ...prev, project_number: pn }))}
         />
 
         {/* RIGHT: Estimate Canvas */}

@@ -60,7 +60,7 @@ function computeCol14(row, equipmentGrid, typeGrid, inventoryItems) {
   return col11 + col12 + col13;
 }
 
-export default function PalettePanel({ inventory, sections, onAddSection, onAddItemToSection, projectNumber }) {
+export default function PalettePanel({ inventory, sections, onAddSection, onAddItemToSection, projectNumber, onProjectSelect }) {
   const [search, setSearch] = useState('');
   const [expandedGroups, setExpandedGroups] = useState({});
   const [selectedSection, setSelectedSection] = useState(null);
@@ -68,17 +68,44 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
   const [showManual, setShowManual] = useState(false);
   const [syncing, setSyncing] = useState(null);
   const [activeProject, setActiveProject] = useState(null);
+  const [allProjects, setAllProjects] = useState([]);
 
-  // Load the active project once when projectNumber changes
+  // Load all projects for the dropdown
+  useEffect(() => {
+    base44.entities.Project.list().then(all => {
+      setAllProjects(all);
+      // Also sync activeProject if projectNumber is already set
+      if (projectNumber) {
+        const match = all.find(p =>
+          (p.project_number || '').trim().toLowerCase() === projectNumber.trim().toLowerCase()
+        );
+        setActiveProject(match || null);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Update activeProject when projectNumber changes externally
   useEffect(() => {
     if (!projectNumber) { setActiveProject(null); return; }
-    base44.entities.Project.list().then(all => {
-      const match = all.find(p =>
-        (p.project_number || '').trim().toLowerCase() === projectNumber.trim().toLowerCase()
-      );
-      setActiveProject(match || null);
-    }).catch(() => setActiveProject(null));
-  }, [projectNumber]);
+    const match = allProjects.find(p =>
+      (p.project_number || '').trim().toLowerCase() === projectNumber.trim().toLowerCase()
+    );
+    setActiveProject(match || null);
+  }, [projectNumber, allProjects]);
+
+  const handleProjectDropdownChange = (e) => {
+    const selectedId = e.target.value;
+    if (!selectedId) {
+      setActiveProject(null);
+      onProjectSelect && onProjectSelect('');
+      return;
+    }
+    const project = allProjects.find(p => p.id === selectedId);
+    if (project) {
+      setActiveProject(project);
+      onProjectSelect && onProjectSelect(project.project_number || project.name || '');
+    }
+  };
 
   // Build a col14 lookup map keyed by inventory item id
   const col14Map = useMemo(() => {
@@ -154,9 +181,26 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
     <div className="w-72 shrink-0 border-r border-border bg-card flex flex-col h-full overflow-hidden">
       <div className="px-3 py-2.5 border-b border-border">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Tool Palette</p>
-        {projectNumber && (
-          <p className="text-xs text-primary mb-2">🔗 Project: <span className="font-semibold">{projectNumber}</span></p>
-        )}
+
+        {/* Connected Project Dropdown */}
+        <div className="mb-2">
+          <label className="text-xs text-muted-foreground">Connected Project:</label>
+          <select
+            value={activeProject?.id || ''}
+            onChange={handleProjectDropdownChange}
+            className="w-full mt-1 text-xs bg-secondary border border-border rounded px-2 py-1 text-foreground outline-none"
+          >
+            <option value="">— None —</option>
+            {allProjects.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.project_number ? `${p.project_number} — ${p.name}` : p.name}
+              </option>
+            ))}
+          </select>
+          {activeProject && (
+            <p className="text-xs text-primary mt-1">🔗 Linked: <span className="font-semibold">{activeProject.project_number || activeProject.name}</span></p>
+          )}
+        </div>
 
         {/* Section selector */}
         <div className="mb-2">
