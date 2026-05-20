@@ -118,9 +118,11 @@ export default function CreateEstimatePanel() {
       tax_rate: estimate.tax_rate || 0,
       discount: estimate.discount || 0,
     });
+    // Always use logos from user settings, ignoring whatever was saved on the estimate
+    const savedLogos = user?.settings?.logoUrls || {};
     setLogoUrls({
-      infoSignalLogo: estimate.info_signal_logo || '',
-      dynaVentLogo: estimate.dyna_vent_logo || '',
+      infoSignalLogo: savedLogos.infoSignalLogo || '',
+      dynaVentLogo: savedLogos.dynaVentLogo || '',
     });
 
     // Reconstruct sections from line_items
