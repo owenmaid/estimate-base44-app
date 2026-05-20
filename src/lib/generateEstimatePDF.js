@@ -138,7 +138,8 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     { label: 'Customer',               value: clientInfo.client_name || '' },
     { label: 'Site / Location / Plant', value: clientInfo.client_address || '', e2: true },
     { label: 'Attention',              value: clientInfo.client_email || '' },
-    { label: 'Project',               value: clientInfo.project_number || '' },
+    { label: 'Phone',                  value: clientInfo.client_phone || '' },
+    { label: 'Project',                value: clientInfo.project_number || '' },
   ];
 
   fields.forEach((field, idx) => {
@@ -166,6 +167,20 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   });
 
   y += 8;
+
+  // Add Notes field if present
+  if (clientInfo.notes && clientInfo.notes.trim()) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...dark);
+    doc.text('Notes:', labelX, y);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...orange);
+    const noteLines = doc.splitTextToSize(clientInfo.notes, contentW - 105);
+    doc.text(noteLines, valueX, y + 4);
+    y += noteLines.length * 13 + 4;
+  }
 
   // ── Second separator line under customer details ──────────────────────────
   doc.setDrawColor(200, 195, 190);
