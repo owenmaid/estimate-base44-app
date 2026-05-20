@@ -94,7 +94,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   // Center: DynaVent logo
   const centerX = pageW / 2;
   if (dynaVentImg) {
-    doc.addImage(dynaVentImg, 'PNG', centerX - 60, logoY, 120, logoH);
+    doc.addImage(dynaVentImg, 'PNG', centerX - 30, logoY + (logoH - logoH * 0.5) / 2, 60, logoH * 0.5);
   } else {
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
@@ -107,7 +107,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
   // Right: Title — bold, dark, right-aligned
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   doc.setTextColor(...dark);
   doc.text('DCSM Project Budgetary Estimate', pageW - margin, logoY + 20, { align: 'right' });
 
@@ -151,13 +151,6 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...orange);
     doc.text(field.value, valueX, y);
-
-    // E2 code next to Site row
-    if (field.e2) {
-      doc.setTextColor(...dark);
-      doc.setFont('helvetica', 'normal');
-      doc.text('E2', e2X, y);
-    }
 
     // Date on first row, top-right
     if (idx === 0) {
