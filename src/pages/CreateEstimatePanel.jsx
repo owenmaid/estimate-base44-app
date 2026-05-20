@@ -339,10 +339,10 @@ export default function CreateEstimatePanel() {
           });
         });
       });
-      // Add summary section marker
+      // Add summary section marker with tax/discount info
       const summarySection = sections.find(s => s._isSummary);
       if (summarySection) {
-        lineItems.push({ description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true });
+        lineItems.push({ description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true, tax_rate: clientInfo.tax_rate, discount: clientInfo.discount });
       }
       await base44.entities.EstimateTemplate.create({
         name: trimmed,

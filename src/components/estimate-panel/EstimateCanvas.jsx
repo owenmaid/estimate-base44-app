@@ -172,7 +172,7 @@ export default function EstimateCanvas({
             onRenameSection(summarySection.id, newTitle);
           }
         }}
-        leftTitle="Calculations"
+        leftTitle="Budgetary Comparison"
         rightTitle="Final Total"
       >
         {{
