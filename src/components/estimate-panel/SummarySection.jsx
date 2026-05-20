@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { GripVertical, Trash2, ChevronDown, ChevronUp, X } from 'lucide-react';
 
-export default function SummarySection({ title, leftTitle, rightTitle, children }) {
+export default function SummarySection({ title, onRename, leftTitle, rightTitle, children }) {
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleVal, setTitleVal] = useState(title);
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -15,9 +17,29 @@ export default function SummarySection({ title, leftTitle, rightTitle, children 
           <button onClick={() => setCollapsed(v => !v)} className="text-muted-foreground hover:text-foreground">
             {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
           </button>
-          <span className="text-xs font-semibold text-foreground">
-            {title}
-          </span>
+          {editingTitle ? (
+            <div className="flex items-center gap-1 flex-1">
+              <input
+                autoFocus
+                className="flex-1 text-xs bg-secondary border border-primary rounded px-2 py-0.5 text-foreground outline-none"
+                value={titleVal}
+                onChange={e => setTitleVal(e.target.value)}
+                onBlur={() => { onRename(titleVal); setEditingTitle(false); }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { onRename(titleVal); setEditingTitle(false); }
+                  if (e.key === 'Escape') { setEditingTitle(false); }
+                }}
+              />
+            </div>
+          ) : (
+            <span
+              className="text-xs font-semibold text-foreground truncate cursor-text hover:text-primary transition-colors"
+              onClick={() => { setTitleVal(title); setEditingTitle(true); }}
+              title="Click to rename section"
+            >
+              {title}
+            </span>
+          )}
         </div>
       </div>
 

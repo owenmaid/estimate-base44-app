@@ -13,7 +13,7 @@ const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
 
 export default function EstimateCanvas({
   clientInfo, onClientInfoChange,
-  sections, onRenameSection, onRemoveSection, onSplitSection,
+  sections, onRenameSection, onRemoveSection, onSplitSection, onSetSections,
   onUpdateItem, onRemoveItem, onReorderItems, onReorderSections,
   subtotal, taxAmount, total, inventory = [], logoUrls = {},
 }) {
@@ -138,7 +138,7 @@ export default function EstimateCanvas({
         <Droppable droppableId="sections-list">
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
-              {sections.map((section, idx) => (
+              {sections.filter(s => !s._isSummary).map((section, idx) => (
                 <Draggable key={String(section.id)} draggableId={`sec-${section.id}`} index={idx}>
                   {(drag) => (
                     <div ref={drag.innerRef} {...drag.draggableProps}>
@@ -165,9 +165,10 @@ export default function EstimateCanvas({
 
       {/* Summary Section */}
       <SummarySection
-        title="Summary"
-        onRename={(newTitle) => {}}
-        onRemove={() => {}}
+        title={sections.find(s => s._isSummary)?.title || 'Summary'}
+        onRename={(newTitle) => {
+          onSetSections(prev => prev.map(s => s._isSummary ? { ...s, title: newTitle } : s));
+        }}
         leftTitle="Calculations"
         rightTitle="Final Total"
       >

@@ -22,7 +22,8 @@ export default function CreateEstimatePanel() {
 
   // Sections: [{id, title, items:[{id,description,quantity,unit_price,total,markup}]}]
   const [sections, setSections] = useState([
-    { id: Date.now(), title: 'Section 1', items: [] }
+    { id: Date.now(), title: 'Section 1', items: [] },
+    { id: 'summary', title: 'Summary', _isSummary: true, items: [] }
   ]);
 
   // Client info
@@ -56,8 +57,8 @@ export default function CreateEstimatePanel() {
       const info = tmpl.client_info || {};
       setActiveEstimate(null);
       setClientInfo({
-        client_name: '',      // cleared — will auto-populate when a project is linked
-        project_number: '',   // always start with no linked project so totals stay zeroed until user picks one
+        client_name: '',
+        project_number: '',
         client_email: info.client_email || '',
         client_phone: info.client_phone || '',
         client_address: info.client_address || '',
@@ -94,7 +95,7 @@ export default function CreateEstimatePanel() {
           });
         }
       });
-      setSections(rebuilt.length > 0 ? rebuilt : [{ id: Date.now(), title: 'Section 1', items: [] }]);
+      setSections(rebuilt.length > 0 ? rebuilt : [{ id: Date.now(), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
       toast.success(`Template "${tmpl.name}" loaded — ready to save as new estimate.`);
     } catch (e) {
       // ignore parse errors
@@ -268,8 +269,14 @@ export default function CreateEstimatePanel() {
     lineItems.forEach((item) => {
       if (item.description && item.description.startsWith('__SECTION__:')) {
         const title = item.description.slice('__SECTION__:'.length);
-        current = { id: Date.now() + Math.random(), title, items: [] };
-        rebuilt.push(current);
+        // Check if this is a summary section marker
+        if (item._isSummary || title.toLowerCase() === 'summary') {
+          current = { id: 'summary', title, _isSummary: true, items: [] };
+          rebuilt.push(current);
+        } else {
+          current = { id: Date.now() + Math.random(), title, items: [] };
+          rebuilt.push(current);
+        }
       } else {
         if (!current) {
           current = { id: Date.now() + Math.random(), title: 'Section 1', items: [] };
@@ -286,14 +293,19 @@ export default function CreateEstimatePanel() {
       }
     });
 
-    setSections(rebuilt.length > 0 ? rebuilt : [{ id: Date.now(), title: 'Section 1', items: [] }]);
+    // Ensure summary section exists
+    const hasSummary = rebuilt.some(s => s._isSummary);
+    if (!hasSummary) {
+      rebuilt.push({ id: 'summary', title: 'Summary', _isSummary: true, items: [] });
+    }
+    setSections(rebuilt);
     toast.success(`Loaded: ${estimate.project_name || estimate.client_name}`);
   };
 
   // ── Reset to blank ─────────────────────────────────────────────────────────
   const handleNew = () => {
     setActiveEstimate(null);
-    setSections([{ id: Date.now(), title: 'Section 1', items: [] }]);
+    setSections([{ id: Date.now(), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
     setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
     // Reset logos to whatever is saved in user settings
     const savedLogos = user?.settings?.logoUrls || {};
@@ -312,8 +324,6 @@ export default function CreateEstimatePanel() {
     }
     setTemplateSaving(true);
     try {
-      // Build line items — zero out unit_price and total for all regular line items
-      // so the template recomputes fresh when linked to a new project
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
         lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
@@ -324,12 +334,16 @@ export default function CreateEstimatePanel() {
             description: item.description,
             quantity: item.quantity,
             markup: item.markup,
-            // Zero out costs for regular items; keep 0 for headers/spacers
-            unit_price: (isHeader || isSpacer) ? 0 : 0,
+            unit_price: 0,
             total: 0,
           });
         });
       });
+      // Add summary section marker
+      const summarySection = sections.find(s => s._isSummary);
+      if (summarySection) {
+        lineItems.push({ description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true });
+      }
       await base44.entities.EstimateTemplate.create({
         name: trimmed,
         description: templateDesc.trim() || `Template from ${activeEstimate?.estimate_number || 'estimate'}`,
@@ -804,6 +818,11 @@ export default function CreateEstimatePanel() {
           lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
         });
       });
+      // Add summary section as a special section with tax/discount info
+      const summarySection = sections.find(s => s._isSummary);
+      if (summarySection) {
+        lineItems.push({ description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true, tax_rate: clientInfo.tax_rate, discount: clientInfo.discount });
+      }
 
       const basePayload = {
         client_name: clientInfo.client_name,
@@ -1005,6 +1024,7 @@ export default function CreateEstimatePanel() {
           onRenameSection={renameSection}
           onRemoveSection={removeSection}
           onSplitSection={splitSection}
+          onSetSections={setSections}
           onUpdateItem={updateItem}
           onRemoveItem={removeItem}
           onReorderItems={reorderItems}
