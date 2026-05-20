@@ -57,7 +57,7 @@ export default function CreateEstimatePanel() {
       setActiveEstimate(null);
       setClientInfo({
         client_name: info.client_name || '',
-        project_number: info.project_number || '',
+        project_number: '',   // always start with no linked project so totals stay zeroed until user picks one
         client_email: info.client_email || '',
         client_phone: info.client_phone || '',
         client_address: info.client_address || '',

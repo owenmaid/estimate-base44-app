@@ -220,9 +220,20 @@ export default function ProjectTemplates() {
     },
   });
 
-  // Navigate to CreateEstimatePanel with template data stored in sessionStorage
+  // Navigate to CreateEstimatePanel with template data stored in sessionStorage.
+  // Zero out all unit_price and total so the panel starts clean — costs are computed
+  // only after the user links a project and the calculation engine runs.
   const handleLoadEstimateTemplate = (tmpl) => {
-    sessionStorage.setItem('estimateTemplateToLoad', JSON.stringify(tmpl));
+    const cleanTmpl = {
+      ...tmpl,
+      client_info: { ...(tmpl.client_info || {}), project_number: '' },
+      line_items: (tmpl.line_items || []).map(item => ({
+        ...item,
+        unit_price: 0,
+        total: 0,
+      })),
+    };
+    sessionStorage.setItem('estimateTemplateToLoad', JSON.stringify(cleanTmpl));
     navigate('/create-estimate-panel');
     toast.success(`Opening "${tmpl.name}" in Estimate Panel…`);
   };
