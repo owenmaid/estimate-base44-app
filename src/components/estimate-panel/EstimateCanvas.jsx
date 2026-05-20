@@ -179,7 +179,7 @@ export default function EstimateCanvas({
           left: (
             <>
               <div className="border-b border-border pb-2 mb-2">
-                <div className="text-xs font-semibold text-foreground">DCSM and Ventilation Cost per Manway/Day</div>
+                <div className="text-sm font-semibold text-foreground">DCSM and Ventilation Cost per Manway/Day</div>
               </div>
               <div className="flex justify-between text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration)</span>
