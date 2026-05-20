@@ -56,7 +56,7 @@ export default function CreateEstimatePanel() {
       const info = tmpl.client_info || {};
       setActiveEstimate(null);
       setClientInfo({
-        client_name: info.client_name || '',
+        client_name: '',      // cleared — will auto-populate when a project is linked
         project_number: '',   // always start with no linked project so totals stay zeroed until user picks one
         client_email: info.client_email || '',
         client_phone: info.client_phone || '',
@@ -135,7 +135,7 @@ export default function CreateEstimatePanel() {
     const isSwitch = prevId !== null && currId !== prevId; // switched from one project to another (or to none)
 
     if (!linkedProject) {
-      // Project deselected — zero everything out
+      // Project deselected — zero everything out and clear customer name
       if (prevId !== null) {
         setSections(prev => prev.map(section => ({
           ...section,
@@ -146,9 +146,13 @@ export default function CreateEstimatePanel() {
             return { ...item, unit_price: 0, total: 0 };
           }),
         })));
+        setClientInfo(prev => ({ ...prev, client_name: '' }));
       }
       return;
     }
+
+    // Populate customer name from the linked project
+    setClientInfo(prev => ({ ...prev, client_name: linkedProject.client || '' }));
 
     if (inventory.length === 0) return;
 
