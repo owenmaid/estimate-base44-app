@@ -146,13 +146,18 @@ export default function CreateEstimatePanel() {
             return { ...item, unit_price: 0, total: 0 };
           }),
         })));
-        setClientInfo(prev => ({ ...prev, client_name: '' }));
+        setClientInfo(prev => ({ ...prev, client_name: '', client_address: '' }));
       }
       return;
     }
 
-    // Populate customer name from the linked project
-    setClientInfo(prev => ({ ...prev, client_name: linkedProject.client || '' }));
+    // Populate customer name and site/location/plant from the linked project
+    const siteParts = [linkedProject.site, linkedProject.location, linkedProject.plant].filter(Boolean);
+    setClientInfo(prev => ({
+      ...prev,
+      client_name: linkedProject.client || '',
+      client_address: siteParts.join(' / ') || prev.client_address,
+    }));
 
     if (inventory.length === 0) return;
 
