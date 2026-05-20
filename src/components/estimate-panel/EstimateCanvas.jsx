@@ -185,6 +185,10 @@ export default function EstimateCanvas({
                 <span>Number of Manways (Averaged out over duration)</span>
                 <span>0</span>
               </div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                <span>Number of days</span>
+                <span>0</span>
+              </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
