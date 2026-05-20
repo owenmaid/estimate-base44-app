@@ -7,6 +7,7 @@ import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
 import { X, Download, BookmarkPlus } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
+import { buildCol14Map, lookupCol14 } from '@/lib/computeCol14';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
@@ -116,6 +117,30 @@ export default function CreateEstimatePanel() {
     if (!pn) return null;
     return projects.find(p => (p.project_number || '').trim().toLowerCase() === pn) || null;
   }, [projects, clientInfo.project_number]);
+
+  // ── Auto-reprice: when a project is linked, fill in unit_price for all zero-cost regular items ──
+  useEffect(() => {
+    if (!linkedProject || inventory.length === 0) return;
+    const col14Map = buildCol14Map(linkedProject, inventory);
+
+    setSections(prev => prev.map(section => ({
+      ...section,
+      items: section.items.map(item => {
+        const isHeader = /[\[\]]/.test(item.description || '');
+        const isSpacer = (item.description || '') === '__SPACER__';
+        // Only reprice regular items that currently have unit_price = 0
+        if (isHeader || isSpacer || (item.unit_price || 0) !== 0) return item;
+
+        const col14 = lookupCol14(item.description, col14Map, inventory);
+        if (col14 == null || col14 <= 0) return item;
+
+        const markup = item.markup || 0;
+        const qty = item.quantity || 1;
+        const markedUp = col14 * (1 + markup / 100);
+        return { ...item, unit_price: col14, total: markedUp * qty };
+      }),
+    })));
+  }, [linkedProject, inventory]);
 
   // Helper: compute Col2 (Col1 × shiftHrs) for a single project row
   const computeRowCol2 = (row, eGrid) => {
