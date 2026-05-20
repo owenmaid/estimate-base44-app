@@ -21,7 +21,7 @@ const COL_HEADERS = Array.from({ length: NUM_COLS }, (_, i) => `Col ${i + 1}`);
 
 // Sub-component: renders all <td> cells for one equipment row
 function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, gridData, setGridData }) {
-  const inventoryEntry = inventoryValueMap.byId[row.item_id]
+  const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
     ?? inventoryValueMap.byName[row.label?.toLowerCase()]
     ?? null;
   const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -117,11 +117,11 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
         } else if (isCol10) {
           cellContent = activeCell(col10Value, 'OT Rate');
         } else if (isCol11) {
-          cellContent = activeCell(col11Value && col11Value > 0 ? col11Value : null, 'Col4×Col9');
+          cellContent = activeCell(col11Value != null && col11Value > 0 ? col11Value : null, 'Col4×Col9');
         } else if (isCol12) {
-          cellContent = activeCell(col12Value && col12Value > 0 ? col12Value : null, 'SUM(Col5:Col7)×Col10');
+          cellContent = activeCell(col12Value != null && col12Value > 0 ? col12Value : null, 'SUM(Col5:Col7)×Col10');
         } else if (isCol13) {
-          cellContent = activeCell(col13Value && col13Value > 0 ? col13Value : null, 'Special Cost');
+          cellContent = activeCell(col13Value != null && col13Value > 0 ? col13Value : null, 'Special Cost');
         } else if (colIdx === 13) {
           const col14Value = (col11Value || 0) + (col12Value || 0) + (col13Value || 0);
           cellContent = activeCell(col14Value > 0 ? col14Value : null, 'Col11 + Col12 + Col13');
@@ -176,7 +176,9 @@ export default function CalculationEngine() {
       const regVal = item.reg_value === '' || item.reg_value === undefined ? null : Number(item.reg_value);
       const otVal = item.ot_value === '' || item.ot_value === undefined ? null : Number(item.ot_value);
       const entry = { reg: isNaN(regVal) ? null : regVal, ot: isNaN(otVal) ? null : otVal, item_group: item.item_group, category: item.category || '' };
-      if (item.id) byId[item.id] = entry;
+      if (item.id) {
+        byId[String(item.id)] = entry;
+      }
       if (item.name) byName[item.name.toLowerCase()] = entry;
       if (item.sku) byName[item.sku.toLowerCase()] = entry;
     });
@@ -225,7 +227,7 @@ export default function CalculationEngine() {
   const rowHours = useMemo(() => {
     const hours = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -241,7 +243,7 @@ export default function CalculationEngine() {
   const rowCol4 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -264,7 +266,7 @@ export default function CalculationEngine() {
   const rowCol5 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -288,7 +290,7 @@ export default function CalculationEngine() {
   const rowCol6 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -312,7 +314,7 @@ export default function CalculationEngine() {
   const rowCol7 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -336,7 +338,7 @@ export default function CalculationEngine() {
   const rowCol8 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -360,7 +362,7 @@ export default function CalculationEngine() {
   const rowCol3 = useMemo(() => {
     const result = {};
     equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
@@ -557,14 +559,14 @@ export default function CalculationEngine() {
                   };
                   // Col11/12/13/14 per row
                   const col11Total = equipmentRows.reduce((s, r) => {
-                    const inv = inventoryValueMap.byId[r.item_id] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+                    const inv = inventoryValueMap.byId[String(r.item_id)] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
                     const isManpower = inv?.item_group === 'Manpower Group';
                     const col9 = inv?.reg ?? null;
                     if (col9 == null) return s;
                     return s + (isManpower ? rowCol4[r.id] : rowSums[r.id]) * col9;
                   }, 0);
                   const col12Total = equipmentRows.reduce((s, r) => {
-                    const inv = inventoryValueMap.byId[r.item_id] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+                    const inv = inventoryValueMap.byId[String(r.item_id)] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
                     const isManpower = inv?.item_group === 'Manpower Group';
                     if (!isManpower) return s;
                     const col10 = inv?.ot ?? null;
@@ -572,7 +574,7 @@ export default function CalculationEngine() {
                     return s + ((rowCol5[r.id] || 0) + (rowCol6[r.id] || 0) + (rowCol7[r.id] || 0)) * col10;
                   }, 0);
                   const col13Total = equipmentRows.reduce((s, r) => {
-                    const inv = inventoryValueMap.byId[r.item_id] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+                    const inv = inventoryValueMap.byId[String(r.item_id)] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
                     const isManpower = inv?.item_group === 'Manpower Group';
                     if (!isManpower) return s;
                     const col10 = inv?.ot ?? null;
