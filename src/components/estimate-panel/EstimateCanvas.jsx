@@ -218,15 +218,6 @@ export default function EstimateCanvas({
           ),
           right: (
             <>
-              <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
-                <span>Discount $</span>
-                <input
-                  type="number" min="0"
-                  className="w-24 text-xs bg-secondary border border-border rounded px-2 py-0.5 text-foreground outline-none text-right"
-                  value={clientInfo.discount}
-                  onChange={e => update('discount', parseFloat(e.target.value) || 0)}
-                />
-              </div>
               <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
                 <span>Total</span>
                 <span className="text-primary">${total.toFixed(2)}</span>
