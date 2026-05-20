@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -118,9 +118,40 @@ export default function CreateEstimatePanel() {
     return projects.find(p => (p.project_number || '').trim().toLowerCase() === pn) || null;
   }, [projects, clientInfo.project_number]);
 
-  // ── Auto-reprice: when a project is linked, fill in unit_price for all zero-cost regular items ──
+  // Track the previous linked project id so we can detect a project switch
+  const prevLinkedProjectIdRef = useRef(null);
+
+  // ── Auto-reprice: fires whenever linkedProject changes ──────────────────────
+  // • First project link (null → project): reprice only zero-cost items
+  // • Project switch (projectA → projectB): zero ALL regular items first, then reprice from new Col14
+  // • Deselect (project → null): zero ALL regular items
   useEffect(() => {
-    if (!linkedProject || inventory.length === 0) return;
+    const prevId = prevLinkedProjectIdRef.current;
+    const currId = linkedProject?.id ?? null;
+
+    // Update ref for next render
+    prevLinkedProjectIdRef.current = currId;
+
+    const isSwitch = prevId !== null && currId !== prevId; // switched from one project to another (or to none)
+
+    if (!linkedProject) {
+      // Project deselected — zero everything out
+      if (prevId !== null) {
+        setSections(prev => prev.map(section => ({
+          ...section,
+          items: section.items.map(item => {
+            const isHeader = /[\[\]]/.test(item.description || '');
+            const isSpacer = (item.description || '') === '__SPACER__';
+            if (isHeader || isSpacer) return item;
+            return { ...item, unit_price: 0, total: 0 };
+          }),
+        })));
+      }
+      return;
+    }
+
+    if (inventory.length === 0) return;
+
     const col14Map = buildCol14Map(linkedProject, inventory);
 
     setSections(prev => prev.map(section => ({
@@ -128,11 +159,17 @@ export default function CreateEstimatePanel() {
       items: section.items.map(item => {
         const isHeader = /[\[\]]/.test(item.description || '');
         const isSpacer = (item.description || '') === '__SPACER__';
-        // Only reprice regular items that currently have unit_price = 0
-        if (isHeader || isSpacer || (item.unit_price || 0) !== 0) return item;
+        if (isHeader || isSpacer) return item;
+
+        // On a project switch, always re-price every regular item from scratch
+        // On first link, only fill in items that are still zeroed
+        if (!isSwitch && (item.unit_price || 0) !== 0) return item;
 
         const col14 = lookupCol14(item.description, col14Map, inventory);
-        if (col14 == null || col14 <= 0) return item;
+        if (col14 == null || col14 <= 0) {
+          // If switching, zero items that have no col14 match in the new project
+          return isSwitch ? { ...item, unit_price: 0, total: 0 } : item;
+        }
 
         const markup = item.markup || 0;
         const qty = item.quantity || 1;
