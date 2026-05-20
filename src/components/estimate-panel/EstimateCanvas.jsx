@@ -179,7 +179,7 @@ export default function EstimateCanvas({
           left: (
             <>
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Subtotal</span>
+                <span>DCSM and VENTILATION COST PER MANWAY/DAY</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
@@ -220,7 +220,7 @@ export default function EstimateCanvas({
       {/* Totals */}
       <div className="border border-border rounded-lg p-4 bg-card ml-auto max-w-xs space-y-2">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Subtotal</span>
+          <span>DCSM and VENTILATION COST PER MANWAY/DAY</span>
           <span>${subtotal.toFixed(2)}</span>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
