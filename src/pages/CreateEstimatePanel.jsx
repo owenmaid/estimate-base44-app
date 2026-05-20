@@ -61,7 +61,7 @@ export default function CreateEstimatePanel() {
         client_email: info.client_email || '',
         client_phone: info.client_phone || '',
         client_address: info.client_address || '',
-        notes: info.notes || '',
+        notes: '',
         tax_rate: info.tax_rate || 0,
         discount: info.discount || 0,
       });
@@ -244,7 +244,7 @@ export default function CreateEstimatePanel() {
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
       client_address: estimate.client_address || '',
-      notes: estimate.notes || '',
+      notes: '',
       tax_rate: estimate.tax_rate || 0,
       discount: estimate.discount || 0,
     });
