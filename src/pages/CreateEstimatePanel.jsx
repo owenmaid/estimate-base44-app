@@ -22,9 +22,7 @@ export default function CreateEstimatePanel() {
 
   // Sections: [{id, title, items:[{id,description,quantity,unit_price,total,markup}]}]
   const [sections, setSections] = useState([
-    { id: Date.now(), title: 'Section 1', items: [] },
-    { id: Date.now() + 1, title: 'Summary 1', items: [], _isSummary: true },
-    { id: Date.now() + 2, title: 'Summary 2', items: [], _isSummary: true },
+    { id: Date.now(), title: 'Section 1', items: [] }
   ]);
 
   // Client info
