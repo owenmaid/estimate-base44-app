@@ -766,54 +766,52 @@ export default function CreateEstimatePanel() {
         });
       });
 
+      const basePayload = {
+        client_name: clientInfo.client_name,
+        project_name: clientInfo.client_email,   // "Attention" field doubles as project_name
+        project_number: clientInfo.project_number,
+        client_email: clientInfo.client_email,
+        client_phone: clientInfo.client_phone,
+        client_address: clientInfo.client_address,
+        notes: clientInfo.notes,
+        tax_rate: clientInfo.tax_rate,
+        discount: clientInfo.discount,
+        line_items: lineItems,
+        subtotal,
+        tax_amount: taxAmount,
+        total,
+        info_signal_logo: logoUrls.infoSignalLogo,
+        dyna_vent_logo: logoUrls.dynaVentLogo,
+      };
+
       // If already editing a known record, always update it
       if (activeEstimate) {
-        const payload = {
-          ...clientInfo,
-          line_items: lineItems,
-          subtotal,
-          tax_amount: taxAmount,
-          total,
+        return base44.entities.Estimate.update(activeEstimate.id, {
+          ...basePayload,
           status: activeEstimate.status,
           estimate_number: activeEstimate.estimate_number,
-          info_signal_logo: logoUrls.infoSignalLogo,
-          dyna_vent_logo: logoUrls.dynaVentLogo,
-        };
-        return base44.entities.Estimate.update(activeEstimate.id, payload);
+        });
       }
 
       // New save: if project_number is set, check for an existing record with that number first
       if (clientInfo.project_number.trim()) {
         const existing = await base44.entities.Estimate.filter({ project_number: clientInfo.project_number.trim() });
         if (existing && existing.length > 0) {
-          // Update the existing record instead of creating a duplicate
           const match = existing[0];
-          const payload = {
-            ...clientInfo,
-            line_items: lineItems,
-            subtotal,
-            tax_amount: taxAmount,
-            total,
+          return base44.entities.Estimate.update(match.id, {
+            ...basePayload,
             status: match.status || 'draft',
             estimate_number: match.estimate_number,
-          };
-          return base44.entities.Estimate.update(match.id, payload);
+          });
         }
       }
 
       // Truly new — create
-      const payload = {
-        ...clientInfo,
-        line_items: lineItems,
-        subtotal,
-        tax_amount: taxAmount,
-        total,
+      return base44.entities.Estimate.create({
+        ...basePayload,
         status: 'draft',
         estimate_number: `EST-${Date.now().toString().slice(-6)}`,
-        info_signal_logo: logoUrls.infoSignalLogo,
-        dyna_vent_logo: logoUrls.dynaVentLogo,
-      };
-      return base44.entities.Estimate.create(payload);
+      });
     },
     onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
