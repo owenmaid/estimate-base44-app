@@ -173,7 +173,9 @@ export default function CalculationEngine() {
     const byId = {};
     const byName = {};
     inventoryItems.forEach(item => {
-      const entry = { reg: item.reg_value, ot: item.ot_value, item_group: item.item_group, category: item.category || '' };
+      const regVal = item.reg_value === '' || item.reg_value === undefined ? null : Number(item.reg_value);
+      const otVal = item.ot_value === '' || item.ot_value === undefined ? null : Number(item.ot_value);
+      const entry = { reg: isNaN(regVal) ? null : regVal, ot: isNaN(otVal) ? null : otVal, item_group: item.item_group, category: item.category || '' };
       if (item.id) byId[item.id] = entry;
       if (item.name) byName[item.name.toLowerCase()] = entry;
       if (item.sku) byName[item.sku.toLowerCase()] = entry;

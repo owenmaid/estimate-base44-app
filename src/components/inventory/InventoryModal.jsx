@@ -89,11 +89,11 @@ export default function InventoryModal({ item, onClose, onSave }) {
             </div>
             <div>
               <Label>Reg Value ($)</Label>
-              <Input type="number" min="0" step="0.01" value={form.reg_value} onChange={e => set('reg_value', parseFloat(e.target.value) || '')} placeholder="0.00" />
+              <Input type="number" min="0" step="0.01" value={form.reg_value ?? ''} onChange={e => { const v = parseFloat(e.target.value); set('reg_value', isNaN(v) ? null : v); }} placeholder="0.00" />
             </div>
             <div>
               <Label>OT Value ($)</Label>
-              <Input type="number" min="0" step="0.01" value={form.ot_value} onChange={e => set('ot_value', parseFloat(e.target.value) || '')} placeholder="0.00" />
+              <Input type="number" min="0" step="0.01" value={form.ot_value ?? ''} onChange={e => { const v = parseFloat(e.target.value); set('ot_value', isNaN(v) ? null : v); }} placeholder="0.00" />
             </div>
             <div>
               <Label>Min Stock Level</Label>
