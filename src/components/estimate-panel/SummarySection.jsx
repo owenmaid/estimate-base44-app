@@ -47,14 +47,14 @@ export default function SummarySection({ title, onRename, leftTitle, rightTitle,
         <div className="grid grid-cols-2 gap-2 px-3 py-2">
           {/* Left Subsection */}
           <div className="border-r border-border pr-2">
-            <h4 className="text-xs font-semibold text-muted-foreground mb-2">{leftTitle}</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-2">{leftTitle}</h4>
             <div className="space-y-2">
               {children.left}
             </div>
           </div>
           {/* Right Subsection */}
           <div className="pl-2">
-            <h4 className="text-xs font-semibold text-muted-foreground mb-2">{rightTitle}</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-2">{rightTitle}</h4>
             <div className="space-y-2">
               {children.right}
             </div>
