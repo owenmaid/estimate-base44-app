@@ -183,8 +183,12 @@ export default function CalculationEngine() {
     return { byId, byName };
   }, [inventoryItems]);
 
-  // Find the active project from localStorage
-  const activeProjectId = typeof window !== 'undefined' ? localStorage.getItem('activeProjectId') : null;
+  // Find the active project from localStorage — reactive state so it updates on nav
+  const [activeProjectId, setActiveProjectId] = useState(() => localStorage.getItem('activeProjectId'));
+  useEffect(() => {
+    const id = localStorage.getItem('activeProjectId');
+    setActiveProjectId(id);
+  }, [projects]);
   const activeProject = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
   const equipmentRows = activeProject?.equipment_rows || [];
   const equipmentGrid = activeProject?.equipment_grid || {};
