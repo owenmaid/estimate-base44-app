@@ -14,6 +14,18 @@
       "type": "string",
       "description": "Client name"
     },
+    "site": {
+      "type": "string",
+      "description": "Site name"
+    },
+    "location": {
+      "type": "string",
+      "description": "Site location"
+    },
+    "plant": {
+      "type": "string",
+      "description": "Plant name"
+    },
     "status": {
       "type": "string",
       "enum": [

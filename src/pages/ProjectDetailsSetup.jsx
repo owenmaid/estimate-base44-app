@@ -28,6 +28,9 @@ export default function ProjectDetailsSetup() {
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [projectNumber, setProjectNumber] = useState('');
+  const [projectSite, setProjectSite] = useState('');
+  const [projectLocation, setProjectLocation] = useState('');
+  const [projectPlant, setProjectPlant] = useState('');
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
   const [newEquipmentCategory, setNewEquipmentCategory] = useState('');
   const [statHolidays, setStatHolidays] = useState([]);
@@ -100,6 +103,9 @@ export default function ProjectDetailsSetup() {
   const handleCloseProject = () => {
     setSelectedProjectId('');
     setProjectNumber('');
+    setProjectSite('');
+    setProjectLocation('');
+    setProjectPlant('');
     setStartDate('');
     setEndDate('');
     setDates([]);
@@ -126,6 +132,9 @@ export default function ProjectDetailsSetup() {
     if (!project) return;
     
     setProjectNumber(project.project_number || '');
+    setProjectSite(project.site || '');
+    setProjectLocation(project.location || '');
+    setProjectPlant(project.plant || '');
     setStartDate(project.start_date || '');
     setEndDate(project.end_date || '');
     const rawGrid = project.equipment_grid;
@@ -208,6 +217,9 @@ export default function ProjectDetailsSetup() {
       const gridToSave = (typeof equipmentGrid === 'object' && equipmentGrid !== null) ? equipmentGrid : {};
       base44.entities.Project.update(selectedProjectId, {
         project_number: projectNumber,
+        site: projectSite,
+        location: projectLocation,
+        plant: projectPlant,
         equipment_grid: gridToSave,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
@@ -216,7 +228,7 @@ export default function ProjectDetailsSetup() {
       });
     }, 1500);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [equipmentGrid, equipmentRows, typeGrid, selectedProjectId, projectNumber]);
+  }, [equipmentGrid, equipmentRows, typeGrid, selectedProjectId, projectNumber, projectSite, projectLocation, projectPlant]);
 
   const PAGE_SIZE = 15;
   const visibleDates = dates.slice(dateOffset, dateOffset + PAGE_SIZE);
@@ -504,6 +516,9 @@ const addEquipmentRow = () => {
       id: selectedProjectId,
       data: {
         project_number: projectNumber,
+        site: projectSite,
+        location: projectLocation,
+        plant: projectPlant,
         equipment_grid: gridToSave,
         equipment_rows: equipmentRows,
         type_grid: typeGrid,
@@ -685,7 +700,7 @@ const addEquipmentRow = () => {
                   value={projectNumber}
                   onChange={e => {
                     setProjectNumber(e.target.value);
-                    base44.entities.Project.update(selectedProjectId, { project_number: e.target.value });
+                    base44.entities.Project.update(selectedProjectId, { project_number: e.target.value, site: projectSite, location: projectLocation, plant: projectPlant });
                   }}
                   placeholder="Project #"
                   className="w-32 h-8"
@@ -750,6 +765,37 @@ const addEquipmentRow = () => {
               {dates.length} days generated — {format(dates[0], 'MMM d, yyyy')} to {format(dates[dates.length - 1], 'MMM d, yyyy')}
             </p>
           )}
+
+          {/* Site / Location / Plant fields */}
+          <div className="flex flex-wrap items-end gap-4 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Site</label>
+              <Input
+                value={projectSite}
+                onChange={e => setProjectSite(e.target.value)}
+                placeholder="Site name…"
+                className="w-44 h-9"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Location</label>
+              <Input
+                value={projectLocation}
+                onChange={e => setProjectLocation(e.target.value)}
+                placeholder="Location…"
+                className="w-44 h-9"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Plant</label>
+              <Input
+                value={projectPlant}
+                onChange={e => setProjectPlant(e.target.value)}
+                placeholder="Plant…"
+                className="w-44 h-9"
+              />
+            </div>
+          </div>
 
         </CardContent>
       </Card>
