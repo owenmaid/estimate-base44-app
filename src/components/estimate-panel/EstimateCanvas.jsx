@@ -172,8 +172,8 @@ export default function EstimateCanvas({
             onRenameSection(summarySection.id, newTitle);
           }
         }}
-        leftTitle="Budgetary Comparison"
-        rightTitle="Final Total"
+        leftTitle=""
+        rightTitle="Conventional Costs Per Manway/Day"
       >
         {{
           left: (
