@@ -433,7 +433,7 @@ export default function CreateEstimatePanel() {
       const sectionToSplit = prev.find(s => s.id === sectionId);
       if (!sectionToSplit) return prev;
       
-      // Split items in half (or keep all items in both subsections)
+      // Split items in half
       const midPoint = Math.ceil(sectionToSplit.items.length / 2);
       const leftItems = sectionToSplit.items.slice(0, midPoint);
       const rightItems = sectionToSplit.items.slice(midPoint);
@@ -441,13 +441,17 @@ export default function CreateEstimatePanel() {
       const leftSection = {
         id: Date.now() + 1,
         title: sectionToSplit.title + ' (Left)',
-        items: leftItems.length > 0 ? leftItems : [],
+        items: leftItems,
+        _splitFrom: sectionId,
+        _isSplit: true,
       };
       
       const rightSection = {
         id: Date.now() + 2,
         title: sectionToSplit.title + ' (Right)',
-        items: rightItems.length > 0 ? rightItems : [],
+        items: rightItems,
+        _splitFrom: sectionId,
+        _isSplit: true,
       };
       
       // Replace the original section with two new sections
