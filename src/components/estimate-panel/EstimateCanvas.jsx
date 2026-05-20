@@ -325,13 +325,13 @@ export default function EstimateCanvas({
             <div className="space-y-0.5">
               {[
                 { field: 'client_name', placeholder: 'Client name' },
-                { field: 'client_address', placeholder: 'Site / Location / Plant' },
+                { field: 'client_address', placeholder: 'Site / Location / Plant', wide: true },
                 { field: 'client_email', placeholder: 'Attention / Contact' },
                 { field: 'project_number', placeholder: 'Project Number - Name' },
-              ].map(({ field, placeholder }) => (
+              ].map(({ field, placeholder, wide }) => (
                 <input
                   key={field}
-                  className="block w-48 leading-5 bg-transparent border-b border-transparent hover:border-orange-300 focus:border-orange-500 outline-none transition-colors"
+                  className={`block leading-5 bg-transparent border-b border-transparent hover:border-orange-300 focus:border-orange-500 outline-none transition-colors ${wide ? 'w-72' : 'w-48'}`}
                   style={{ color: '#dc6e1e' }}
                   value={clientInfo[field]}
                   onChange={e => update(field, e.target.value)}
