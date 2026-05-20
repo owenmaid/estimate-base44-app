@@ -30,7 +30,7 @@ export default function CreateEstimatePanel() {
   // Logo URLs (loaded from user settings)
   const [logoUrls, setLogoUrls] = useState({ infoSignalLogo: '', dynaVentLogo: '' });
 
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), staleTime: 0 });
 
   // Auto-load logos from user settings whenever user data arrives
   useEffect(() => {
@@ -737,6 +737,7 @@ export default function CreateEstimatePanel() {
           taxAmount={taxAmount}
           total={total}
           inventory={inventory}
+          logoUrls={logoUrls}
         />
       </div>
     </div>

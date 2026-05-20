@@ -270,7 +270,7 @@ export default function EstimateCanvas({
   clientInfo, onClientInfoChange,
   sections, onRenameSection, onRemoveSection,
   onUpdateItem, onRemoveItem, onReorderItems, onReorderSections,
-  subtotal, taxAmount, total, inventory = [],
+  subtotal, taxAmount, total, inventory = [], logoUrls = {},
 }) {
   const [showClient, setShowClient] = useState(true);
 
@@ -290,16 +290,22 @@ export default function EstimateCanvas({
       <div className="border border-border rounded-lg overflow-hidden bg-white text-black">
         {/* Logo row */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
-          {/* Left: InfoSignal logo or placeholder */}
+          {/* Left: InfoSignal logo */}
           <div className="w-32 flex items-center">
-            <span className="font-bold text-lg" style={{ color: '#dc6e1e' }}>
-              <span style={{ color: '#dc6e1e' }}>&#9679;&#9679;&#9679; Info</span><span style={{ color: '#dc6e1e' }}>Signal</span>
-            </span>
+            {logoUrls.infoSignalLogo
+              ? <img src={logoUrls.infoSignalLogo} alt="InfoSignal" className="h-9 w-auto object-contain" />
+              : <span className="font-bold text-lg" style={{ color: '#dc6e1e' }}>InfoSignal</span>
+            }
           </div>
-          {/* Center: DynaVent logo or placeholder */}
+          {/* Center: DynaVent logo */}
           <div className="flex flex-col items-center">
-            <span className="font-bold text-base" style={{ color: '#dc6e1e' }}>DynaVent</span>
-            <span className="text-gray-400 uppercase tracking-widest" style={{ fontSize: '7px' }}>Breathe Innovation</span>
+            {logoUrls.dynaVentLogo
+              ? <img src={logoUrls.dynaVentLogo} alt="DynaVent" className="h-9 w-auto object-contain" />
+              : <>
+                  <span className="font-bold text-base" style={{ color: '#dc6e1e' }}>DynaVent</span>
+                  <span className="text-gray-400 uppercase tracking-widest" style={{ fontSize: '7px' }}>Breathe Innovation</span>
+                </>
+            }
           </div>
           {/* Right: Title */}
           <div className="text-right">
