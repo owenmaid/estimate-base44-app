@@ -53,7 +53,7 @@ export default function SummarySection({ title, onRename, leftTitle, rightTitle,
             </div>
           </div>
           {/* Right Subsection */}
-          <div className="pl-2 min-h-[120px]">
+          <div className="pl-2 min-h-[124px]">
             <h4 className="text-sm font-semibold text-foreground mb-2">{rightTitle}</h4>
             <div className="space-y-2">
               {children.right}
