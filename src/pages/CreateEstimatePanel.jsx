@@ -236,12 +236,22 @@ export default function CreateEstimatePanel() {
     }
     setTemplateSaving(true);
     try {
-      // Build line items the same way as the save mutation
+      // Build line items — zero out unit_price and total for all regular line items
+      // so the template recomputes fresh when linked to a new project
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
         lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
-          lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
+          const isHeader = /[\[\]]/.test(item.description || '');
+          const isSpacer = (item.description || '') === '__SPACER__';
+          lineItems.push({
+            description: item.description,
+            quantity: item.quantity,
+            markup: item.markup,
+            // Zero out costs for regular items; keep 0 for headers/spacers
+            unit_price: (isHeader || isSpacer) ? 0 : 0,
+            total: 0,
+          });
         });
       });
       await base44.entities.EstimateTemplate.create({
