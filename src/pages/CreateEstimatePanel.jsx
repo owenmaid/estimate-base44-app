@@ -428,6 +428,37 @@ export default function CreateEstimatePanel() {
     setSections(newSections);
   };
 
+  const splitSection = (sectionId) => {
+    setSections(prev => {
+      const sectionToSplit = prev.find(s => s.id === sectionId);
+      if (!sectionToSplit) return prev;
+      
+      // Split items in half (or keep all items in both subsections)
+      const midPoint = Math.ceil(sectionToSplit.items.length / 2);
+      const leftItems = sectionToSplit.items.slice(0, midPoint);
+      const rightItems = sectionToSplit.items.slice(midPoint);
+      
+      const leftSection = {
+        id: Date.now() + 1,
+        title: sectionToSplit.title + ' (Left)',
+        items: leftItems.length > 0 ? leftItems : [],
+      };
+      
+      const rightSection = {
+        id: Date.now() + 2,
+        title: sectionToSplit.title + ' (Right)',
+        items: rightItems.length > 0 ? rightItems : [],
+      };
+      
+      // Replace the original section with two new sections
+      const newSections = prev.filter(s => s.id !== sectionId);
+      const insertIndex = prev.findIndex(s => s.id === sectionId);
+      newSections.splice(insertIndex, 0, leftSection, rightSection);
+      
+      return newSections;
+    });
+  };
+
   // ── Aggregate helpers ──────────────────────────────────────────────────────
   const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
   const isSpacer = (desc) => (desc || '') === '__SPACER__';
@@ -969,6 +1000,7 @@ export default function CreateEstimatePanel() {
           sections={sectionsWithAggregate}
           onRenameSection={renameSection}
           onRemoveSection={removeSection}
+          onSplitSection={splitSection}
           onUpdateItem={updateItem}
           onRemoveItem={removeItem}
           onReorderItems={reorderItems}

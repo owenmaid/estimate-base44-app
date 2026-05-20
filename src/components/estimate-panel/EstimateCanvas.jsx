@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
+import { GripVertical, Trash2, ChevronDown, ChevronUp, Check, X, Columns } from 'lucide-react';
 
 function EditableCell({ value, onChange, type = 'text', className = '' }) {
   const [editing, setEditing] = useState(false);
@@ -55,7 +55,7 @@ function buildSubtotals(items) {
   return map;
 }
 
-function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem, onReorderItems, inventory, dragHandleProps }) {
+function SectionBlock({ section, onRename, onRemove, onSplit, onUpdateItem, onRemoveItem, onReorderItems, inventory, dragHandleProps }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -124,6 +124,9 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
                 : `$${sectionTotal.toFixed(2)}`}
             </span>
           )}
+          <button onClick={() => onSplit(section.id)} className="text-muted-foreground hover:text-primary transition-colors" title="Split into two columns">
+            <Columns className="h-3.5 w-3.5" />
+          </button>
           <button onClick={() => onRemove(section.id)} className="text-muted-foreground hover:text-destructive transition-colors">
             <Trash2 className="h-3 w-3" />
           </button>
@@ -268,7 +271,7 @@ function SectionBlock({ section, onRename, onRemove, onUpdateItem, onRemoveItem,
 
 export default function EstimateCanvas({
   clientInfo, onClientInfoChange,
-  sections, onRenameSection, onRemoveSection,
+  sections, onRenameSection, onRemoveSection, onSplitSection,
   onUpdateItem, onRemoveItem, onReorderItems, onReorderSections,
   subtotal, taxAmount, total, inventory = [], logoUrls = {},
 }) {
@@ -282,6 +285,12 @@ export default function EstimateCanvas({
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
     onReorderSections(reordered);
+  };
+
+  const handleSplit = (sectionId) => {
+    if (onSplitSection) {
+      onSplitSection(sectionId);
+    }
   };
 
   return (
@@ -395,6 +404,7 @@ export default function EstimateCanvas({
                         section={section}
                         onRename={onRenameSection}
                         onRemove={onRemoveSection}
+                        onSplit={handleSplit}
                         onUpdateItem={onUpdateItem}
                         onRemoveItem={onRemoveItem}
                         onReorderItems={onReorderItems}
