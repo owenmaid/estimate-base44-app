@@ -146,18 +146,19 @@ export default function CreateEstimatePanel() {
             return { ...item, unit_price: 0, total: 0 };
           }),
         })));
-        setClientInfo(prev => ({ ...prev, client_name: '', client_address: '', client_email: '' }));
+        setClientInfo(prev => ({ ...prev, client_name: '', client_address: '', client_email: '', project_name: '' }));
       }
       return;
     }
 
-    // Populate customer name, site/location/plant, and attention from the linked project
+    // Populate customer name, site/location/plant, attention, and project name from the linked project
     const siteParts = [linkedProject.site, linkedProject.location, linkedProject.plant].filter(Boolean);
     setClientInfo(prev => ({
       ...prev,
       client_name: linkedProject.client || '',
       client_address: siteParts.join(' / '),
       client_email: linkedProject.name || '',
+      project_name: linkedProject.name || '',
     }));
 
     if (inventory.length === 0) return;
@@ -241,7 +242,8 @@ export default function CreateEstimatePanel() {
     setActiveEstimate(estimate);
     setClientInfo({
       client_name: estimate.client_name || '',
-      project_number: estimate.project_number || estimate.project_name || '',
+      project_number: estimate.project_number || '',
+      project_name: estimate.project_name || '',
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
       client_address: estimate.client_address || '',
@@ -290,7 +292,7 @@ export default function CreateEstimatePanel() {
   const handleNew = () => {
     setActiveEstimate(null);
     setSections([{ id: Date.now(), title: 'Section 1', items: [] }]);
-    setClientInfo({ client_name: '', project_number: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
+    setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
     // Reset logos to whatever is saved in user settings
     const savedLogos = user?.settings?.logoUrls || {};
     setLogoUrls({ infoSignalLogo: savedLogos.infoSignalLogo || '', dynaVentLogo: savedLogos.dynaVentLogo || '' });
@@ -768,7 +770,7 @@ export default function CreateEstimatePanel() {
 
       const basePayload = {
         client_name: clientInfo.client_name,
-        project_name: clientInfo.client_email,   // "Attention" field doubles as project_name
+        project_name: clientInfo.project_name,
         project_number: clientInfo.project_number,
         client_email: clientInfo.client_email,
         client_phone: clientInfo.client_phone,

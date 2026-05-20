@@ -24,7 +24,7 @@
     },
     "project_name": {
       "type": "string",
-      "description": "Name or title of the project"
+      "description": "Name of the linked project"
     },
     "project_number": {
       "type": "string",

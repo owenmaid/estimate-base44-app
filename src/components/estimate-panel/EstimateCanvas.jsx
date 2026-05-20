@@ -318,7 +318,7 @@ export default function EstimateCanvas({
           {/* Left: labels + values */}
           <div className="flex gap-4 flex-1">
             <div className="space-y-0.5 text-right shrink-0">
-              {['Customer', 'Site / Location / Plant', 'Attention', 'Project'].map(l => (
+              {['Customer', 'Site / Location / Plant', 'Attention', 'Project Name', 'Project'].map(l => (
                 <div key={l} className="font-semibold text-gray-800 leading-5">{l}</div>
               ))}
             </div>
@@ -327,7 +327,8 @@ export default function EstimateCanvas({
                 { field: 'client_name', placeholder: 'Client name' },
                 { field: 'client_address', placeholder: 'Site / Location / Plant', wide: true },
                 { field: 'client_email', placeholder: 'Attention / Contact' },
-                { field: 'project_number', placeholder: 'Project Number - Name' },
+                { field: 'project_name', placeholder: 'Project Name', wide: true },
+                { field: 'project_number', placeholder: 'Project Number' },
               ].map(({ field, placeholder, wide }) => (
                 <input
                   key={field}

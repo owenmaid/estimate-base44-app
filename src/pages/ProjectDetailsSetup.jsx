@@ -705,7 +705,15 @@ const addEquipmentRow = () => {
                   placeholder="Project #"
                   className="w-32 h-8"
                 />
-                <span className="text-primary font-bold">— {projects.find(p => p.id === selectedProjectId)?.name}</span>
+                <Input
+                  value={projects.find(p => p.id === selectedProjectId)?.name || ''}
+                  onChange={e => {
+                    const newName = e.target.value;
+                    base44.entities.Project.update(selectedProjectId, { name: newName });
+                  }}
+                  placeholder="Project Name"
+                  className="w-48 h-8"
+                />
               </div>
             )}
           </CardTitle>
