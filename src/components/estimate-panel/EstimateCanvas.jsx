@@ -178,6 +178,9 @@ export default function EstimateCanvas({
         {{
           left: (
             <>
+              <div className="border-b border-border pb-2 mb-2">
+                <div className="text-xs font-semibold text-foreground">DCSM and VENTILATION COST PER MANWAY/DAY</div>
+              </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
