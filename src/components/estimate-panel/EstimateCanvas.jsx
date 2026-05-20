@@ -13,7 +13,7 @@ const isHourSection = (title) => HOUR_ITEMS.includes(normalizeDesc(title));
 
 export default function EstimateCanvas({
   clientInfo, onClientInfoChange,
-  sections, onRenameSection, onRemoveSection, onSplitSection, onSetSections,
+  sections, onRenameSection, onRemoveSection, onSplitSection,
   onUpdateItem, onRemoveItem, onReorderItems, onReorderSections,
   subtotal, taxAmount, total, inventory = [], logoUrls = {},
 }) {
@@ -167,7 +167,10 @@ export default function EstimateCanvas({
       <SummarySection
         title={sections.find(s => s._isSummary)?.title || 'Summary'}
         onRename={(newTitle) => {
-          onSetSections(prev => prev.map(s => s._isSummary ? { ...s, title: newTitle } : s));
+          const summarySection = sections.find(s => s._isSummary);
+          if (summarySection) {
+            onRenameSection(summarySection.id, newTitle);
+          }
         }}
         leftTitle="Calculations"
         rightTitle="Final Total"
