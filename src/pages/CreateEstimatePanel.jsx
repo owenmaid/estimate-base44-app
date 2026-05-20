@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -27,11 +27,19 @@ export default function CreateEstimatePanel() {
     tax_rate: 0, discount: 0,
   });
 
-  // Logo URLs (loaded from settings)
-  const [logoUrls, setLogoUrls] = useState({
-    infoSignalLogo: '',
-    dynaVentLogo: '',
-  });
+  // Logo URLs (loaded from user settings)
+  const [logoUrls, setLogoUrls] = useState({ infoSignalLogo: '', dynaVentLogo: '' });
+
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
+
+  // Auto-load logos from user settings whenever user data arrives
+  useEffect(() => {
+    if (!user?.settings?.logoUrls) return;
+    setLogoUrls(prev => ({
+      infoSignalLogo: user.settings.logoUrls.infoSignalLogo || prev.infoSignalLogo,
+      dynaVentLogo: user.settings.logoUrls.dynaVentLogo || prev.dynaVentLogo,
+    }));
+  }, [user]);
 
   const { data: inventory = [] } = useQuery({
     queryKey: ['inventory'],
@@ -150,7 +158,9 @@ export default function CreateEstimatePanel() {
     setActiveEstimate(null);
     setSections([{ id: Date.now(), title: 'Section 1', items: [] }]);
     setClientInfo({ client_name: '', project_number: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
-    setLogoUrls({ infoSignalLogo: '', dynaVentLogo: '' });
+    // Reset logos to whatever is saved in user settings
+    const savedLogos = user?.settings?.logoUrls || {};
+    setLogoUrls({ infoSignalLogo: savedLogos.infoSignalLogo || '', dynaVentLogo: savedLogos.dynaVentLogo || '' });
   };
 
   const handleCloseEstimate = () => setShowCloseConfirm(true);
