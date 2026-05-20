@@ -193,6 +193,10 @@ export default function EstimateCanvas({
                 <span>Total Cost</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between text-xs text-foreground font-bold mb-2">
+                <span>Cost per manway/day</span>
+                <span>$0.00</span>
+              </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
