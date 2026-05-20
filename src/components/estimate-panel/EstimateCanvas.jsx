@@ -189,6 +189,10 @@ export default function EstimateCanvas({
                 <span>Number of days</span>
                 <span>0</span>
               </div>
+              <div className="flex justify-between text-xs text-foreground font-bold mb-2">
+                <span>Total Cost</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
