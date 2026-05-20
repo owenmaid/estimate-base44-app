@@ -38,7 +38,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 48;
+  const margin = 40;
   const contentW = pageW - margin * 2;
   let y = margin;
 
@@ -54,10 +54,6 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
       y = margin;
     }
   };
-
-  // ── Header bar with logos ───────────────────────────────────────────────────
-  doc.setFillColor(...orange);
-  doc.rect(0, 0, pageW, 70, 'F');
 
   // Helper to load image from URL as data URL
   const loadImage = async (url) => {
@@ -80,68 +76,109 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   const infoSignalImg = logoUrls.infoSignalLogo ? await loadImage(logoUrls.infoSignalLogo) : null;
   const dynaVentImg = logoUrls.dynaVentLogo ? await loadImage(logoUrls.dynaVentLogo) : null;
 
-  // Left logo (InfoSignal)
+  // ── Header: white background, 3-column layout ──────────────────────────────
+  // Left: InfoSignal logo
+  const logoH = 38;
+  const logoY = y;
+
   if (infoSignalImg) {
-    doc.addImage(infoSignalImg, 'JPEG', margin, 15, 50, 20);
+    doc.addImage(infoSignalImg, 'PNG', margin, logoY, 110, logoH);
+  } else {
+    // Fallback text
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...orange);
+    doc.text('InfoSignal', margin, logoY + 26);
   }
 
-  // Center logo (DynaVent)
+  // Center: DynaVent logo
+  const centerX = pageW / 2;
   if (dynaVentImg) {
-    doc.addImage(dynaVentImg, 'JPEG', pageW / 2 - 25, 15, 50, 20);
+    doc.addImage(dynaVentImg, 'PNG', centerX - 60, logoY, 120, logoH);
+  } else {
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...orange);
+    doc.text('DynaVent', centerX, logoY + 26, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('BREATHE INNOVATION', centerX, logoY + 36, { align: 'center' });
   }
 
-  // Right side - Title
-  doc.setTextColor(...white);
-  doc.setFontSize(14);
+  // Right: Title — bold, dark, right-aligned
   doc.setFont('helvetica', 'bold');
-  doc.text('DCSM Project Budgetary Estimate', pageW - margin, 25, { align: 'right' });
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  if (estimateNumber) doc.text(`#${estimateNumber}`, pageW - margin, 40, { align: 'right' });
-
-  // Date top-right (below estimate number)
-  doc.setFontSize(9);
-  const dateStr = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
-  doc.text(dateStr, pageW - margin, 52, { align: 'right' });
-
-  y = 90;
-
-  // ── Customer Details Section ───────────────────────────────────────────────
+  doc.setFontSize(13);
   doc.setTextColor(...dark);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Customer Details:', margin, y);
-  y += 8;
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...muted);
-  
-  // Site/Location/Plant
-  if (clientInfo.client_address) {
-    doc.text(`Site/Location/Plant: ${clientInfo.client_address}`, margin, y);
-    y += 12;
-  }
-  
-  // Attention
-  if (clientInfo.client_name) {
-    doc.text(`Attention: ${clientInfo.client_name}`, margin, y);
-    y += 12;
-  }
-  
-  // Project
-  if (clientInfo.project_name) {
-    doc.text(`Project: ${clientInfo.project_name}`, margin, y);
-    y += 12;
-  }
-  
-  // Project location code (E2) - center
-  doc.setFontSize(8);
-  doc.setTextColor(150);
-  doc.text('E2', pageW / 2, 85, { align: 'center' });
-  
+  doc.text('DCSM Project Budgetary Estimate', pageW - margin, logoY + 20, { align: 'right' });
+
+  y = logoY + logoH + 10;
+
+  // ── Thin separator line under logos ──────────────────────────────────────
+  doc.setDrawColor(200, 195, 190);
+  doc.setLineWidth(0.75);
+  doc.line(margin, y, pageW - margin, y);
   y += 10;
+
+  // ── Customer details block ────────────────────────────────────────────────
+  // Format date as "08-Jul-24"
+  const now = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr = `${String(now.getDate()).padStart(2,'0')}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
+
+  const labelX = margin;
+  const valueX = margin + 105;
+  const e2X = pageW / 2 - 10;
+  const dateLabelX = pageW - margin - 80;
+  const dateValueX = pageW - margin;
+  const rowGap = 13;
+
+  doc.setFontSize(8.5);
+
+  const fields = [
+    { label: 'Customer',               value: clientInfo.client_name || '' },
+    { label: 'Site / Location / Plant', value: clientInfo.client_address || '', e2: true },
+    { label: 'Attention',              value: clientInfo.client_email || '' },
+    { label: 'Project',               value: clientInfo.project_number || '' },
+  ];
+
+  fields.forEach((field, idx) => {
+    // Label — dark, bold
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...dark);
+    doc.text(field.label, labelX, y);
+
+    // Value — orange
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...orange);
+    doc.text(field.value, valueX, y);
+
+    // E2 code next to Site row
+    if (field.e2) {
+      doc.setTextColor(...dark);
+      doc.setFont('helvetica', 'normal');
+      doc.text('E2', e2X, y);
+    }
+
+    // Date on first row, top-right
+    if (idx === 0) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...dark);
+      doc.text('Date', dateLabelX, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...orange);
+      doc.text(dateStr, dateValueX, y, { align: 'right' });
+    }
+
+    y += rowGap;
+  });
+
+  y += 8;
+
+  // ── Second separator line under customer details ──────────────────────────
+  doc.setDrawColor(200, 195, 190);
+  doc.setLineWidth(0.75);
+  doc.line(margin, y, pageW - margin, y);
+  y += 14;
 
   // ── Column layout ───────────────────────────────────────────────────────────
   const colDesc  = margin;

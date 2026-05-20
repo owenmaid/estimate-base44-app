@@ -286,45 +286,93 @@ export default function EstimateCanvas({
 
   return (
     <div className="flex-1 overflow-y-auto bg-background p-5 space-y-4">
-      {/* Client Info */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <button
-          onClick={() => setShowClient(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 bg-secondary/40 text-xs font-semibold text-foreground hover:bg-secondary/60 transition-colors"
-        >
-          Client & Project Info
-          {showClient ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </button>
-        {showClient && (
-          <div className="grid grid-cols-2 gap-3 p-4">
-            {[
-              { label: 'Client Name', field: 'client_name' },
-              { label: 'Project Number', field: 'project_number' },
-              { label: 'Email', field: 'client_email' },
-              { label: 'Phone', field: 'client_phone' },
-              { label: 'Address', field: 'client_address' },
-            ].map(({ label, field }) => (
-              <div key={field}>
-                <label className="text-xs text-muted-foreground block mb-1">{label}</label>
+      {/* Header Preview — matches PDF layout */}
+      <div className="border border-border rounded-lg overflow-hidden bg-white text-black">
+        {/* Logo row */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+          {/* Left: InfoSignal logo or placeholder */}
+          <div className="w-32 flex items-center">
+            <span className="font-bold text-lg" style={{ color: '#dc6e1e' }}>
+              <span style={{ color: '#dc6e1e' }}>&#9679;&#9679;&#9679; Info</span><span style={{ color: '#dc6e1e' }}>Signal</span>
+            </span>
+          </div>
+          {/* Center: DynaVent logo or placeholder */}
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-base" style={{ color: '#dc6e1e' }}>DynaVent</span>
+            <span className="text-gray-400 uppercase tracking-widest" style={{ fontSize: '7px' }}>Breathe Innovation</span>
+          </div>
+          {/* Right: Title */}
+          <div className="text-right">
+            <span className="font-bold text-sm text-gray-900">DCSM Project Budgetary Estimate</span>
+          </div>
+        </div>
+
+        {/* Customer details row */}
+        <div className="flex px-5 py-2.5 text-xs gap-4 border-b border-gray-200">
+          {/* Left: labels + values */}
+          <div className="flex gap-4 flex-1">
+            <div className="space-y-0.5 text-right shrink-0">
+              {['Customer', 'Site / Location / Plant', 'Attention', 'Project'].map(l => (
+                <div key={l} className="font-semibold text-gray-800 leading-5">{l}</div>
+              ))}
+            </div>
+            <div className="space-y-0.5">
+              {[
+                { field: 'client_name', placeholder: 'Client name' },
+                { field: 'client_address', placeholder: 'Site / Location / Plant' },
+                { field: 'client_email', placeholder: 'Attention / Contact' },
+                { field: 'project_number', placeholder: 'Project Number - Name' },
+              ].map(({ field, placeholder }) => (
                 <input
-                  className="w-full text-xs bg-secondary border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-primary transition-colors"
+                  key={field}
+                  className="block w-48 leading-5 bg-transparent border-b border-transparent hover:border-orange-300 focus:border-orange-500 outline-none transition-colors"
+                  style={{ color: '#dc6e1e' }}
                   value={clientInfo[field]}
                   onChange={e => update(field, e.target.value)}
-                  placeholder={label}
+                  placeholder={placeholder}
                 />
-              </div>
-            ))}
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Notes</label>
-              <textarea
-                className="w-full text-xs bg-secondary border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-primary transition-colors resize-none h-16"
-                value={clientInfo.notes}
-                onChange={e => update('notes', e.target.value)}
-                placeholder="Notes / terms…"
-              />
+              ))}
             </div>
           </div>
-        )}
+          {/* Right: Date */}
+          <div className="shrink-0 text-right self-start flex gap-2 items-center">
+            <span className="font-semibold text-gray-800">Date</span>
+            <span style={{ color: '#dc6e1e' }}>{new Date().toLocaleDateString('en-CA', { day:'2-digit', month:'short', year:'2-digit' }).replace(/ /g, '-')}</span>
+          </div>
+        </div>
+
+        {/* Edit remaining fields in collapsed section */}
+        <div>
+          <button
+            onClick={() => setShowClient(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-1.5 bg-gray-50 text-xs text-gray-500 hover:bg-gray-100 transition-colors"
+          >
+            <span>Additional fields (Phone, Notes)</span>
+            {showClient ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+          {showClient && (
+            <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Phone</label>
+                <input
+                  className="w-full text-xs bg-white border border-gray-200 rounded px-2 py-1.5 text-gray-800 outline-none focus:border-orange-400 transition-colors"
+                  value={clientInfo.client_phone}
+                  onChange={e => update('client_phone', e.target.value)}
+                  placeholder="Phone"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Notes</label>
+                <textarea
+                  className="w-full text-xs bg-white border border-gray-200 rounded px-2 py-1.5 text-gray-800 outline-none focus:border-orange-400 transition-colors resize-none h-12"
+                  value={clientInfo.notes}
+                  onChange={e => update('notes', e.target.value)}
+                  placeholder="Notes / terms…"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sections */}
