@@ -45,11 +45,8 @@ export default function SummarySection({ title, onRename, leftTitle, rightTitle,
 
       {!collapsed && (
         <div className="px-3 py-2">
-          {/* Header row with both titles */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <h4 className="text-sm font-semibold text-foreground">{leftTitle}</h4>
-            <h4 className="text-sm font-semibold text-foreground">{rightTitle}</h4>
-          </div>
+          {/* Left title above the line */}
+          <h4 className="text-sm font-semibold text-foreground mb-2">{leftTitle}</h4>
           {/* Spanning divider line */}
           <div className="border-t border-border mb-2"></div>
           {/* Content row */}
@@ -60,6 +57,7 @@ export default function SummarySection({ title, onRename, leftTitle, rightTitle,
               </div>
             </div>
             <div className="pl-2 h-[160px]">
+              <h4 className="text-sm font-semibold text-foreground mb-2">{rightTitle}</h4>
               <div className="space-y-2">
                 {children.right}
               </div>
