@@ -575,8 +575,14 @@ export default function CreateEstimatePanel() {
   const LEAD_VENT_BRACKET = 'lead ventilation tech';
   const LEAD_VENT_TARGET  = 'lead ventilation tech total';
 
+  // Ensure all items have totals calculated BEFORE computing bracket subtotals
+  const sectionsPass2WithTotals = sectionsPass2.map(s => ({
+    ...s,
+    items: s.items.map(ensureItemTotal),
+  }));
+
   let leadVentValue = 0;
-  sectionsPass2.forEach(s => {
+  sectionsPass2WithTotals.forEach(s => {
     s.items.forEach((item, idx) => {
       if (normalizeDesc(item.description) !== LEAD_VENT_BRACKET) return;
       let sum = 0;
@@ -595,7 +601,7 @@ export default function CreateEstimatePanel() {
   const VENT_TECH_TARGET  = 'ventilation tech total';
 
   let ventTechValue = 0;
-  sectionsPass2.forEach(s => {
+  sectionsPass2WithTotals.forEach(s => {
     s.items.forEach((item, idx) => {
       if (normalizeDesc(item.description) !== VENT_TECH_BRACKET) return;
       let sum = 0;
@@ -623,7 +629,7 @@ export default function CreateEstimatePanel() {
   };
 
   let logisticsValue = 0;
-  sectionsPass2.forEach(s => {
+  sectionsPass2WithTotals.forEach(s => {
     s.items.forEach((item, idx) => {
       if (!isSubtotalHeader(item.description)) return;
       if (!isLogisticsBracket(item.description)) return;
@@ -666,7 +672,7 @@ export default function CreateEstimatePanel() {
   };
 
   let ventEquipBracketValue = 0;
-  sectionsPass2.forEach(s => {
+  sectionsPass2WithTotals.forEach(s => {
     s.items.forEach((item, idx) => {
       if (!isSubtotalHeader(item.description)) return;
       if (!isVentEquipBracket(item.description)) return;
@@ -689,7 +695,7 @@ export default function CreateEstimatePanel() {
   const VENT_CONSUMABLES_TARGET  = 'consumables | securement total cost';
 
   let ventConsumablesValue = 0;
-  sectionsPass2.forEach(s => {
+  sectionsPass2WithTotals.forEach(s => {
     s.items.forEach((item, idx) => {
       if (!isSubtotalHeader(item.description)) return;
       if (normalizeDesc(item.description) !== VENT_CONSUMABLES_BRACKET) return;
