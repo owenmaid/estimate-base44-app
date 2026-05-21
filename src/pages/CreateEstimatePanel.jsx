@@ -747,6 +747,12 @@ export default function CreateEstimatePanel() {
   );
 
   console.log('[Pass4] Found ventLabourSection:', !!ventLabourSection, 'equipConsumableSection:', !!equipConsumableSection);
+  if (ventLabourSection) {
+    console.log('[Pass4] ventLabourSection items:', ventLabourSection.items.map(i => `"${i.description}" total:${i.total}`));
+  }
+  if (equipConsumableSection) {
+    console.log('[Pass4] equipConsumableSection items:', equipConsumableSection.items.map(i => `"${i.description}" total:${i.total}`));
+  }
   
   const ventLabourTotal = ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0;
   const equipConsumableTotal = equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0;
