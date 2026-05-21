@@ -23,6 +23,11 @@ function buildSubtotals(items) {
       map[item.id] = item.total || 0;
       return;
     }
+    // DCSM Est Total and Ventilation Total Cost use injected total directly
+    if (n === 'dcsm est total' || n === 'ventilation total cost' || n === 'total cost for ventilation') {
+      map[item.id] = item.total || 0;
+      return;
+    }
     let sum = 0;
     for (let j = idx + 1; j < items.length; j++) {
       if (isSubtotalHeader(items[j].description)) break;
