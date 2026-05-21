@@ -710,24 +710,35 @@ export default function CreateEstimatePanel() {
         return { ...item, total: ventEquipValue };
       if (normalizeDesc(item.description) === VENT_CONSUMABLES_TARGET)
         return { ...item, total: ventConsumablesValue };
-      return item;
+      // Ensure all other items have their totals calculated
+      return ensureItemTotal(item);
     }),
   }));
 
+  // Helper to ensure item totals are calculated if missing
+  const ensureItemTotal = (item) => {
+    if (item.total != null && item.total > 0) return item;
+    if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
+    const calculated = (item.quantity || 0) * (item.unit_price || 0) * (1 + (item.markup || 0) / 100);
+    return { ...item, total: calculated };
+  };
+
   // Pass 4: "Ventilation Total Cost" = simplified formula
-  // Sum the two source section totals directly by their exact titles
-  console.log('[Pass4] Available sections:', sectionsPass3.map(s => ({ title: s.title, normalized: normalizeDesc(s.title) })));
-  
-  const ventLabourSection = sectionsPass3.find(s => 
+  // Ensure all items have totals calculated first, then sum section totals
+  const sectionsPass3WithCalculatedTotals = sectionsPass3.map(s => ({
+    ...s,
+    items: s.items.map(ensureItemTotal),
+  }));
+
+  const ventLabourSection = sectionsPass3WithCalculatedTotals.find(s => 
     normalizeDesc(s.title) === 'ventilation total labour | logistics cost'
   );
-  const equipConsumableSection = sectionsPass3.find(s => 
+  const equipConsumableSection = sectionsPass3WithCalculatedTotals.find(s => 
     normalizeDesc(s.title) === 'total equipment | consumable costs'
   );
 
   const ventilationSectionTotal = (ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0) +
                                    (equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
-  console.log('[Pass4] Found ventLabourSection:', !!ventLabourSection, 'equipConsumableSection:', !!equipConsumableSection);
   console.log('[Pass4] Ventilation Total Labour | Logistics Cost section total:', ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0);
   console.log('[Pass4] Total Equipment | Consumable Costs section total:', equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
   console.log('[Pass4] Ventilation Total Cost:', ventilationSectionTotal);
