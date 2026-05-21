@@ -546,6 +546,14 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
+  // Helper to ensure item totals are calculated if missing (must be defined before use)
+  const ensureItemTotal = (item) => {
+    if (item.total != null && item.total > 0) return item;
+    if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
+    const calculated = (item.quantity || 0) * (item.unit_price || 0) * (1 + (item.markup || 0) / 100);
+    return { ...item, total: calculated };
+  };
+
   // Pass 2: inject "DCSM Est Total" = sum of "Total Labour | Logistics Cost" + "Total Equipment | Consumables Cost" sections
   // Use sectionsPass1 so the Labour value is already updated
   const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
@@ -563,14 +571,6 @@ export default function CreateEstimatePanel() {
       return ensureItemTotal(item);
     }),
   }));
-
-  // Helper to ensure item totals are calculated if missing
-  const ensureItemTotal = (item) => {
-    if (item.total != null && item.total > 0) return item;
-    if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
-    const calculated = (item.quantity || 0) * (item.unit_price || 0) * (1 + (item.markup || 0) / 100);
-    return { ...item, total: calculated };
-  };
 
   // Pass 3: inject "Lead Ventilation Tech Total" = the bracketed [Lead Ventilation Tech] subtotal
   // Find the [Lead Ventilation Tech] bracket row in any section and compute its subtotal
