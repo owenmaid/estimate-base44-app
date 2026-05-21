@@ -846,22 +846,20 @@ export default function CreateEstimatePanel() {
     return value;
   }, [sectionsPass5, projectCol14Total]);
 
+  // Compute Ventilation Total Cost once and apply it in final aggregation
+  const ventTotalCostValue = ventilationSectionTotal;
+
   const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      // Preserve hour injections from Pass 5 (they were already set in sectionsPass5)
       // Inject Total Project Cost
       if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET) {
         return { ...item, total: projectCostValue };
       }
-      // Preserve Ventilation Total Cost from Pass 4 (it's not a bracket header)
+      // Inject Ventilation Total Cost (computed from Pass 4)
       if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
-        const origSection = sectionsPass4.find(ps => ps.id === s.id);
-        const origItem = origSection?.items.find(oi => oi.id === item.id);
-        if (origItem?.total != null) {
-          return { ...item, total: origItem.total };
-        }
+        return { ...item, total: ventTotalCostValue };
       }
       return item;
     }),
