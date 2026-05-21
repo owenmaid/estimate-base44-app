@@ -723,7 +723,7 @@ export default function CreateEstimatePanel() {
   }));
 
   // Pass 4: "Ventilation Total Cost" line item =
-  //   SectionTotal("Ventilation (Total Labour | Logistics Cost)") + SectionTotal("Total Equipment | Consumable Costs")
+  //   SectionTotal("Ventilation Total Labour | Logistics Cost") + SectionTotal("Total Equipment | Consumable Costs")
   // Matches both the line item description "ventilation total cost" AND "total cost for ventilation"
   const isVentTotalCostTarget = (desc) => {
     const n = normalizeDesc(desc);
