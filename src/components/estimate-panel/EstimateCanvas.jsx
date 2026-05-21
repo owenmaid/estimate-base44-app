@@ -228,7 +228,7 @@ export default function EstimateCanvas({
                 <span>0</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-foreground">
-                <span>Total</span>
+                <span>Total Cost</span>
                 <span className="text-primary">${total.toFixed(2)}</span>
               </div>
             </>
