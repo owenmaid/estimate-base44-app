@@ -186,7 +186,7 @@ export default function EstimateCanvas({
                 <span>0</span>
               </div>
               <div className="flex justify-between text-xs text-muted-foreground mb-2">
-                <span>Number of days</span>
+                <span>Number of days DCSM</span>
                 <span>0</span>
               </div>
               <div className="flex justify-between text-xs text-foreground font-bold mb-2">
