@@ -166,10 +166,11 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
   const itemsToRender = section.items;
 
   const subtotalMap = buildSubtotals(itemsToRender);
-  const bracketItems = itemsToRender.filter(i => isSubtotalHeader(i.description));
-  const sectionTotal = bracketItems.length > 0
-    ? bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0)
-    : itemsToRender.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
+  // Always sum only leaf-level items (non-bracket, non-spacer) for the section header total
+  // to avoid double-counting injected summary rows alongside their raw siblings
+  const sectionTotal = itemsToRender
+    .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
+    .reduce((s, i) => s + (i.total || 0), 0);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
