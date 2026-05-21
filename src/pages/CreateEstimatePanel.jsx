@@ -698,7 +698,7 @@ export default function CreateEstimatePanel() {
 
   const ventilationSectionTotal = sectionsPass3
     .filter(s => isSectionMatch(s.title, ['ventilation']) && !isSectionMatch(s.title, ['total cost for ventilation']))
-    .reduce((sum, s) => sum + s.items.reduce((a, i) => a + (i.total || 0), 0), 0);
+    .reduce((sum, s) => sum + getSectionTotal(s.items), 0);
 
   const sectionsPass4 = sectionsPass3.map(s => ({
     ...s,
