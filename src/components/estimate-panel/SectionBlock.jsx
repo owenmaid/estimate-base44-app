@@ -166,10 +166,24 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
   const itemsToRender = section.items;
 
   const subtotalMap = buildSubtotals(itemsToRender);
-  // Always sum only leaf-level items (non-bracket, non-spacer) for the section header total
-  // to avoid double-counting injected summary rows alongside their raw siblings
+
+  // Known injected summary items (non-bracket) that aggregate sibling raw items —
+  // must be excluded from the section total to avoid double-counting
+  const INJECTED_SUMMARIES = [
+    'lead ventilation tech total',
+    'ventilation tech total',
+    'logistic / shipping total',
+    'logistics / shipping total',
+    'logistic/shipping total',
+    'logistics/shipping total',
+    'ventilation equipment total cost',
+    'consumables | securement total cost',
+  ];
+  const isInjectedSummary = (desc) => INJECTED_SUMMARIES.includes(normalizeDesc(desc));
+
+  // Sum only true leaf items: non-bracket, non-spacer, not an injected summary
   const sectionTotal = itemsToRender
-    .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
+    .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description) && !isInjectedSummary(i.description))
     .reduce((s, i) => s + (i.total || 0), 0);
 
   const handleDragEnd = (result) => {

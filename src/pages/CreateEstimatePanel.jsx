@@ -732,11 +732,22 @@ export default function CreateEstimatePanel() {
 
   const isSectionMatch = (title, keywords) => keywords.some(kw => (title || '').toLowerCase().includes(kw));
 
-  // Sum only leaf-level line items (non-bracket, non-spacer) to avoid double-counting
-  // injected summary rows like "Lead Ventilation Tech Total" which already aggregate their children
+  // Injected summary targets — these are non-bracket items whose value = sum of siblings above them.
+  // Must be excluded from leaf sums to prevent double-counting raw items + their aggregated summary.
+  const INJECTED_SUMMARY_TARGETS = [
+    LEAD_VENT_TARGET,        // 'lead ventilation tech total'
+    VENT_TECH_TARGET,        // 'ventilation tech total'
+    LOGISTICS_TARGET,        // 'logistic / shipping total'
+    VENT_EQUIP_TOTAL_TARGET, // 'ventilation equipment total cost'
+    VENT_CONSUMABLES_TARGET, // 'consumables | securement total cost'
+  ];
+  const isInjectedSummary = (desc) =>
+    INJECTED_SUMMARY_TARGETS.includes(normalizeDesc(desc)) || isLogisticsTarget(desc);
+
+  // Sum only true leaf-level line items: non-bracket, non-spacer, and not an injected summary row
   const getLeafTotal = (sectionItems) =>
     sectionItems
-      .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
+      .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description) && !isInjectedSummary(i.description))
       .reduce((s, i) => s + (i.total || 0), 0);
 
   const ventilationSectionTotal = sectionsPass3.reduce((sum, s) => {
