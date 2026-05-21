@@ -181,19 +181,19 @@ export default function EstimateCanvas({
               <div className="border-b border-border pb-2 mb-2">
                 <div className="text-xs font-semibold text-foreground">DCSM and Ventilation Cost per Manway/Day</div>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration) DCSM</span>
                 <span>0</span>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of days DCSM</span>
                 <span>0</span>
               </div>
-              <div className="flex justify-between text-xs text-foreground font-bold mb-2">
+              <div className="flex justify-between items-center text-xs text-foreground font-bold mb-2">
                 <span>Total Cost</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Cost per manway/day</span>
                 <span>$0.00</span>
               </div>
@@ -202,19 +202,19 @@ export default function EstimateCanvas({
           right: (
             <>
               <div className="border-t border-border pt-0.5"></div>
-              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration)</span>
                 <span>0</span>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of days</span>
                 <span>0</span>
               </div>
-              <div className="flex justify-between text-xs font-bold text-foreground">
+              <div className="flex justify-between items-center text-xs font-bold text-foreground">
                 <span>Total Cost</span>
                 <span className="text-primary">${total.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
                 <span>Cost per manway/day</span>
                 <span>$0.00</span>
               </div>
