@@ -513,6 +513,20 @@ export default function CreateEstimatePanel() {
   const isSpacer = (desc) => (desc || '') === '__SPACER__';
   const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
+  // Known injected summary items (non-bracket) that aggregate sibling raw items —
+  // must be excluded from bracket subtotals to avoid double-counting
+  const INJECTED_SUMMARIES = [
+    'lead ventilation tech total',
+    'ventilation tech total',
+    'logistic / shipping total',
+    'logistics / shipping total',
+    'logistic/shipping total',
+    'logistics/shipping total',
+    'ventilation equipment total cost',
+    'consumables | securement total cost',
+  ];
+  const isInjectedSummary = (desc) => INJECTED_SUMMARIES.includes(normalizeDesc(desc));
+
   // Compute the display total of a section (mirrors EstimateCanvas logic)
   const getSectionTotal = (sectionItems) => {
     const bracketItems = sectionItems.filter(i => isSubtotalHeader(i.description));
@@ -524,13 +538,14 @@ export default function CreateEstimatePanel() {
         for (let j = idx + 1; j < sectionItems.length; j++) {
           if (isSubtotalHeader(sectionItems[j].description)) break;
           if (isSpacer(sectionItems[j].description)) continue;
+          if (isInjectedSummary(sectionItems[j].description)) continue;
           sum += sectionItems[j].total || 0;
         }
         map[item.id] = sum;
       });
       return bracketItems.reduce((s, i) => s + (map[i.id] || 0), 0);
     }
-    return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
+    return sectionItems.filter(i => !isSpacer(i.description) && !isInjectedSummary(i.description)).reduce((s, i) => s + (i.total || 0), 0);
   };
 
   // Helper: sum section totals by matching section titles
