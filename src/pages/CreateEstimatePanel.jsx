@@ -730,46 +730,21 @@ export default function CreateEstimatePanel() {
     return n === 'ventilation total cost' || n === 'total cost for ventilation';
   };
 
-  const isSectionMatch = (title, keywords) => keywords.some(kw => (title || '').toLowerCase().includes(kw));
-
-  // Compute the true total for a section:
-  // - If the section has bracket headers, sum their subtotals (avoids double-counting raw children)
-  // - Otherwise sum raw leaf items directly (non-bracket, non-spacer)
-  const getLeafTotal = (sectionItems) => {
-    const brackets = sectionItems.filter(i => isSubtotalHeader(i.description));
-    if (brackets.length > 0) {
-      // Build a local subtotal map for this section's brackets
-      const map = {};
-      sectionItems.forEach((item, idx) => {
-        if (!isSubtotalHeader(item.description)) return;
-        let sum = 0;
-        for (let j = idx + 1; j < sectionItems.length; j++) {
-          if (isSubtotalHeader(sectionItems[j].description)) break;
-          if (isSpacer(sectionItems[j].description)) continue;
-          sum += sectionItems[j].total || 0;
-        }
-        map[item.id] = sum;
-      });
-      return brackets.reduce((s, i) => s + (map[i.id] || 0), 0);
-    }
-    return sectionItems
-      .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
-      .reduce((s, i) => s + (i.total || 0), 0);
-  };
-
-  const ventilationSectionTotal = sectionsPass3.reduce((sum, s) => {
+  // Find the two source sections and sum their totals
+  const ventLabourSection = sectionsPass3.find(s => {
     const t = normalizeDesc(s.title);
-    const isVentLabour = t.includes('ventilation') && (t.includes('labour') || t.includes('labor')) && t.includes('logistics');
-    const isEquipConsumable = t.includes('total equipment') && t.includes('consumable');
-    const match = isVentLabour || isEquipConsumable;
-    if (match) {
-      const sTotal = getLeafTotal(s.items);
-      console.log('[Pass4] Matched section:', s.title, '→', sTotal);
-      return sum + sTotal;
-    }
-    return sum;
-  }, 0);
-  console.log('[Pass4] ventilationSectionTotal:', ventilationSectionTotal);
+    return t.includes('ventilation') && (t.includes('labour') || t.includes('labor')) && t.includes('logistics');
+  });
+  const equipConsumableSection = sectionsPass3.find(s => {
+    const t = normalizeDesc(s.title);
+    return t.includes('total equipment') && t.includes('consumable');
+  });
+
+  const ventilationSectionTotal = (ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0) +
+                                   (equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
+  console.log('[Pass4] Ventilation Total Labour | Logistics Cost:', ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0);
+  console.log('[Pass4] Total Equipment | Consumable Costs:', equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
+  console.log('[Pass4] Ventilation Total Cost:', ventilationSectionTotal);
 
   const sectionsPass4 = sectionsPass3.map(s => ({
     ...s,
