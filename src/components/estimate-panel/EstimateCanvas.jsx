@@ -234,7 +234,7 @@ export default function EstimateCanvas({
               </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of days</span>
-                <span>0</span>
+                <span>{durationDays}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-foreground">
                 <span>Total Cost</span>
