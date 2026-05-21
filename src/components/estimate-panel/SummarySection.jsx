@@ -54,8 +54,8 @@ export default function SummarySection({ title, onRename, leftTitle, rightTitle,
               <h4 className="text-xs font-semibold text-foreground">{rightTitle}</h4>
             </div>
           </div>
-          {/* Spanning divider line */}
-          <div className="border-t border-border my-2"></div>
+          {/* Spanning divider line — full width, negates px-3 padding */}
+          <div className="border-t border-border my-2 -mx-3"></div>
           {/* Content row */}
           <div className="grid grid-cols-2 gap-2">
             <div className="border-r border-border pr-2 h-[160px]">
