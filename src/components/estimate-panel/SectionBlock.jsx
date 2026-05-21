@@ -37,6 +37,11 @@ function buildSubtotals(items) {
   items.forEach((item, idx) => {
     if (!isSubtotalHeader(item.description)) return;
     const n = normalizeDesc(item.description);
+    // Use the bracket's own total if already injected (for aggregated values)
+    if (item.total != null && item.total > 0) {
+      map[item.id] = item.total;
+      return;
+    }
     if (n === 'total project labour hours') {
       map[item.id] = item.total || 0;
       return;
