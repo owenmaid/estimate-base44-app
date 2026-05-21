@@ -848,6 +848,7 @@ export default function CreateEstimatePanel() {
 
   // Compute Ventilation Total Cost once and apply it in final aggregation
   const ventTotalCostValue = ventilationSectionTotal;
+  console.log('[Final] Ventilation Total Cost value:', ventTotalCostValue);
 
   const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
@@ -859,11 +860,21 @@ export default function CreateEstimatePanel() {
       }
       // Inject Ventilation Total Cost (computed from Pass 4)
       if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+        console.log('[Final] Setting Ventilation Total Cost:', ventTotalCostValue, 'for item:', item.description);
         return { ...item, total: ventTotalCostValue };
       }
       return item;
     }),
   }));
+  
+  // Debug: check what's in the final sections
+  sectionsWithAggregate.forEach(s => {
+    s.items.forEach(item => {
+      if (normalizeDesc(item.description) === 'ventilation total cost') {
+        console.log('[Final Check] Section:', s.title, 'Item:', item.description, 'Total:', item.total);
+      }
+    });
+  });
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   // Use [Total Project Cost] bracket value as the subtotal (not sum of all items)
