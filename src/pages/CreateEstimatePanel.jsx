@@ -743,7 +743,7 @@ export default function CreateEstimatePanel() {
     normalizeDesc(s.title) === 'ventilation total labour | logistics cost'
   );
   const equipConsumableSection = sectionsPass3WithCalculatedTotals.find(s => 
-    normalizeDesc(s.title) === 'total equipment | consumable costs'
+    normalizeDesc(s.title) === 'ventilation total equipment | consumable costs'
   );
 
   console.log('[Pass4] Found ventLabourSection:', !!ventLabourSection, 'equipConsumableSection:', !!equipConsumableSection);
