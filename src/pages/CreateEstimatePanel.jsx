@@ -551,15 +551,17 @@ export default function CreateEstimatePanel() {
   const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
   const DCSM_TARGET  = 'dcsm est total';
   const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
-
+  console.log('[Pass2] DCSM Est Total:', dcsmTotal, '= Labour:', sumSectionsByTitle(sectionsPass1, ['total labour | logistics cost']), '+ Equipment:', sumSectionsByTitle(sectionsPass1, ['total equipment | consumables cost']));
 
   const sectionsPass2 = sectionsPass1.map(s => ({
     ...s,
-    items: s.items.map(item =>
-      normalizeDesc(item.description) === DCSM_TARGET
-        ? { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal }
-        : item
-    ),
+    items: s.items.map(item => {
+      if (normalizeDesc(item.description) === DCSM_TARGET) {
+        console.log('[Pass2] Setting DCSM Est Total:', dcsmTotal, 'for item:', item.description);
+        return { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal };
+      }
+      return ensureItemTotal(item);
+    }),
   }));
 
   // Helper to ensure item totals are calculated if missing
@@ -715,20 +717,32 @@ export default function CreateEstimatePanel() {
   const sectionsPass3a = sectionsPass2.map(s => ({
     ...s,
     items: s.items.map(item => {
-      if (normalizeDesc(item.description) === LEAD_VENT_TARGET)
+      if (normalizeDesc(item.description) === LEAD_VENT_TARGET) {
+        console.log('[Pass3a] Setting Lead Vent Total:', leadVentValue, 'for:', item.description);
         return { ...item, total: leadVentValue };
-      if (normalizeDesc(item.description) === VENT_TECH_TARGET)
+      }
+      if (normalizeDesc(item.description) === VENT_TECH_TARGET) {
+        console.log('[Pass3a] Setting Vent Tech Total:', ventTechValue, 'for:', item.description);
         return { ...item, total: ventTechValue };
-      if (isLogisticsTarget(item.description))
+      }
+      if (isLogisticsTarget(item.description)) {
+        console.log('[Pass3a] Setting Logistics Total:', logisticsValue, 'for:', item.description);
         return { ...item, total: logisticsValue };
-      if (normalizeDesc(item.description) === VENT_EQUIP_TOTAL_TARGET)
+      }
+      if (normalizeDesc(item.description) === VENT_EQUIP_TOTAL_TARGET) {
+        console.log('[Pass3a] Setting Vent Equip Total:', ventEquipValue, 'for:', item.description);
         return { ...item, total: ventEquipValue };
-      if (normalizeDesc(item.description) === VENT_CONSUMABLES_TARGET)
+      }
+      if (normalizeDesc(item.description) === VENT_CONSUMABLES_TARGET) {
+        console.log('[Pass3a] Setting Vent Consumables Total:', ventConsumablesValue, 'for:', item.description);
         return { ...item, total: ventConsumablesValue };
+      }
       // Ensure all other items have their totals calculated
       return ensureItemTotal(item);
     }),
   }));
+  
+  console.log('[Pass3a] Sample section after named brackets:', sectionsPass3a.find(s => normalizeDesc(s.title) === 'total cost for dcsm')?.items.filter(i => normalizeDesc(i.description) === 'dcsm est total'));
 
   // Second pass: inject totals for ALL generic bracket items (sum items below each bracket)
   const sectionsPass3 = sectionsPass3a.map(s => ({
@@ -736,7 +750,10 @@ export default function CreateEstimatePanel() {
     items: s.items.map((item, idx) => {
       if (!isSubtotalHeader(item.description)) return item;
       // Check if this bracket already has a non-zero total (from Pass 3a)
-      if (item.total && item.total > 0) return item;
+      if (item.total && item.total > 0) {
+        console.log('[Pass3] Keeping existing bracket total:', item.total, 'for:', item.description);
+        return item;
+      }
       // Calculate sum of all items below this bracket until next bracket
       let sum = 0;
       for (let j = idx + 1; j < s.items.length; j++) {
@@ -744,9 +761,14 @@ export default function CreateEstimatePanel() {
         if (isSpacer(s.items[j].description)) continue;
         sum += s.items[j].total || 0;
       }
+      if (normalizeDesc(item.description) === 'dcsm est total') {
+        console.log('[Pass3] DCSM Est Total - bracket sum:', sum, 'for:', item.description);
+      }
       return { ...item, total: sum > 0 ? sum : 0 };
     }),
   }));
+  
+  console.log('[Pass3] Sample section after generic brackets:', sectionsPass3.find(s => normalizeDesc(s.title) === 'total cost for dcsm')?.items.filter(i => normalizeDesc(i.description) === 'dcsm est total'));
 
   // Pass 4: "Ventilation Total Cost" = simplified formula
   // Ensure all items have totals calculated first, then sum section totals
@@ -922,6 +944,11 @@ export default function CreateEstimatePanel() {
         console.log('[Final] Setting Ventilation Total Cost:', ventTotalCostValue, 'for item:', item.description);
         return { ...item, total: ventTotalCostValue };
       }
+      // Inject DCSM Est Total (ensure it persists through all passes)
+      if (n === 'dcsm est total') {
+        console.log('[Final] DCSM Est Total - item:', item.description, 'section:', s.title, 'current total:', item.total, 'injected value:', dcsmTotal);
+        return { ...item, total: dcsmTotal };
+      }
       return item;
     }),
   }));
@@ -931,7 +958,7 @@ export default function CreateEstimatePanel() {
   sectionsWithAggregate.forEach(s => {
     s.items.forEach(item => {
       const n = normalizeDesc(item.description);
-      if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+      if (n === 'ventilation total cost' || n === 'total cost for ventilation' || n === 'dcsm est total') {
         console.log(`  [Final Check] Section: "${s.title}", Item: "${item.description}", Normalized: "${n}", Total: ${item.total}`);
       }
     });
