@@ -732,13 +732,20 @@ export default function CreateEstimatePanel() {
 
   const isSectionMatch = (title, keywords) => keywords.some(kw => (title || '').toLowerCase().includes(kw));
 
+  // Sum only leaf-level line items (non-bracket, non-spacer) to avoid double-counting
+  // injected summary rows like "Lead Ventilation Tech Total" which already aggregate their children
+  const getLeafTotal = (sectionItems) =>
+    sectionItems
+      .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
+      .reduce((s, i) => s + (i.total || 0), 0);
+
   const ventilationSectionTotal = sectionsPass3.reduce((sum, s) => {
     const t = normalizeDesc(s.title);
     const isVentLabour = t.includes('ventilation') && (t.includes('labour') || t.includes('labor')) && t.includes('logistics');
     const isEquipConsumable = t.includes('total equipment') && t.includes('consumable');
     const match = isVentLabour || isEquipConsumable;
     if (match) {
-      const sTotal = getSectionTotal(s.items);
+      const sTotal = getLeafTotal(s.items);
       console.log('[Pass4] Matched section:', s.title, '→', sTotal);
       return sum + sTotal;
     }
