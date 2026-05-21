@@ -465,11 +465,11 @@ export default function CreateEstimatePanel() {
   };
 
   const reorderSections = (newSections) => {
-    // newSections comes from sectionsWithAggregate (computed), so we remap
-    // back to the raw sections state using the same ID order.
+    // Remap IDs from the computed (transformed) sections back to the raw sections state,
+    // preserving the new order while keeping raw item data intact.
     setSections(prev => {
-      const prevMap = new Map(prev.map(s => [s.id, s]));
-      return newSections.map(s => prevMap.get(s.id) || s);
+      const prevMap = new Map(prev.map(s => [String(s.id), s]));
+      return newSections.map(s => prevMap.get(String(s.id)) || s);
     });
   };
 

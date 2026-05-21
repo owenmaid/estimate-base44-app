@@ -31,10 +31,11 @@ export default function EstimateCanvas({
 
   const handleSectionDragEnd = (result) => {
     if (!result.destination) return;
-    const reordered = Array.from(sections);
-    const [moved] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, moved);
-    onReorderSections(reordered);
+    const nonSummary = sections.filter(s => !s._isSummary);
+    const [moved] = nonSummary.splice(result.source.index, 1);
+    nonSummary.splice(result.destination.index, 0, moved);
+    const summarySection = sections.filter(s => s._isSummary);
+    onReorderSections([...nonSummary, ...summarySection]);
   };
 
   const handleSplit = (sectionId) => {
