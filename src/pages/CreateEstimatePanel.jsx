@@ -465,7 +465,12 @@ export default function CreateEstimatePanel() {
   };
 
   const reorderSections = (newSections) => {
-    setSections(newSections);
+    // newSections comes from sectionsWithAggregate (computed), so we remap
+    // back to the raw sections state using the same ID order.
+    setSections(prev => {
+      const prevMap = new Map(prev.map(s => [s.id, s]));
+      return newSections.map(s => prevMap.get(s.id) || s);
+    });
   };
 
   const splitSection = (sectionId) => {
