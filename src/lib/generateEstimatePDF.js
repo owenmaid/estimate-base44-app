@@ -326,16 +326,10 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     y += 8;
   });
 
-  // ── Summary Section (rendered once at the bottom, before totals box) ───────
-  if (summarySection && summarySection.items.length > 0) {
-    checkPage(40);
+  // ── Summary Section (rendered as two-column layout matching the UI) ───────
+  if (summarySection) {
+    checkPage(120);
     y += 8;
-
-    const subtotalMap = buildSubtotals(summarySection.items);
-    const bracketItems = summarySection.items.filter(i => isSubtotalHeader(i.description));
-    const secTotal = bracketItems.length > 0
-      ? bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0)
-      : summarySection.items.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
 
     // Section header
     doc.setFillColor(...light);
@@ -346,56 +340,97 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...dark);
-    doc.text(summarySection.title, margin + 10, y + 10);
+    doc.text(summarySection.title || 'Summary', margin + 10, y + 10);
     y += 22;
 
-    // Render summary items
-    doc.setFont('helvetica', 'normal');
+    // Two-column layout matching the UI SummarySection component
+    const colWidth = contentW / 2 - 10;
+    const leftX = margin;
+    const rightX = margin + contentW / 2 + 5;
+    
+    // Left column title
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    summarySection.items.forEach((item) => {
-      const isHeader = isSubtotalHeader(item.description);
-      const spacer = isSpacer(item.description);
-      checkPage(18);
+    doc.setTextColor(...dark);
+    doc.text('DCSM and Ventilation Cost per Manway/Day', leftX, y);
+    
+    // Right column title
+    doc.text('Conventional Costs Per Manway/Day', rightX, y);
+    y += 8;
+    
+    // Divider line
+    doc.setDrawColor(...muted);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, margin + contentW, y);
+    y += 10;
 
-      if (spacer) {
-        doc.setFillColor(180, 180, 180);
-        doc.rect(margin, y - 6, contentW, 10, 'F');
-        y += 10;
-        return;
-      }
+    // Calculate duration days
+    const durationDays = (() => {
+      if (!clientInfo.start_date || !clientInfo.end_date) return 0;
+      const start = new Date(clientInfo.start_date);
+      const end = new Date(clientInfo.end_date);
+      const diff = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      return diff > 0 ? diff : 0;
+    })();
 
-      if (isHeader) {
-        doc.setFillColor(255, 237, 213);
-        doc.rect(margin, y - 10, contentW, 16, 'F');
-        doc.setFillColor(...orange);
-        doc.rect(margin, y - 10, 3, 16, 'F');
+    // Left column content (DCSM and Ventilation)
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    
+    const leftRows = [
+      { label: 'Number of Manways (Averaged out over duration) DCSM', value: '' },
+      { label: 'Number of days DCSM', value: '' },
+      { label: 'Total Cost', value: `$${subtotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, bold: true },
+      { label: 'Cost per manway/day', value: '$0.00' },
+    ];
+    
+    const rightRows = [
+      { label: 'Number of Manways (Averaged out over duration)', value: '' },
+      { label: 'Number of days', value: '' },
+      { label: 'Total Cost', value: `$${total.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, bold: true, primary: true },
+      { label: 'Cost per manway/day', value: '$0.00' },
+    ];
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
+    const rowSpacing = 22;
+    
+    // Render left column
+    leftRows.forEach((row, idx) => {
+      const rowY = y + idx * rowSpacing;
+      doc.setTextColor(...muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text(row.label, leftX, rowY);
+      
+      doc.setFont('helvetica', row.bold ? 'bold' : 'normal');
+      doc.setFontSize(7.5);
+      if (row.primary) {
         doc.setTextColor(...orange);
-        const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 12);
-        doc.text(descLines, colDesc + 6, y);
-        doc.text(fmtVal(subtotalMap[item.id] || 0, isHourItem(item.description)), colTotal, y, { align: 'right' });
-
-        doc.setFont('helvetica', 'normal');
-        y += descLines.length > 1 ? descLines.length * 11 : 16;
       } else {
         doc.setTextColor(...dark);
-        doc.setFont('helvetica', 'normal');
-        const descLines = doc.splitTextToSize(item.description || '', colQty - colDesc - 8);
-        doc.text(descLines, colDesc, y);
-        doc.text(String(item.quantity ?? 1), colQty, y, { align: 'right' });
-        doc.text(`$${(item.unit_price || 0).toFixed(2)}`, colUnit, y, { align: 'right' });
-        doc.text(`${item.markup || 0}%`, colMkup, y, { align: 'right' });
-        doc.setFont('helvetica', 'bold');
-        doc.text(fmtVal(item.total || 0, isHourItem(item.description)), colTotal, y, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
-        
-        y += descLines.length > 1 ? descLines.length * 11 : 14;
       }
+      doc.text(row.value, leftX + colWidth, rowY, { align: 'right' });
     });
-
-    y += 8;
+    
+    // Render right column
+    rightRows.forEach((row, idx) => {
+      const rowY = y + idx * rowSpacing;
+      doc.setTextColor(...muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text(row.label, rightX, rowY);
+      
+      doc.setFont('helvetica', row.bold ? 'bold' : 'normal');
+      doc.setFontSize(7.5);
+      if (row.primary) {
+        doc.setTextColor(...orange);
+      } else {
+        doc.setTextColor(...dark);
+      }
+      doc.text(row.value, rightX + colWidth, rowY, { align: 'right' });
+    });
+    
+    y += leftRows.length * rowSpacing + 12;
   }
 
   // ── Totals box ──────────────────────────────────────────────────────────────
