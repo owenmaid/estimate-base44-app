@@ -855,6 +855,14 @@ export default function CreateEstimatePanel() {
       if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET) {
         return { ...item, total: projectCostValue };
       }
+      // Preserve Ventilation Total Cost from Pass 4 (it's not a bracket header)
+      if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+        const origSection = sectionsPass4.find(ps => ps.id === s.id);
+        const origItem = origSection?.items.find(oi => oi.id === item.id);
+        if (origItem?.total != null) {
+          return { ...item, total: origItem.total };
+        }
+      }
       return item;
     }),
   }));
