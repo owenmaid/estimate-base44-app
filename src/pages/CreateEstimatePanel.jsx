@@ -513,39 +513,16 @@ export default function CreateEstimatePanel() {
   const isSpacer = (desc) => (desc || '') === '__SPACER__';
   const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
-  // Known injected summary items (non-bracket) that aggregate sibling raw items —
-  // must be excluded from bracket subtotals to avoid double-counting
-  const INJECTED_SUMMARIES = [
-    'lead ventilation tech total',
-    'ventilation tech total',
-    'logistic / shipping total',
-    'logistics / shipping total',
-    'logistic/shipping total',
-    'logistics/shipping total',
-    'ventilation equipment total cost',
-    'consumables | securement total cost',
-  ];
-  const isInjectedSummary = (desc) => INJECTED_SUMMARIES.includes(normalizeDesc(desc));
-
-  // Compute the display total of a section (mirrors EstimateCanvas logic)
+  // Simplified section total: sum ONLY bracket subtotals, ignoring all leaf items
+  // This avoids double-counting injected summary rows
   const getSectionTotal = (sectionItems) => {
     const bracketItems = sectionItems.filter(i => isSubtotalHeader(i.description));
     if (bracketItems.length > 0) {
-      const map = {};
-      sectionItems.forEach((item, idx) => {
-        if (!isSubtotalHeader(item.description)) return;
-        let sum = 0;
-        for (let j = idx + 1; j < sectionItems.length; j++) {
-          if (isSubtotalHeader(sectionItems[j].description)) break;
-          if (isSpacer(sectionItems[j].description)) continue;
-          if (isInjectedSummary(sectionItems[j].description)) continue;
-          sum += sectionItems[j].total || 0;
-        }
-        map[item.id] = sum;
-      });
-      return bracketItems.reduce((s, i) => s + (map[i.id] || 0), 0);
+      // Sum bracket subtotals directly (they already contain the aggregated values)
+      return bracketItems.reduce((s, i) => s + (i.total || 0), 0);
     }
-    return sectionItems.filter(i => !isSpacer(i.description) && !isInjectedSummary(i.description)).reduce((s, i) => s + (i.total || 0), 0);
+    // No brackets: sum raw leaf items
+    return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
   };
 
   // Helper: sum section totals by matching section titles
@@ -737,37 +714,30 @@ export default function CreateEstimatePanel() {
     }),
   }));
 
-  // Pass 4: "Ventilation Total Cost" line item =
-  //   SectionTotal("Ventilation Total Labour | Logistics Cost") + SectionTotal("Total Equipment | Consumable Costs")
-  // Matches both the line item description "ventilation total cost" AND "total cost for ventilation"
-  const isVentTotalCostTarget = (desc) => {
-    const n = normalizeDesc(desc);
-    return n === 'ventilation total cost' || n === 'total cost for ventilation';
-  };
-
-  // Find the two source sections and sum their totals
-  const ventLabourSection = sectionsPass3.find(s => {
-    const t = normalizeDesc(s.title);
-    return t.includes('ventilation') && (t.includes('labour') || t.includes('labor')) && t.includes('logistics');
-  });
-  const equipConsumableSection = sectionsPass3.find(s => {
-    const t = normalizeDesc(s.title);
-    return t.includes('total equipment') && t.includes('consumable');
-  });
+  // Pass 4: "Ventilation Total Cost" = simplified formula
+  // Sum the two source section totals directly by their exact titles
+  const ventLabourSection = sectionsPass3.find(s => 
+    normalizeDesc(s.title) === 'ventilation total labour | logistics cost'
+  );
+  const equipConsumableSection = sectionsPass3.find(s => 
+    normalizeDesc(s.title) === 'total equipment | consumable costs'
+  );
 
   const ventilationSectionTotal = (ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0) +
                                    (equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
-  console.log('[Pass4] Ventilation Total Labour | Logistics Cost:', ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0);
-  console.log('[Pass4] Total Equipment | Consumable Costs:', equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
+  console.log('[Pass4] Ventilation Total Labour | Logistics Cost section total:', ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0);
+  console.log('[Pass4] Total Equipment | Consumable Costs section total:', equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
   console.log('[Pass4] Ventilation Total Cost:', ventilationSectionTotal);
 
   const sectionsPass4 = sectionsPass3.map(s => ({
     ...s,
-    items: s.items.map(item =>
-      isVentTotalCostTarget(item.description)
-        ? { ...item, total: ventilationSectionTotal }
-        : item
-    ),
+    items: s.items.map(item => {
+      const n = normalizeDesc(item.description);
+      if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+        return { ...item, total: ventilationSectionTotal };
+      }
+      return item;
+    }),
   }));
 
   // Pass 5: Auto-create brackets in Project Totals section first, then inject values
