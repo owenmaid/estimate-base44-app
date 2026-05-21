@@ -711,7 +711,8 @@ export default function CreateEstimatePanel() {
     });
   });
 
-  const sectionsPass3 = sectionsPass2.map(s => ({
+  // First pass: inject named bracket totals
+  const sectionsPass3a = sectionsPass2.map(s => ({
     ...s,
     items: s.items.map(item => {
       if (normalizeDesc(item.description) === LEAD_VENT_TARGET)
@@ -726,6 +727,24 @@ export default function CreateEstimatePanel() {
         return { ...item, total: ventConsumablesValue };
       // Ensure all other items have their totals calculated
       return ensureItemTotal(item);
+    }),
+  }));
+
+  // Second pass: inject totals for ALL generic bracket items (sum items below each bracket)
+  const sectionsPass3 = sectionsPass3a.map(s => ({
+    ...s,
+    items: s.items.map((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return item;
+      // Check if this bracket already has a non-zero total (from Pass 3a)
+      if (item.total && item.total > 0) return item;
+      // Calculate sum of all items below this bracket until next bracket
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        sum += s.items[j].total || 0;
+      }
+      return { ...item, total: sum > 0 ? sum : 0 };
     }),
   }));
 
