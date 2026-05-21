@@ -218,11 +218,12 @@ export default function EstimateCanvas({
           ),
           right: (
             <>
+              <div className="border-t border-border pt-2"></div>
               <div className="flex justify-between text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration)</span>
                 <span>0</span>
               </div>
-              <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-foreground">
+              <div className="flex justify-between text-sm font-bold text-foreground">
                 <span>Total</span>
                 <span className="text-primary">${total.toFixed(2)}</span>
               </div>
