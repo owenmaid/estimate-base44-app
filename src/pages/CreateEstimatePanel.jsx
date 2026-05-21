@@ -562,6 +562,14 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
+  // Helper to ensure item totals are calculated if missing
+  const ensureItemTotal = (item) => {
+    if (item.total != null && item.total > 0) return item;
+    if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
+    const calculated = (item.quantity || 0) * (item.unit_price || 0) * (1 + (item.markup || 0) / 100);
+    return { ...item, total: calculated };
+  };
+
   // Pass 3: inject "Lead Ventilation Tech Total" = the bracketed [Lead Ventilation Tech] subtotal
   // Find the [Lead Ventilation Tech] bracket row in any section and compute its subtotal
   const LEAD_VENT_BRACKET = 'lead ventilation tech';
@@ -714,14 +722,6 @@ export default function CreateEstimatePanel() {
       return ensureItemTotal(item);
     }),
   }));
-
-  // Helper to ensure item totals are calculated if missing
-  const ensureItemTotal = (item) => {
-    if (item.total != null && item.total > 0) return item;
-    if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
-    const calculated = (item.quantity || 0) * (item.unit_price || 0) * (1 + (item.markup || 0) / 100);
-    return { ...item, total: calculated };
-  };
 
   // Pass 4: "Ventilation Total Cost" = simplified formula
   // Ensure all items have totals calculated first, then sum section totals
