@@ -208,6 +208,8 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   nonSummarySections.forEach((section) => {
     checkPage(40);
 
+    const sectionStartY = y;
+
     const subtotalMap = buildSubtotals(section.items);
     const bracketItems = section.items.filter(i => isSubtotalHeader(i.description));
     const secTotal = bracketItems.length > 0
@@ -324,11 +326,18 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     });
 
     y += 8;
+    const sectionEndY = y;
+
+    // Draw thin black border around the entire section
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.25);
+    doc.rect(margin, sectionStartY - 2, contentW, sectionEndY - sectionStartY + 2, 'S');
   });
 
   // ── Summary Section (rendered as two-column layout matching the UI) ───────
   if (summarySection) {
     checkPage(120);
+    const summaryStartY = y;
     y += 8;
 
     // Section header
@@ -431,6 +440,12 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     });
     
     y += leftRows.length * rowSpacing + 12;
+    const summaryEndY = y;
+
+    // Draw thin black border around the Summary section
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.25);
+    doc.rect(margin, summaryStartY - 2, contentW, summaryEndY - summaryStartY + 2, 'S');
   }
 
   // ── Totals box ──────────────────────────────────────────────────────────────
