@@ -218,7 +218,7 @@ export default function EstimateCanvas({
           ),
           right: (
             <>
-              <div className="border-t border-border pt-1"></div>
+              <div className="border-t border-border pt-0.5"></div>
               <div className="flex justify-between text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration)</span>
                 <span>0</span>
