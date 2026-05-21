@@ -555,20 +555,25 @@ export default function CreateEstimatePanel() {
   };
 
   // Pass 2: inject "DCSM Est Total" = sum of "Total Labour | Logistics Cost" + "Total Equipment | Consumables Cost" sections
-  // Use sectionsPass1 so the Labour value is already updated
+  // First ensure all items in sectionsPass1 have totals calculated before summing
+  const sectionsPass1WithTotals = sectionsPass1.map(s => ({
+    ...s,
+    items: s.items.map(ensureItemTotal),
+  }));
+  
   const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
   const DCSM_TARGET  = 'dcsm est total';
-  const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
-  console.log('[Pass2] DCSM Est Total:', dcsmTotal, '= Labour:', sumSectionsByTitle(sectionsPass1, ['total labour | logistics cost']), '+ Equipment:', sumSectionsByTitle(sectionsPass1, ['total equipment | consumables cost']));
+  const dcsmTotal = sumSectionsByTitle(sectionsPass1WithTotals, DCSM_SOURCES);
+  console.log('[Pass2] DCSM Est Total:', dcsmTotal, '= Labour:', sumSectionsByTitle(sectionsPass1WithTotals, ['total labour | logistics cost']), '+ Equipment:', sumSectionsByTitle(sectionsPass1WithTotals, ['total equipment | consumables cost']));
 
-  const sectionsPass2 = sectionsPass1.map(s => ({
+  const sectionsPass2 = sectionsPass1WithTotals.map(s => ({
     ...s,
     items: s.items.map(item => {
       if (normalizeDesc(item.description) === DCSM_TARGET) {
         console.log('[Pass2] Setting DCSM Est Total:', dcsmTotal, 'for item:', item.description);
         return { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal };
       }
-      return ensureItemTotal(item);
+      return item; // items already have totals from sectionsPass1WithTotals
     }),
   }));
 
