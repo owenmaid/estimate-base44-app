@@ -197,19 +197,6 @@ export default function EstimateCanvas({
                 <span>Cost per manway/day</span>
                 <span>$0.00</span>
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
-                <span>Tax %</span>
-                <input
-                  type="number" min="0" max="100"
-                  className="w-16 text-xs bg-secondary border border-border rounded px-2 py-0.5 text-foreground outline-none text-right"
-                  value={clientInfo.tax_rate}
-                  onChange={e => update('tax_rate', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Tax Amount</span>
-                <span>${taxAmount.toFixed(2)}</span>
-              </div>
             </>
           ),
           right: (
