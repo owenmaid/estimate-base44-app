@@ -209,6 +209,28 @@ export default function CreateEstimatePanel() {
     return col1 * shiftHrs;
   };
 
+  // Manway Package Complete: avg manways per day (SUM of all day values / COUNT of days > 0)
+  const manwayAvgDCSM = useMemo(() => {
+    if (!linkedProject) return 0;
+    const rows = linkedProject.equipment_rows || [];
+    const eGrid = linkedProject.equipment_grid || {};
+    // Find the row whose inventory item name matches "Manway_Package_Complete" (case-insensitive)
+    const manwayRow = rows.find(row => {
+      const invItem = inventory.find(i => String(i.id) === String(row.item_id));
+      const label = (invItem?.name || row.label || '').toLowerCase().replace(/[\s-]/g, '_');
+      return label === 'manway_package_complete' || (invItem?.name || row.label || '').toLowerCase().includes('manway_package_complete'.toLowerCase());
+    });
+    if (!manwayRow) return 0;
+    let sum = 0;
+    let count = 0;
+    Object.entries(eGrid).forEach(([key, value]) => {
+      if (!key.startsWith(`${manwayRow.id}_`)) return;
+      const num = parseInt(value, 10);
+      if (!isNaN(num) && num > 0) { sum += num; count += 1; }
+    });
+    return count > 0 ? sum / count : 0;
+  }, [linkedProject, inventory]);
+
   // DCSM Man Hours: Col2 for Manpower rows whose label contains "DCSM", "Superintendent", or "On-Site Admin"
   const DCSM_KEYWORDS = ['dcsm', 'superintendent', 'on-site admin'];
   const col2Sum = useMemo(() => {
@@ -1040,6 +1062,7 @@ export default function CreateEstimatePanel() {
           total={total}
           inventory={inventory}
           logoUrls={logoUrls}
+          manwayAvgDCSM={manwayAvgDCSM}
         />
       </div>
     </div>

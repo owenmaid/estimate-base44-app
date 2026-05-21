@@ -15,7 +15,7 @@ export default function EstimateCanvas({
   clientInfo, onClientInfoChange,
   sections, onRenameSection, onRemoveSection, onSplitSection,
   onUpdateItem, onRemoveItem, onReorderItems, onReorderSections,
-  subtotal, taxAmount, total, inventory = [], logoUrls = {},
+  subtotal, taxAmount, total, inventory = [], logoUrls = {}, manwayAvgDCSM = 0,
 }) {
   const [showClient, setShowClient] = useState(true);
 
@@ -210,7 +210,7 @@ export default function EstimateCanvas({
             <>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration) DCSM</span>
-                <span>0</span>
+                <span>{manwayAvgDCSM > 0 ? manwayAvgDCSM.toFixed(2) : 0}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of days DCSM</span>
