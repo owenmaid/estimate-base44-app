@@ -126,13 +126,27 @@ function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isPro
         )}
       </div>
       <div className="text-right">
-        {!isHeader && !spacer && <EditableCell value={item.quantity} onChange={v => onUpdateItem(sectionId, item.id, 'quantity', v)} type="number" className="w-14 text-right" />}
+        {!spacer && (isHeader ? (
+          <span className="text-xs text-muted-foreground">1</span>
+        ) : (
+          <EditableCell value={item.quantity} onChange={v => onUpdateItem(sectionId, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
+        ))}
       </div>
       <div className="text-right">
-        {!isHeader && !spacer && <EditableCell value={item.unit_price} onChange={v => onUpdateItem(sectionId, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />}
+        {!spacer && (isHeader ? (
+          <span className={`text-xs ${isHourItem(item.description) ? 'text-foreground' : 'text-foreground'}`}>
+            {isHourItem(item.description) ? Math.round(item.unit_price || 0).toLocaleString() : `$${(item.unit_price || 0).toFixed(2)}`}
+          </span>
+        ) : (
+          <EditableCell value={item.unit_price} onChange={v => onUpdateItem(sectionId, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />
+        ))}
       </div>
       <div className="text-right">
-        {!isHeader && !spacer && <EditableCell value={item.markup} onChange={v => onUpdateItem(sectionId, item.id, 'markup', v)} type="number" className="w-14 text-right" />}
+        {!spacer && (isHeader ? (
+          <span className="text-xs text-muted-foreground">0%</span>
+        ) : (
+          <EditableCell value={item.markup} onChange={v => onUpdateItem(sectionId, item.id, 'markup', v)} type="number" className="w-14 text-right" />
+        ))}
       </div>
       <div className={`text-right font-semibold ${isHeader ? 'text-orange-400' : 'text-foreground'}`}>
        {!spacer && (isHeader
