@@ -92,10 +92,32 @@ export default function EstimateCanvas({
               ))}
             </div>
           </div>
-          {/* Right: Date */}
-          <div className="shrink-0 text-right self-start flex gap-2 items-center">
-            <span className="font-semibold text-gray-800">Date</span>
-            <span style={{ color: '#dc6e1e' }}>{new Date().toLocaleDateString('en-CA', { day:'2-digit', month:'short', year:'2-digit' }).replace(/ /g, '-')}</span>
+          {/* Right: Date + Start/End */}
+          <div className="shrink-0 text-right self-start space-y-0.5">
+            <div className="flex gap-2 items-center justify-end">
+              <span className="font-semibold text-gray-800">Date</span>
+              <span style={{ color: '#dc6e1e' }}>{new Date().toLocaleDateString('en-CA', { day:'2-digit', month:'short', year:'2-digit' }).replace(/ /g, '-')}</span>
+            </div>
+            <div className="flex gap-2 items-center justify-end">
+              <span className="font-semibold text-gray-800">Start Date</span>
+              <input
+                type="date"
+                className="text-xs bg-transparent border-b border-transparent hover:border-orange-300 focus:border-orange-500 outline-none transition-colors"
+                style={{ color: '#dc6e1e' }}
+                value={clientInfo.start_date || ''}
+                onChange={e => update('start_date', e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 items-center justify-end">
+              <span className="font-semibold text-gray-800">End Date</span>
+              <input
+                type="date"
+                className="text-xs bg-transparent border-b border-transparent hover:border-orange-300 focus:border-orange-500 outline-none transition-colors"
+                style={{ color: '#dc6e1e' }}
+                value={clientInfo.end_date || ''}
+                onChange={e => update('end_date', e.target.value)}
+              />
+            </div>
           </div>
         </div>
 

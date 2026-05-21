@@ -30,7 +30,7 @@ export default function CreateEstimatePanel() {
   const [clientInfo, setClientInfo] = useState({
     client_name: '', project_number: '', project_name: '', client_email: '',
     client_phone: '', client_address: '', notes: '',
-    tax_rate: 0, discount: 0,
+    tax_rate: 0, discount: 0, start_date: '', end_date: '',
   });
 
   // Logo URLs (loaded from user settings)
@@ -152,7 +152,7 @@ export default function CreateEstimatePanel() {
       return;
     }
 
-    // Populate customer name, site/location/plant, attention, project name, phone, and notes from the linked project
+    // Populate customer name, site/location/plant, attention, project name, phone, notes, and dates from the linked project
     const siteParts = [linkedProject.site, linkedProject.location, linkedProject.plant].filter(Boolean);
     setClientInfo(prev => ({
       ...prev,
@@ -162,6 +162,8 @@ export default function CreateEstimatePanel() {
       project_name: linkedProject.name || '',
       client_phone: linkedProject.phone || '',
       notes: linkedProject.notes || '',
+      start_date: linkedProject.start_date || '',
+      end_date: linkedProject.end_date || '',
     }));
 
     if (inventory.length === 0) return;
@@ -253,6 +255,8 @@ export default function CreateEstimatePanel() {
       notes: estimate.notes || '',
       tax_rate: estimate.tax_rate || 0,
       discount: estimate.discount || 0,
+      start_date: estimate.start_date || '',
+      end_date: estimate.end_date || '',
     });
     // Always use logos from user settings, ignoring whatever was saved on the estimate
     const savedLogos = user?.settings?.logoUrls || {};
@@ -306,7 +310,7 @@ export default function CreateEstimatePanel() {
   const handleNew = () => {
     setActiveEstimate(null);
     setSections([{ id: Date.now(), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
-    setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0 });
+    setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0, start_date: '', end_date: '' });
     // Reset logos to whatever is saved in user settings
     const savedLogos = user?.settings?.logoUrls || {};
     setLogoUrls({ infoSignalLogo: savedLogos.infoSignalLogo || '', dynaVentLogo: savedLogos.dynaVentLogo || '' });
@@ -834,6 +838,8 @@ export default function CreateEstimatePanel() {
         notes: clientInfo.notes,
         tax_rate: clientInfo.tax_rate,
         discount: clientInfo.discount,
+        start_date: clientInfo.start_date || '',
+        end_date: clientInfo.end_date || '',
         line_items: lineItems,
         subtotal,
         tax_amount: taxAmount,
