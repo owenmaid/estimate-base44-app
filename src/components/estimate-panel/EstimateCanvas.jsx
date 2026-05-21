@@ -230,7 +230,7 @@ export default function EstimateCanvas({
             <>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration)</span>
-                <span>0</span>
+                <span>{manwayAvgDCSM > 0 ? manwayAvgDCSM.toFixed(2) : 0}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of days</span>
