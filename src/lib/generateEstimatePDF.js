@@ -327,11 +327,12 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
     y += 8;
     const sectionEndY = y;
+    const sectionPadding = 6;
 
-    // Draw thin black border around the entire section
+    // Draw thin black border around the entire section with padding
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
-    doc.rect(margin, sectionStartY - 2, contentW, sectionEndY - sectionStartY + 2, 'S');
+    doc.rect(margin - sectionPadding / 2, sectionStartY - 2 - sectionPadding / 2, contentW + sectionPadding, sectionEndY - sectionStartY + 2 + sectionPadding, 'S');
   });
 
   // ── Summary Section (rendered as two-column layout matching the UI) ───────
@@ -441,11 +442,12 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     
     y += leftRows.length * rowSpacing + 12;
     const summaryEndY = y;
+    const summaryPadding = 6;
 
-    // Draw thin black border around the Summary section
+    // Draw thin black border around the Summary section with padding
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
-    doc.rect(margin, summaryStartY - 2, contentW, summaryEndY - summaryStartY + 2, 'S');
+    doc.rect(margin - summaryPadding / 2, summaryStartY - 2 - summaryPadding / 2, contentW + summaryPadding, summaryEndY - summaryStartY + 2 + summaryPadding, 'S');
   }
 
   // ── Totals box ──────────────────────────────────────────────────────────────
