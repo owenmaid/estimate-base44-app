@@ -730,6 +730,15 @@ export default function CreateEstimatePanel() {
     items: s.items.map(ensureItemTotal),
   }));
 
+  console.log('[Pass4] All sections with their items:');
+  sectionsPass3WithCalculatedTotals.forEach(s => {
+    console.log(`  Section: "${s.title}" (normalized: "${normalizeDesc(s.title)}")`);
+    console.log(`    Items count: ${s.items.length}`);
+    s.items.forEach(item => {
+      console.log(`      - "${item.description}" | qty:${item.quantity} price:${item.unit_price} markup:${item.markup}% total:${item.total}`);
+    });
+  });
+
   const ventLabourSection = sectionsPass3WithCalculatedTotals.find(s => 
     normalizeDesc(s.title) === 'ventilation total labour | logistics cost'
   );
@@ -737,10 +746,14 @@ export default function CreateEstimatePanel() {
     normalizeDesc(s.title) === 'total equipment | consumable costs'
   );
 
-  const ventilationSectionTotal = (ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0) +
-                                   (equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
-  console.log('[Pass4] Ventilation Total Labour | Logistics Cost section total:', ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0);
-  console.log('[Pass4] Total Equipment | Consumable Costs section total:', equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0);
+  console.log('[Pass4] Found ventLabourSection:', !!ventLabourSection, 'equipConsumableSection:', !!equipConsumableSection);
+  
+  const ventLabourTotal = ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0;
+  const equipConsumableTotal = equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0;
+  const ventilationSectionTotal = ventLabourTotal + equipConsumableTotal;
+  
+  console.log('[Pass4] Ventilation Total Labour | Logistics Cost section total:', ventLabourTotal);
+  console.log('[Pass4] Total Equipment | Consumable Costs section total:', equipConsumableTotal);
   console.log('[Pass4] Ventilation Total Cost:', ventilationSectionTotal);
 
   const sectionsPass4 = sectionsPass3.map(s => ({
@@ -874,6 +887,7 @@ export default function CreateEstimatePanel() {
       }
       // Inject Ventilation Total Cost (computed from Pass 4)
       if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+        console.log('[Final] MATCHED ventilation total cost item:', item.description);
         console.log('[Final] Setting Ventilation Total Cost:', ventTotalCostValue, 'for item:', item.description);
         return { ...item, total: ventTotalCostValue };
       }
@@ -882,10 +896,12 @@ export default function CreateEstimatePanel() {
   }));
   
   // Debug: check what's in the final sections
+  console.log('[Final] Final sections check:');
   sectionsWithAggregate.forEach(s => {
     s.items.forEach(item => {
-      if (normalizeDesc(item.description) === 'ventilation total cost') {
-        console.log('[Final Check] Section:', s.title, 'Item:', item.description, 'Total:', item.total);
+      const n = normalizeDesc(item.description);
+      if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+        console.log(`  [Final Check] Section: "${s.title}", Item: "${item.description}", Normalized: "${n}", Total: ${item.total}`);
       }
     });
   });
