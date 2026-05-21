@@ -7,7 +7,7 @@ import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
 import { X, Download, BookmarkPlus } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
-import { buildCol14Map, lookupCol14 } from '@/lib/computeCol14';
+import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
@@ -638,13 +638,51 @@ export default function CreateEstimatePanel() {
     });
   });
 
-  // Sum of [Ventilation Equipment - (Exp. Blowers. Duct, Hose)] + [Ventilation Equipment - (Blowers, Duct, Hose)] bracket subtotals
-  // Use flexible matching since the bracket names contain special chars and may vary slightly
+  // "Ventilation Equipment Total Cost" = sum of Col14 for all inventory items in "Ventilation Equipment" category on the linked project
+  const VENT_EQUIP_TOTAL_TARGET = 'ventilation equipment total cost';
+
+  const ventEquipCategoryValue = useMemo(() => {
+    if (!linkedProject) return 0;
+    const rows = linkedProject.equipment_rows || [];
+    const eGrid = linkedProject.equipment_grid || {};
+    const tGrid = linkedProject.type_grid || {};
+    let total = 0;
+    rows.forEach(row => {
+      const invItem = inventory.find(i => String(i.id) === String(row.item_id))
+        || inventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+        || null;
+      if (!invItem) return;
+      if ((invItem.category || '').toLowerCase() !== 'ventilation equipment') return;
+      const col14 = computeCol14(row, eGrid, tGrid, inventory);
+      if (col14 != null && col14 > 0) total += col14;
+    });
+    return total;
+  }, [linkedProject, inventory]);
+
+  // Keep bracket-matching for ventEquipValue as fallback when no project is linked
   const isVentEquipBracket = (desc) => {
     const n = normalizeDesc(desc);
     return n.startsWith('ventilation equipment');
   };
-  const VENT_EQUIP_TOTAL_TARGET = 'ventilation equipment total cost';
+
+  let ventEquipBracketValue = 0;
+  sectionsPass2.forEach(s => {
+    s.items.forEach((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return;
+      if (!isVentEquipBracket(item.description)) return;
+      let sum = 0;
+      for (let j = idx + 1; j < s.items.length; j++) {
+        if (isSubtotalHeader(s.items[j].description)) break;
+        if (isSpacer(s.items[j].description)) continue;
+        if (normalizeDesc(s.items[j].description) === VENT_EQUIP_TOTAL_TARGET) continue;
+        sum += s.items[j].total || 0;
+      }
+      ventEquipBracketValue += sum;
+    });
+  });
+
+  // Use the category-based value when a project is linked, otherwise fall back to bracket sum
+  const ventEquipValue = linkedProject ? ventEquipCategoryValue : ventEquipBracketValue;
 
   // Mirror [Ventilation Consumables] bracket subtotal → "Consumables | Securement Total Cost"
   const VENT_CONSUMABLES_BRACKET = 'ventilation consumables';
@@ -664,22 +702,6 @@ export default function CreateEstimatePanel() {
         sum += s.items[j].total || 0;
       }
       ventConsumablesValue = sum;
-    });
-  });
-
-  let ventEquipValue = 0;
-  sectionsPass2.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (!isSubtotalHeader(item.description)) return;
-      if (!isVentEquipBracket(item.description)) return;
-      let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        if (normalizeDesc(s.items[j].description) === VENT_EQUIP_TOTAL_TARGET) continue;
-        sum += s.items[j].total || 0;
-      }
-      ventEquipValue += sum;
     });
   });
 
