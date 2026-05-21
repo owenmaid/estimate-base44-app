@@ -722,30 +722,34 @@ export default function CreateEstimatePanel() {
     }),
   }));
 
-  // Pass 4: "Ventilation Total Cost" = sum of the two specific source sections:
-  //   "Ventilation (Total Labour | Logistics Cost)" + "Total Equipment | Consumable Costs"
-  const TOTAL_COST_VENT_TARGET = 'total cost for ventilation';
-  const VENT_TOTAL_SOURCES = [
-    'ventilation (total labour | logistics cost)',
-    'ventilation total labour | logistics cost',
-    'total equipment | consumable costs',
-    'total equipment | consumables cost',
-  ];
+  // Pass 4: "Ventilation Total Cost" line item =
+  //   SectionTotal("Ventilation (Total Labour | Logistics Cost)") + SectionTotal("Total Equipment | Consumable Costs")
+  // Matches both the line item description "ventilation total cost" AND "total cost for ventilation"
+  const isVentTotalCostTarget = (desc) => {
+    const n = normalizeDesc(desc);
+    return n === 'ventilation total cost' || n === 'total cost for ventilation';
+  };
 
   const isSectionMatch = (title, keywords) => keywords.some(kw => (title || '').toLowerCase().includes(kw));
 
   const ventilationSectionTotal = sectionsPass3.reduce((sum, s) => {
     const t = normalizeDesc(s.title);
     const isVentLabour = t.includes('ventilation') && (t.includes('labour') || t.includes('labor')) && t.includes('logistics');
-    const isEquipConsumable = (t.includes('total equipment') && t.includes('consumable'));
-    if (isVentLabour || isEquipConsumable) return sum + getSectionTotal(s.items);
+    const isEquipConsumable = t.includes('total equipment') && t.includes('consumable');
+    const match = isVentLabour || isEquipConsumable;
+    if (match) {
+      const sTotal = getSectionTotal(s.items);
+      console.log('[Pass4] Matched section:', s.title, '→', sTotal);
+      return sum + sTotal;
+    }
     return sum;
   }, 0);
+  console.log('[Pass4] ventilationSectionTotal:', ventilationSectionTotal);
 
   const sectionsPass4 = sectionsPass3.map(s => ({
     ...s,
     items: s.items.map(item =>
-      normalizeDesc(item.description) === TOTAL_COST_VENT_TARGET
+      isVentTotalCostTarget(item.description)
         ? { ...item, total: ventilationSectionTotal }
         : item
     ),
