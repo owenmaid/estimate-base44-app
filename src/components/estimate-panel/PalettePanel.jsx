@@ -159,7 +159,7 @@ export default function PalettePanel({ inventory, sections, onAddSection, onAddI
             onChange={e => setSelectedSection(Number(e.target.value) || e.target.value)}
             className="w-full mt-1 text-xs bg-secondary border border-border rounded px-2 py-1 text-foreground outline-none"
           >
-            {sections.map(s => (
+            {sections.filter(s => !s._isSummary).map(s => (
               <option key={s.id} value={s.id}>{s.title}</option>
             ))}
           </select>
