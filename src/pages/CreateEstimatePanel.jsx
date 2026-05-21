@@ -732,23 +732,30 @@ export default function CreateEstimatePanel() {
 
   const isSectionMatch = (title, keywords) => keywords.some(kw => (title || '').toLowerCase().includes(kw));
 
-  // Injected summary targets — these are non-bracket items whose value = sum of siblings above them.
-  // Must be excluded from leaf sums to prevent double-counting raw items + their aggregated summary.
-  const INJECTED_SUMMARY_TARGETS = [
-    LEAD_VENT_TARGET,        // 'lead ventilation tech total'
-    VENT_TECH_TARGET,        // 'ventilation tech total'
-    LOGISTICS_TARGET,        // 'logistic / shipping total'
-    VENT_EQUIP_TOTAL_TARGET, // 'ventilation equipment total cost'
-    VENT_CONSUMABLES_TARGET, // 'consumables | securement total cost'
-  ];
-  const isInjectedSummary = (desc) =>
-    INJECTED_SUMMARY_TARGETS.includes(normalizeDesc(desc)) || isLogisticsTarget(desc);
-
-  // Sum only true leaf-level line items: non-bracket, non-spacer, and not an injected summary row
-  const getLeafTotal = (sectionItems) =>
-    sectionItems
-      .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description) && !isInjectedSummary(i.description))
+  // Compute the true total for a section:
+  // - If the section has bracket headers, sum their subtotals (avoids double-counting raw children)
+  // - Otherwise sum raw leaf items directly (non-bracket, non-spacer)
+  const getLeafTotal = (sectionItems) => {
+    const brackets = sectionItems.filter(i => isSubtotalHeader(i.description));
+    if (brackets.length > 0) {
+      // Build a local subtotal map for this section's brackets
+      const map = {};
+      sectionItems.forEach((item, idx) => {
+        if (!isSubtotalHeader(item.description)) return;
+        let sum = 0;
+        for (let j = idx + 1; j < sectionItems.length; j++) {
+          if (isSubtotalHeader(sectionItems[j].description)) break;
+          if (isSpacer(sectionItems[j].description)) continue;
+          sum += sectionItems[j].total || 0;
+        }
+        map[item.id] = sum;
+      });
+      return brackets.reduce((s, i) => s + (map[i.id] || 0), 0);
+    }
+    return sectionItems
+      .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
       .reduce((s, i) => s + (i.total || 0), 0);
+  };
 
   const ventilationSectionTotal = sectionsPass3.reduce((sum, s) => {
     const t = normalizeDesc(s.title);
