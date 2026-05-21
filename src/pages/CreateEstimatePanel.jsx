@@ -657,6 +657,8 @@ export default function CreateEstimatePanel() {
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
         if (isSpacer(s.items[j].description)) continue;
+        // Exclude the target summary line itself to prevent circular compounding
+        if (normalizeDesc(s.items[j].description) === VENT_CONSUMABLES_TARGET) continue;
         sum += s.items[j].total || 0;
       }
       ventConsumablesValue = sum;
