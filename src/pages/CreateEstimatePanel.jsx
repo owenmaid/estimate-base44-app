@@ -736,7 +736,7 @@ export default function CreateEstimatePanel() {
 
   const ventilationSectionTotal = sectionsPass3.reduce((sum, s) => {
     const t = normalizeDesc(s.title);
-    const isVentLabour = t.includes('ventilation') && t.includes('labour') && t.includes('logistics');
+    const isVentLabour = t.includes('ventilation') && (t.includes('labour') || t.includes('labor')) && t.includes('logistics');
     const isEquipConsumable = (t.includes('total equipment') && t.includes('consumable'));
     if (isVentLabour || isEquipConsumable) return sum + getSectionTotal(s.items);
     return sum;
