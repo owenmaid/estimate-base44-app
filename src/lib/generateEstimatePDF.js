@@ -289,7 +289,21 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
         const isHourBracket = itemN === 'total project labour hours' || itemN === 'dcsm est total hours' || itemN === 'total ventilation labour hours';
         const displayTotal = (isProjectCostBracket || isHourBracket) ? (item.total || 0) : (subtotalMap[item.id] || 0);
         
-        doc.text(fmtVal(displayTotal, isHourItem(item.description)), colTotal, y, { align: 'right' });
+        // Show Unit $ column for bracket headers (use unit_price if set, otherwise displayTotal)
+        const unitPrice = (item.unit_price || 0) > 0 ? item.unit_price : displayTotal;
+        
+        if (isProjTotals) {
+          // Project Totals: only Description and Total
+          doc.setFont('helvetica', 'bold');
+          doc.text(fmtVal(displayTotal, isHourItem(item.description)), colTotal, y, { align: 'right' });
+        } else {
+          // Regular sections: show Qty, Unit $, Mkup%, Total for bracket headers
+          doc.text('1', colQty, y, { align: 'right' });
+          doc.text(fmtVal(unitPrice, isHourItem(item.description)), colUnit, y, { align: 'right' });
+          doc.text('0%', colMkup, y, { align: 'right' });
+          doc.setFont('helvetica', 'bold');
+          doc.text(fmtVal(displayTotal, isHourItem(item.description)), colTotal, y, { align: 'right' });
+        }
 
         doc.setFont('helvetica', 'normal');
         y += descLines.length > 1 ? descLines.length * 11 : 16;
