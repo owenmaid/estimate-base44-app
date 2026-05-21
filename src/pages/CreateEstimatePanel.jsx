@@ -579,11 +579,11 @@ export default function CreateEstimatePanel() {
   sectionsPass2.forEach(s => {
     s.items.forEach((item, idx) => {
       if (normalizeDesc(item.description) !== LEAD_VENT_BRACKET) return;
-      // Sum items below this bracket until the next bracket
       let sum = 0;
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
         if (isSpacer(s.items[j].description)) continue;
+        if (normalizeDesc(s.items[j].description) === LEAD_VENT_TARGET) continue;
         sum += s.items[j].total || 0;
       }
       leadVentValue = sum;
@@ -602,6 +602,7 @@ export default function CreateEstimatePanel() {
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
         if (isSpacer(s.items[j].description)) continue;
+        if (normalizeDesc(s.items[j].description) === VENT_TECH_TARGET) continue;
         sum += s.items[j].total || 0;
       }
       ventTechValue = sum;
@@ -630,6 +631,7 @@ export default function CreateEstimatePanel() {
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
         if (isSpacer(s.items[j].description)) continue;
+        if (isLogisticsTarget(s.items[j].description)) continue;
         sum += s.items[j].total || 0;
       }
       logisticsValue = sum;
@@ -674,9 +676,10 @@ export default function CreateEstimatePanel() {
       for (let j = idx + 1; j < s.items.length; j++) {
         if (isSubtotalHeader(s.items[j].description)) break;
         if (isSpacer(s.items[j].description)) continue;
+        if (normalizeDesc(s.items[j].description) === VENT_EQUIP_TOTAL_TARGET) continue;
         sum += s.items[j].total || 0;
       }
-      ventEquipValue += sum; // accumulate both brackets
+      ventEquipValue += sum;
     });
   });
 
