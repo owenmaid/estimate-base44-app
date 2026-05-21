@@ -21,6 +21,14 @@ export default function EstimateCanvas({
 
   const update = (field, value) => onClientInfoChange(prev => ({ ...prev, [field]: value }));
 
+  const durationDays = (() => {
+    if (!clientInfo.start_date || !clientInfo.end_date) return 0;
+    const start = new Date(clientInfo.start_date);
+    const end = new Date(clientInfo.end_date);
+    const diff = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    return diff > 0 ? diff : 0;
+  })();
+
   const handleSectionDragEnd = (result) => {
     if (!result.destination) return;
     const reordered = Array.from(sections);
@@ -206,7 +214,7 @@ export default function EstimateCanvas({
               </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of days DCSM</span>
-                <span>0</span>
+                <span>{durationDays}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-foreground font-bold mb-2">
                 <span>Total Cost</span>
