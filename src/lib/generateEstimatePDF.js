@@ -201,7 +201,8 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   const colTotal = margin + contentW;
 
   // ── Sections ────────────────────────────────────────────────────────────────
-  sections.forEach((section) => {
+  // Filter out Summary sections (they're rendered separately in the totals box)
+  sections.filter(s => !s._isSummary).forEach((section) => {
     checkPage(40);
 
     const subtotalMap = buildSubtotals(section.items);
