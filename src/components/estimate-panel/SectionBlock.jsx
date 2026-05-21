@@ -52,7 +52,7 @@ function buildSubtotals(items) {
   return map;
 }
 
-function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isProjectTotalsSection, subtotalMap }) {
+function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isProjectTotalsSection, subtotalMap, dragHandleProps }) {
   const isHeader = isSubtotalHeader(item.description);
   const spacer = isSpacer(item.description);
   const headerSubtotal = isHeader ? subtotalMap[item.id] : null;
@@ -69,7 +69,7 @@ function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isPro
           hover:bg-secondary/20`}
         style={{gridTemplateColumns: '28px 1fr 88px 28px'}}
       >
-        <div className="flex items-center">
+        <div className="flex items-center" {...dragHandleProps}>
           <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
         </div>
         <div className={isHeader ? 'font-bold text-orange-400' : 'text-foreground'}>
@@ -108,7 +108,7 @@ function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isPro
         hover:bg-secondary/20`}
       style={{gridTemplateColumns: '28px 1fr 56px 88px 60px 88px 88px 28px'}}
     >
-      <div className="flex items-center">
+      <div className="flex items-center" {...dragHandleProps}>
         <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab" />
       </div>
       <div className={isHeader ? 'font-bold text-orange-400' : 'text-foreground'}>
@@ -268,6 +268,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
                             inventory={inventory}
                             isProjectTotalsSection={isProjectTotalsSection}
                             subtotalMap={subtotalMap}
+                            dragHandleProps={drag.dragHandleProps}
                           />
                         </div>
                       )}
