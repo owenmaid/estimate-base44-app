@@ -172,15 +172,12 @@ export default function EstimateCanvas({
             onRenameSection(summarySection.id, newTitle);
           }
         }}
-        leftTitle=""
+        leftTitle="DCSM and Ventilation Cost per Manway/Day"
         rightTitle="Conventional Costs Per Manway/Day"
       >
         {{
           left: (
             <>
-              <div className="border-b border-border pb-2 mb-2">
-                <div className="text-xs font-semibold text-foreground">DCSM and Ventilation Cost per Manway/Day</div>
-              </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration) DCSM</span>
                 <span>0</span>
@@ -201,7 +198,6 @@ export default function EstimateCanvas({
           ),
           right: (
             <>
-              <div className="border-t border-border pt-0.5"></div>
               <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
                 <span>Number of Manways (Averaged out over duration)</span>
                 <span>0</span>
