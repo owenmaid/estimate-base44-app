@@ -44,16 +44,6 @@ export default function ProjectDetailsSetup() {
   const isSyncingScroll = useRef(false);
   const [tableScrollWidth, setTableScrollWidth] = useState(0);
 
-  useEffect(() => {
-    const el = tableScrollRef.current;
-    if (!el) return;
-    const update = () => setTableScrollWidth(el.scrollWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [dates, equipmentRows, visibleDates]);
-
   const queryClient = useQueryClient();
   
 
@@ -256,6 +246,16 @@ export default function ProjectDetailsSetup() {
   const visibleDates = dates.slice(dateOffset, dateOffset + PAGE_SIZE);
   const canGoPrevPage = dateOffset > 0;
   const canGoNextPage = dateOffset + PAGE_SIZE < dates.length;
+
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const update = () => setTableScrollWidth(el.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [dates, equipmentRows]);
 
 const addEquipmentRow = () => {
     if (!newEquipmentItemId) {
