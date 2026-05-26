@@ -981,6 +981,25 @@ export default function CreateEstimatePanel() {
     });
   });
 
+  // ── Conventional Costs Total ───────────────────────────────────────────────
+  // Sum totals of all regular line items whose inventory category is "CONVENTIONAL COSTS"
+  const conventionalCostsTotal = useMemo(() => {
+    let sum = 0;
+    sectionsWithAggregate.forEach(s => {
+      s.items.forEach(item => {
+        if (isSubtotalHeader(item.description) || isSpacer(item.description)) return;
+        const desc = (item.description || '').toLowerCase();
+        const match = inventory.find(i =>
+          (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc
+        );
+        if (match && (match.category || '').toLowerCase() === 'conventional costs') {
+          sum += item.total || 0;
+        }
+      });
+    });
+    return sum;
+  }, [sectionsWithAggregate, inventory]);
+
   // ── Totals ─────────────────────────────────────────────────────────────────
   // Use [Total Project Cost] bracket value as the subtotal (not sum of all items)
   const subtotal = projectCostValue;
@@ -1216,6 +1235,7 @@ export default function CreateEstimatePanel() {
           inventory={inventory}
           logoUrls={logoUrls}
           manwayAvgDCSM={manwayAvgDCSM}
+          conventionalCostsTotal={conventionalCostsTotal}
         />
       </div>
     </div>
