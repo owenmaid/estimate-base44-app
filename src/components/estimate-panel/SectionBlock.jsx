@@ -135,10 +135,9 @@ function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isPro
       <div className="text-right">
         {!spacer && (isHeader ? (
           <span className="text-xs text-foreground">
-            {(() => {
-              const val = (item.unit_price && item.unit_price > 0) ? item.unit_price : (item.total || 0);
-              return isHourItem(item.description) ? `${Math.round(val).toLocaleString()} hrs` : `$${val.toFixed(2)}`;
-            })()}
+            {isHourItem(item.description)
+              ? `${Math.round(displayTotal).toLocaleString()} hrs`
+              : `$${Number(displayTotal).toFixed(2)}`}
           </span>
         ) : (
           <EditableCell value={item.unit_price} onChange={v => onUpdateItem(sectionId, item.id, 'unit_price', v)} type="number" className="w-20 text-right" />
