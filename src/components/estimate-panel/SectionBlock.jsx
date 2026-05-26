@@ -27,7 +27,7 @@ function EditableCell({ value, onChange, type = 'text', className = '' }) {
   }
   return (
     <span className={`cursor-pointer hover:text-primary transition-colors ${className}`} onClick={() => { setLocal(value); setEditing(true); }}>
-      {value}
+      {type === 'number' ? Number(value).toFixed(2) : value}
     </span>
   );
 }
