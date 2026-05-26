@@ -546,12 +546,24 @@ export default function CreateEstimatePanel() {
     ),
   }));
 
-  // Helper to ensure item totals are calculated if missing (must be defined before use)
+  // Helper to ensure item totals and unit_price are calculated if missing (must be defined before use)
   const ensureItemTotal = (item) => {
-    if (item.total != null && item.total > 0) return item;
     if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
-    const calculated = (item.quantity || 0) * (item.unit_price || 0) * (1 + (item.markup || 0) / 100);
-    return { ...item, total: calculated };
+    const qty = item.quantity || 1;
+    const markup = item.markup || 0;
+    const multiplier = 1 + markup / 100;
+
+    // If unit_price is missing but total exists, back-calculate unit_price
+    if ((!item.unit_price || item.unit_price === 0) && item.total && item.total > 0) {
+      const backCalcUnitPrice = item.total / qty / multiplier;
+      return { ...item, unit_price: backCalcUnitPrice };
+    }
+    // If total is missing but unit_price exists, calculate total
+    if (item.total == null || item.total === 0) {
+      const calculated = qty * (item.unit_price || 0) * multiplier;
+      return { ...item, total: calculated };
+    }
+    return item;
   };
 
   // Pass 2: inject "DCSM Est Total" = sum of "Total Labour | Logistics Cost" + "Total Equipment | Consumables Cost" sections
