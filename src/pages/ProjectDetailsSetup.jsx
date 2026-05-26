@@ -39,6 +39,20 @@ export default function ProjectDetailsSetup() {
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [expandedSchedule, setExpandedSchedule] = useState(false);
   const [convertingEstimate, setConvertingEstimate] = useState(false);
+  const tableScrollRef = useRef(null);
+  const bottomScrollRef = useRef(null);
+  const isSyncingScroll = useRef(false);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const update = () => setTableScrollWidth(el.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [dates, equipmentRows, visibleDates]);
 
   const queryClient = useQueryClient();
   
@@ -950,7 +964,16 @@ const addEquipmentRow = () => {
             )}
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div
+              ref={tableScrollRef}
+              className="overflow-x-auto"
+              onScroll={e => {
+                if (isSyncingScroll.current) return;
+                isSyncingScroll.current = true;
+                if (bottomScrollRef.current) bottomScrollRef.current.scrollLeft = e.target.scrollLeft;
+                isSyncingScroll.current = false;
+              }}
+            >
               <table className="w-full text-xs border-collapse">
                 <thead>
                   {/* Type row — references Sa_Su_St list from Control Page */}
@@ -1093,6 +1116,21 @@ const addEquipmentRow = () => {
                   </tbody>
               </table>
             </div>
+            {/* Mirror scrollbar — syncs with the table above */}
+            <div
+              ref={bottomScrollRef}
+              className="overflow-x-auto border-t border-border"
+              style={{ height: '12px' }}
+              onScroll={e => {
+                if (isSyncingScroll.current) return;
+                isSyncingScroll.current = true;
+                if (tableScrollRef.current) tableScrollRef.current.scrollLeft = e.target.scrollLeft;
+                isSyncingScroll.current = false;
+              }}
+            >
+              <div style={{ width: tableScrollWidth || '100%', height: '1px' }} />
+            </div>
+
             <div className="px-4 py-3 border-t border-border flex items-center gap-2">
               <select
                 value={newEquipmentCategory}
