@@ -41,8 +41,12 @@ export default function ProjectDetailsSetup() {
   const [convertingEstimate, setConvertingEstimate] = useState(false);
   const tableScrollRef = useRef(null);
   const bottomScrollRef = useRef(null);
+  const floatingScrollRef = useRef(null);
+  const cardRef = useRef(null);
   const isSyncingScroll = useRef(false);
   const [tableScrollWidth, setTableScrollWidth] = useState(0);
+  const [showFloatingScroll, setShowFloatingScroll] = useState(false);
+  const [floatingScrollLeft, setFloatingScrollLeft] = useState(0);
 
   const queryClient = useQueryClient();
   
@@ -256,6 +260,34 @@ export default function ProjectDetailsSetup() {
     ro.observe(el);
     return () => ro.disconnect();
   }, [dates, equipmentRows]);
+
+  // Show floating scrollbar when the bottom mirror scrollbar scrolls off screen
+  useEffect(() => {
+    const mirrorEl = bottomScrollRef.current;
+    if (!mirrorEl) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowFloatingScroll(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(mirrorEl);
+    return () => observer.disconnect();
+  }, [dates]);
+
+  // Sync floating scrollbar with table
+  useEffect(() => {
+    const tableEl = tableScrollRef.current;
+    if (!tableEl) return;
+    const onTableScroll = () => {
+      setFloatingScrollLeft(tableEl.scrollLeft);
+      if (floatingScrollRef.current && !isSyncingScroll.current) {
+        isSyncingScroll.current = true;
+        floatingScrollRef.current.scrollLeft = tableEl.scrollLeft;
+        isSyncingScroll.current = false;
+      }
+    };
+    tableEl.addEventListener('scroll', onTableScroll);
+    return () => tableEl.removeEventListener('scroll', onTableScroll);
+  }, [dates]);
 
 const addEquipmentRow = () => {
     if (!newEquipmentItemId) {
@@ -891,7 +923,7 @@ const addEquipmentRow = () => {
 {/* Equipment Spreadsheet + Calculations */}
       {dates.length > 0 && (
         <div className={expandedSchedule ? "fixed inset-0 z-50 bg-background p-4 overflow-auto flex gap-4 items-start" : "flex gap-4 items-start"}>
-        <Card className="flex-1 min-w-0">
+        <Card ref={cardRef} className="flex-1 min-w-0">
           <CardHeader className="pb-2">
             <div className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1218,8 +1250,30 @@ const addEquipmentRow = () => {
              </table>
            </CardContent>
          </Card>
-        </div>
-      )}
-    </div>
-  );
-}
+         </div>
+         )}
+
+         {/* Floating horizontal scrollbar — appears at bottom of viewport when table scrollbar is off-screen */}
+         {showFloatingScroll && tableScrollWidth > 0 && (
+         <div
+          ref={floatingScrollRef}
+          className="fixed bottom-0 z-50 overflow-x-auto bg-card border-t-2 border-primary/40 shadow-lg"
+          style={{
+            left: cardRef.current ? cardRef.current.getBoundingClientRect().left + 'px' : '0',
+            width: cardRef.current ? cardRef.current.getBoundingClientRect().width + 'px' : '100%',
+            height: '16px',
+          }}
+          onScroll={e => {
+            if (isSyncingScroll.current) return;
+            isSyncingScroll.current = true;
+            if (tableScrollRef.current) tableScrollRef.current.scrollLeft = e.target.scrollLeft;
+            if (bottomScrollRef.current) bottomScrollRef.current.scrollLeft = e.target.scrollLeft;
+            isSyncingScroll.current = false;
+          }}
+         >
+          <div style={{ width: tableScrollWidth, height: '1px' }} />
+         </div>
+         )}
+         </div>
+         );
+         }
