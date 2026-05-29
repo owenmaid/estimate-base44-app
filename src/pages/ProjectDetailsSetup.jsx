@@ -892,7 +892,7 @@ const addEquipmentRow = () => {
       {dates.length > 0 && (
         <div className={expandedSchedule ? "fixed inset-0 z-50 bg-background p-4 overflow-auto flex gap-4 items-start" : "flex gap-4 items-start"}>
         <Card className="flex-1 min-w-0">
-          <CardHeader className="pb-2">
+          <CardHeader className={`pb-2${expandedSchedule ? ' sticky top-0 z-30 bg-card border-b border-border' : ''}`}>
             <div className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base">Equipment Schedule</CardTitle>
@@ -977,11 +977,11 @@ const addEquipmentRow = () => {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   {/* Type row — references Sa_Su_St list from Control Page */}
-                  <tr className="bg-secondary/40 border-b border-border" style={{ height: '36px' }}>
-                    <th className="sticky left-0 z-10 bg-secondary/60 px-4 py-2 text-left font-semibold text-primary border-r border-border text-xs min-w-[90px] w-[90px]">
-                      
+                  <tr className="bg-secondary/40 border-b border-border" style={{ height: '36px', ...(expandedSchedule ? { position: 'sticky', top: 0, zIndex: 20 } : {}) }}>
+                    <th className="sticky left-0 z-10 bg-card px-4 py-2 text-left font-semibold text-primary border-r border-border text-xs min-w-[90px] w-[90px]" style={expandedSchedule ? { backgroundColor: 'hsl(var(--card))' } : {}}>
+
                     </th>
-                    <th className="bg-secondary/60 px-4 py-2 text-left font-semibold text-primary min-w-[160px] border-r border-border text-xs">
+                    <th className="px-4 py-2 text-left font-semibold text-primary min-w-[160px] border-r border-border text-xs" style={expandedSchedule ? { backgroundColor: 'hsl(var(--secondary) / 0.6)' } : {}}>
                       Type
                     </th>
                     {visibleDates.map((d) => {
@@ -1008,9 +1008,9 @@ const addEquipmentRow = () => {
                       );
                     })}
                   </tr>
-                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
-                    <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground border-r border-border min-w-[90px] w-[90px]">
-                     Item_ID
+                  <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px', ...(expandedSchedule ? { position: 'sticky', top: '36px', zIndex: 20 } : {}) }}>
+                     <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground border-r border-border min-w-[90px] w-[90px]">
+                      Item_ID
                     </th>
                     <th className="bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[160px] border-r border-border">
                      Equipment
