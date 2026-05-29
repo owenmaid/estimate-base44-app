@@ -91,6 +91,10 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   const light = [245, 243, 240];
   const white = [255, 255, 255];
 
+  const setFill  = (c) => doc.setFillColor(c[0], c[1], c[2]);
+  const setStroke = (c) => doc.setDrawColor(c[0], c[1], c[2]);
+  const setColor = (c) => doc.setTextColor(c[0], c[1], c[2]);
+
   const checkPage = (needed = 20) => {
     if (y + needed > pageH - margin) {
       doc.addPage();
@@ -127,7 +131,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   } else {
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...orange);
+    setColor(orange);
     doc.text('InfoSignal', margin, logoY + 26);
   }
 
@@ -137,7 +141,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   } else {
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...orange);
+    setColor(orange);
     doc.text('DynaVent', centerX, logoY + 26, { align: 'center' });
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
@@ -146,7 +150,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(...dark);
+  setColor(dark);
   doc.text('DCSM Project Budgetary Estimate', pageW - margin, logoY + 20, { align: 'right' });
 
   y = logoY + logoH + 10;
@@ -157,7 +161,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   doc.line(margin, y, pageW - margin, y);
   y += 10;
 
-  // ── Customer details block ──────────────────────────────────────────────────
+  // ── Customer details block ─────────────────────────────────────────────────
   const now = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dateStr = `${String(now.getDate()).padStart(2,'0')}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
@@ -189,36 +193,36 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
   fields.forEach((field, idx) => {
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...dark);
+    setColor(dark);
     doc.text(field.label, labelX, y);
 
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...orange);
+    setColor(orange);
     doc.text(field.value, valueX, y);
 
     // Right-side: Date, Start Date, End Date on first three rows
     if (idx === 0) {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...dark);
+      setColor(dark);
       doc.text('Date', dateLabelX, y);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...orange);
+      setColor(orange);
       doc.text(dateStr, dateValueX, y, { align: 'right' });
     }
     if (idx === 1) {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...dark);
+      setColor(dark);
       doc.text('Start Date', dateLabelX, y);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...orange);
+      setColor(orange);
       doc.text(fmtDate(clientInfo.start_date), dateValueX, y, { align: 'right' });
     }
     if (idx === 2) {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...dark);
+      setColor(dark);
       doc.text('End Date', dateLabelX, y);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...orange);
+      setColor(orange);
       doc.text(fmtDate(clientInfo.end_date), dateValueX, y, { align: 'right' });
     }
 
@@ -230,10 +234,10 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   if (clientInfo.notes && clientInfo.notes.trim()) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.setTextColor(...dark);
+    setColor(dark);
     doc.text('Notes:', labelX, y);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...orange);
+    setColor(orange);
     const noteLines = doc.splitTextToSize(clientInfo.notes, contentW - 105);
     doc.text(noteLines, valueX, y + 4);
     y += noteLines.length * 13 + 4;
@@ -265,20 +269,20 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     const secTotal      = getSectionTotal(section);
 
     // Section header
-    doc.setFillColor(...light);
+    setFill(light);
     doc.rect(margin, y - 2, contentW, 18, 'F');
-    doc.setFillColor(...orange);
+    setFill(orange);
     doc.rect(margin, y - 2, 4, 18, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.setTextColor(...dark);
+    setColor(dark);
     doc.text(section.title, margin + 10, y + 10);
 
     if (!isProjTotals) {
       const titleN = normalizeDesc(section.title);
       const sectionIsHour = HOUR_ITEMS.includes(titleN);
-      doc.setTextColor(...orange);
+      setColor(orange);
       doc.text(fmtVal(secTotal, sectionIsHour), colTotal, y + 10, { align: 'right' });
     }
     y += 22;
@@ -287,14 +291,14 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     if (section.items.length > 0 && !isProjTotals) {
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...muted);
+      setColor(muted);
       doc.text('DESCRIPTION', colDesc, y);
       doc.text('QTY',    colQty,   y, { align: 'right' });
       doc.text('UNIT $', colUnit,  y, { align: 'right' });
       doc.text('MKP%',   colMkup,  y, { align: 'right' });
       doc.text('TOTAL',  colTotal, y, { align: 'right' });
       y += 4;
-      doc.setDrawColor(...muted);
+      setStroke(muted);
       doc.setLineWidth(0.5);
       doc.line(margin, y, margin + contentW, y);
       y += 10;
@@ -320,12 +324,12 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
       if (isHeader) {
         doc.setFillColor(255, 237, 213);
         doc.rect(margin, y - 10, contentW, 16, 'F');
-        doc.setFillColor(...orange);
+        setFill(orange);
         doc.rect(margin, y - 10, 3, 16, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
-        doc.setTextColor(...orange);
+        setColor(orange);
         const descLines = doc.splitTextToSize(item.description || '', isProjTotals ? contentW - 100 : colQty - colDesc - 12);
         doc.text(descLines, colDesc + 6, y);
 
@@ -352,7 +356,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
           doc.setFillColor(250, 249, 247);
           doc.rect(margin, y - 9, contentW, 14, 'F');
         }
-        doc.setTextColor(...dark);
+        setColor(dark);
         doc.setFont('helvetica', 'normal');
         const descLines = doc.splitTextToSize(item.description || '', isProjTotals ? contentW - 100 : colQty - colDesc - 8);
         doc.text(descLines, colDesc, y);
@@ -389,14 +393,14 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     const summaryStartY = y;
     y += 8;
 
-    doc.setFillColor(...light);
+    setFill(light);
     doc.rect(margin, y - 2, contentW, 18, 'F');
-    doc.setFillColor(...orange);
+    setFill(orange);
     doc.rect(margin, y - 2, 4, 18, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.setTextColor(...dark);
+    setColor(dark);
     doc.text(summarySection.title || 'Summary', margin + 10, y + 10);
     y += 22;
 
@@ -406,12 +410,12 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.setTextColor(...dark);
+    setColor(dark);
     doc.text('DCSM and Ventilation Cost per Manway/Day', leftX,  y);
     doc.text('Conventional Costs Per Manway/Day',       rightX, y);
     y += 8;
 
-    doc.setDrawColor(...muted);
+    setStroke(muted);
     doc.setLineWidth(0.5);
     doc.line(margin, y, margin + contentW, y);
     y += 10;
@@ -441,25 +445,25 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
     leftRows.forEach((row, idx) => {
       const rowY = y + idx * rowSpacing;
-      doc.setTextColor(...muted);
+      setColor(muted);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.text(row.label, leftX, rowY);
       doc.setFont('helvetica', row.bold ? 'bold' : 'normal');
       doc.setFontSize(7.5);
-      doc.setTextColor(row.primary ? orange : dark);
+      setColor(row.primary ? orange : dark);
       doc.text(row.value, leftX + colWidth, rowY, { align: 'right' });
     });
 
     rightRows.forEach((row, idx) => {
       const rowY = y + idx * rowSpacing;
-      doc.setTextColor(...muted);
+      setColor(muted);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.text(row.label, rightX, rowY);
       doc.setFont('helvetica', row.bold ? 'bold' : 'normal');
       doc.setFontSize(7.5);
-      doc.setTextColor(row.primary ? orange : dark);
+      setColor(row.primary ? orange : dark);
       doc.text(row.value, rightX + colWidth, rowY, { align: 'right' });
     });
 
@@ -477,7 +481,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   const boxW = 200;
   const boxX = pageW - margin - boxW;
 
-  doc.setDrawColor(...orange);
+  setStroke(orange);
   doc.setLineWidth(0.5);
   doc.rect(boxX, y, boxW, clientInfo.discount > 0 ? 82 : 68, 'S');
 
@@ -486,9 +490,9 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
   const drawTotalRow = (label, value) => {
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...muted);
+    setColor(muted);
     doc.text(label, boxX + 12, y + 12);
-    doc.setTextColor(...dark);
+    setColor(dark);
     doc.text(value, boxX + boxW - 12, y + 12, { align: 'right' });
     y += rowH;
   };
@@ -499,9 +503,9 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     drawTotalRow('Discount', `-${fmtMoney(clientInfo.discount || 0)}`);
   }
 
-  doc.setFillColor(...orange);
+  setFill(orange);
   doc.rect(boxX, y, boxW, rowH + 4, 'F');
-  doc.setTextColor(...white);
+  setColor(white);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text('TOTAL', boxX + 12, y + 13);
@@ -509,12 +513,12 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
 
   // ── Footer ──────────────────────────────────────────────────────────────────
   const footerY = pageH - 28;
-  doc.setDrawColor(...light);
+  setStroke(light);
   doc.setLineWidth(0.5);
   doc.line(margin, footerY - 8, pageW - margin, footerY - 8);
   doc.setFontSize(7.5);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...muted);
+  setColor(muted);
   doc.text('This estimate is valid for 30 days from the date issued.', margin, footerY);
   doc.text('Page 1', pageW - margin, footerY, { align: 'right' });
 
