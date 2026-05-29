@@ -698,12 +698,16 @@ export default function CreateEstimatePanel() {
   }));
 
   // ── PASS 4: inject "Ventilation Total Cost" ────────────────────────────────
-  // = sum of "Ventilation Total Labour | Logistics Cost" + "Ventilation Total Equipment | Consumable Costs" sections
-  const ventLabourSection      = sectionsPass3WithBrackets.find(s => normalizeDesc(s.title) === 'ventilation total labour | logistics cost');
-  const equipConsumableSection = sectionsPass3WithBrackets.find(s => normalizeDesc(s.title) === 'ventilation total equipment | consumable costs');
-  const ventLabourTotal        = ventLabourSection      ? getSectionTotal(ventLabourSection.items)      : 0;
-  const equipConsumableTotal   = equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0;
-  const ventilationSectionTotal = ventLabourTotal + equipConsumableTotal;
+  // = sum of ALL leaf items (excluding bracketed subtotals) across:
+  //   Ventilation Total Labour | Logistics Cost + Ventilation Total Equipment | Consumable Costs
+  const VENT_TOTAL_LEAF_SOURCES = ['ventilation total labour | logistics cost', 'ventilation total equipment | consumable costs'];
+  const ventilationSectionTotal = sectionsPass3WithBrackets.reduce((sum, s) => {
+    if (!VENT_TOTAL_LEAF_SOURCES.includes(normalizeDesc(s.title))) return sum;
+    return sum + s.items.reduce((itemSum, item) => {
+      if (isSubtotalHeader(item.description) || isSpacer(item.description)) return itemSum;
+      return itemSum + (item.total || 0);
+    }, 0);
+  }, 0);
 
   const sectionsPass4 = sectionsPass3WithBrackets.map(s => ({
     ...s,
