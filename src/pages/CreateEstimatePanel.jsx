@@ -513,152 +513,57 @@ export default function CreateEstimatePanel() {
   const isSpacer = (desc) => (desc || '') === '__SPACER__';
   const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
-  // Simplified section total: sum ONLY bracket subtotals, ignoring all leaf items
-  // This avoids double-counting injected summary rows
+  // getSectionTotal: if section has bracket items, sum their totals (avoids double-counting).
+  // Otherwise sum all leaf items.
   const getSectionTotal = (sectionItems) => {
     const bracketItems = sectionItems.filter(i => isSubtotalHeader(i.description));
     if (bracketItems.length > 0) {
-      // Sum bracket subtotals directly (they already contain the aggregated values)
       return bracketItems.reduce((s, i) => s + (i.total || 0), 0);
     }
-    // No brackets: sum raw leaf items
     return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
   };
 
-  // Helper: sum section totals by matching section titles
+  // sumSectionsByTitle: sum getSectionTotal for all sections whose title matches the list
   const sumSectionsByTitle = (sectionList, titleList) =>
     sectionList.reduce((sum, s) => {
       const title = normalizeDesc(s.title);
       return titleList.includes(title) ? sum + getSectionTotal(s.items) : sum;
     }, 0);
 
-  // Pass 1: inject "Total Labour | Logistics Cost" = sum of Indirects + Directs + Support & Logistics
-  const LABOUR_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
-  const LABOUR_TARGET  = 'total labour | logistics cost';
-  // labourTotal is computed after ensureItemTotal is defined (see below)
-
-  // Helper to ensure item totals and unit_price are calculated if missing (must be defined before use)
+  // ensureItemTotal: for leaf items, calculate total from unit_price/qty/markup if missing,
+  // or back-calculate unit_price from total if unit_price is missing.
   const ensureItemTotal = (item) => {
     if (isSubtotalHeader(item.description) || isSpacer(item.description)) return item;
     const qty = item.quantity || 1;
     const markup = item.markup || 0;
     const multiplier = 1 + markup / 100;
-
-    // If unit_price is missing but total exists, back-calculate unit_price
     if ((!item.unit_price || item.unit_price === 0) && item.total && item.total > 0) {
-      const backCalcUnitPrice = item.total / qty / multiplier;
-      return { ...item, unit_price: backCalcUnitPrice };
+      return { ...item, unit_price: item.total / qty / multiplier };
     }
-    // If total is missing but unit_price exists, calculate total
-    if (item.total == null || item.total === 0) {
-      const calculated = qty * (item.unit_price || 0) * multiplier;
-      return { ...item, total: calculated };
+    if (!item.total || item.total === 0) {
+      return { ...item, total: qty * (item.unit_price || 0) * multiplier };
     }
     return item;
   };
 
-  // Pre-pass: compute bracket totals for raw sections so LABOUR_SOURCES getSectionTotal is accurate
-  const sectionsPrePass = sections.map(s => ({
-    ...s,
-    items: (() => {
-      const withTotals = s.items.map(ensureItemTotal);
-      return withTotals.map((item, idx) => {
-        if (!isSubtotalHeader(item.description)) return item;
-        if (item.total && item.total > 0) return item;
-        let sum = 0;
-        for (let j = idx + 1; j < withTotals.length; j++) {
-          if (isSubtotalHeader(withTotals[j].description)) break;
-          if (isSpacer(withTotals[j].description)) continue;
-          sum += withTotals[j].total || 0;
-        }
-        return { ...item, total: sum };
-      });
-    })(),
-  }));
-
-  const labourTotal = sumSectionsByTitle(sectionsPrePass, LABOUR_SOURCES);
-
-  const sectionsPass1 = sectionsPrePass.map(s => ({
-    ...s,
-    items: s.items.map(item =>
-      normalizeDesc(item.description) === LABOUR_TARGET
-        ? { ...item, total: labourTotal }
-        : item
-    ),
-  }));
-
-  // Pass 2: inject "DCSM Est Total" = sum of "Total Labour | Logistics Cost" + "Total Equipment | Consumables Cost" sections
-  // First ensure all items in sectionsPass1 have totals calculated before summing
-  const sectionsPass1WithTotals = sectionsPass1.map(s => ({
-    ...s,
-    items: s.items.map(ensureItemTotal),
-  }));
-  
-  const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
-  const DCSM_TARGET  = 'dcsm est total';
-  const dcsmTotal = sumSectionsByTitle(sectionsPass1WithTotals, DCSM_SOURCES);
-  console.log('[Pass2] DCSM Est Total:', dcsmTotal, '= Labour:', sumSectionsByTitle(sectionsPass1WithTotals, ['total labour | logistics cost']), '+ Equipment:', sumSectionsByTitle(sectionsPass1WithTotals, ['total equipment | consumables cost']));
-
-  const sectionsPass2 = sectionsPass1WithTotals.map(s => ({
-    ...s,
-    items: s.items.map(item => {
-      if (normalizeDesc(item.description) === DCSM_TARGET) {
-        console.log('[Pass2] Setting DCSM Est Total:', dcsmTotal, 'for item:', item.description);
-        return { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal };
-      }
-      return item; // items already have totals from sectionsPass1WithTotals
-    }),
-  }));
-
-  // Pass 3: inject "Lead Ventilation Tech Total" = the bracketed [Lead Ventilation Tech] subtotal
-  // Find the [Lead Ventilation Tech] bracket row in any section and compute its subtotal
-  const LEAD_VENT_BRACKET = 'lead ventilation tech';
-  const LEAD_VENT_TARGET  = 'lead ventilation tech total';
-
-  // Ensure all items have totals calculated BEFORE computing bracket subtotals
-  const sectionsPass2WithTotals = sectionsPass2.map(s => ({
-    ...s,
-    items: s.items.map(ensureItemTotal),
-  }));
-
-  let leadVentValue = 0;
-  sectionsPass2WithTotals.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (normalizeDesc(item.description) !== LEAD_VENT_BRACKET) return;
+  // injectBracketTotals: for each bracket header in a section, sum leaf items below it
+  // (until the next bracket) and set that as the bracket's total.
+  // Always recomputes — does not preserve stale values.
+  const injectBracketTotals = (items) => {
+    const withLeafTotals = items.map(ensureItemTotal);
+    return withLeafTotals.map((item, idx) => {
+      if (!isSubtotalHeader(item.description)) return item;
       let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        if (normalizeDesc(s.items[j].description) === LEAD_VENT_TARGET) continue;
-        sum += s.items[j].total || 0;
+      for (let j = idx + 1; j < withLeafTotals.length; j++) {
+        if (isSubtotalHeader(withLeafTotals[j].description)) break;
+        if (isSpacer(withLeafTotals[j].description)) continue;
+        sum += withLeafTotals[j].total || 0;
       }
-      leadVentValue = sum;
+      return { ...item, total: sum };
     });
-  });
+  };
 
-  // Also inject "Ventilation Tech Total" = the bracketed [Ventilation Tech] subtotal
-  const VENT_TECH_BRACKET = 'ventilation tech';
-  const VENT_TECH_TARGET  = 'ventilation tech total';
-
-  let ventTechValue = 0;
-  sectionsPass2WithTotals.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (normalizeDesc(item.description) !== VENT_TECH_BRACKET) return;
-      let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        if (normalizeDesc(s.items[j].description) === VENT_TECH_TARGET) continue;
-        sum += s.items[j].total || 0;
-      }
-      ventTechValue = sum;
-    });
-  });
-
-  // Also inject "Logistic / Shipping Total" = the bracketed [Logistics / Shipping] subtotal
-  // Use flexible matching to handle spacing variations around '/'
-  const LOGISTICS_TARGET = 'logistic / shipping total';
-
+  // ── Named target matchers (flexible spacing/slash variants) ────────────────
   const isLogisticsBracket = (desc) => {
     const n = normalizeDesc(desc);
     return n === 'logistics / shipping' || n === 'logistics/shipping' || n === 'logistic / shipping' || n === 'logistic/shipping';
@@ -668,25 +573,77 @@ export default function CreateEstimatePanel() {
     return n === 'logistic / shipping total' || n === 'logistics / shipping total' || n === 'logistic/shipping total' || n === 'logistics/shipping total';
   };
 
-  let logisticsValue = 0;
-  sectionsPass2WithTotals.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (!isSubtotalHeader(item.description)) return;
-      if (!isLogisticsBracket(item.description)) return;
-      let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        if (isLogisticsTarget(s.items[j].description)) continue;
-        sum += s.items[j].total || 0;
-      }
-      logisticsValue = sum;
+  // ── PRE-PASS: ensure all leaf totals + bracket totals are fresh ────────────
+  // Used as the base for all subsequent passes to avoid stale totals propagating forward.
+  const sectionsBase = sections.map(s => ({ ...s, items: injectBracketTotals(s.items) }));
+
+  // ── PASS 1: inject "Total Labour | Logistics Cost" ─────────────────────────
+  // = sum of section totals for: Indirects Total + Directs Total + Support and Logistics
+  const LABOUR_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
+  const LABOUR_TARGET  = 'total labour | logistics cost';
+  const labourTotal = sumSectionsByTitle(sectionsBase, LABOUR_SOURCES);
+
+  const sectionsPass1 = sectionsBase.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === LABOUR_TARGET
+        ? { ...item, total: labourTotal }
+        : item
+    ),
+  }));
+
+  // ── PASS 2: inject "DCSM Est Total" ────────────────────────────────────────
+  // = sum of "Total Labour | Logistics Cost" section + "Total Equipment | Consumables Cost" section
+  const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
+  const DCSM_TARGET  = 'dcsm est total';
+  const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
+
+  const sectionsPass2 = sectionsPass1.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === DCSM_TARGET
+        ? { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal }
+        : item
+    ),
+  }));
+
+  // ── PASS 3: inject named bracket summary totals ────────────────────────────
+  // These are "mirror" items whose value = sum of leaves under a specific bracket header.
+  // Computed from sectionsPass2 (with fresh leaf totals).
+  const LEAD_VENT_BRACKET      = 'lead ventilation tech';
+  const LEAD_VENT_TARGET       = 'lead ventilation tech total';
+  const VENT_TECH_BRACKET      = 'ventilation tech';
+  const VENT_TECH_TARGET       = 'ventilation tech total';
+  const VENT_EQUIP_TOTAL_TARGET     = 'ventilation equipment total cost';
+  const VENT_CONSUMABLES_BRACKET    = 'ventilation consumables';
+  const VENT_CONSUMABLES_TARGET     = 'consumables | securement total cost';
+
+  // Helper: sum leaf items under a bracket (identified by a predicate), skipping targetDesc
+  const sumBracketLeaves = (sectionList, bracketPredicate, targetNorm) => {
+    let value = 0;
+    sectionList.forEach(s => {
+      s.items.forEach((item, idx) => {
+        if (!bracketPredicate(item.description)) return;
+        let sum = 0;
+        for (let j = idx + 1; j < s.items.length; j++) {
+          if (isSubtotalHeader(s.items[j].description)) break;
+          if (isSpacer(s.items[j].description)) continue;
+          if (targetNorm && normalizeDesc(s.items[j].description) === targetNorm) continue;
+          sum += s.items[j].total || 0;
+        }
+        value += sum;
+      });
     });
-  });
+    return value;
+  };
 
-  // "Ventilation Equipment Total Cost" = sum of Col14 for all inventory items in "Ventilation Equipment" category on the linked project
-  const VENT_EQUIP_TOTAL_TARGET = 'ventilation equipment total cost';
+  // Each named mirror value is computed from sectionsPass2 leaves
+  const leadVentValue       = sumBracketLeaves(sectionsPass2, d => isSubtotalHeader(d) && normalizeDesc(d) === LEAD_VENT_BRACKET, LEAD_VENT_TARGET);
+  const ventTechValue       = sumBracketLeaves(sectionsPass2, d => isSubtotalHeader(d) && normalizeDesc(d) === VENT_TECH_BRACKET, VENT_TECH_TARGET);
+  const logisticsValue      = sumBracketLeaves(sectionsPass2, d => isLogisticsBracket(d), null);
+  const ventConsumablesValue = sumBracketLeaves(sectionsPass2, d => isSubtotalHeader(d) && normalizeDesc(d) === VENT_CONSUMABLES_BRACKET, VENT_CONSUMABLES_TARGET);
 
+  // Ventilation Equipment: prefer category-sum from linked project, else bracket leaves
   const ventEquipCategoryValue = useMemo(() => {
     if (!linkedProject) return 0;
     const rows = linkedProject.equipment_rows || [];
@@ -705,149 +662,43 @@ export default function CreateEstimatePanel() {
     return total;
   }, [linkedProject, inventory]);
 
-  // Keep bracket-matching for ventEquipValue as fallback when no project is linked
-  const isVentEquipBracket = (desc) => {
-    const n = normalizeDesc(desc);
-    return n.startsWith('ventilation equipment');
-  };
-
-  let ventEquipBracketValue = 0;
-  sectionsPass2WithTotals.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (!isSubtotalHeader(item.description)) return;
-      if (!isVentEquipBracket(item.description)) return;
-      let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        if (normalizeDesc(s.items[j].description) === VENT_EQUIP_TOTAL_TARGET) continue;
-        sum += s.items[j].total || 0;
-      }
-      ventEquipBracketValue += sum;
-    });
-  });
-
-  // Use the category-based value when a project is linked, otherwise fall back to bracket sum
+  const ventEquipBracketValue = sumBracketLeaves(
+    sectionsPass2,
+    d => isSubtotalHeader(d) && normalizeDesc(d).startsWith('ventilation equipment'),
+    VENT_EQUIP_TOTAL_TARGET
+  );
   const ventEquipValue = linkedProject ? ventEquipCategoryValue : ventEquipBracketValue;
 
-  // Mirror [Ventilation Consumables] bracket subtotal → "Consumables | Securement Total Cost"
-  const VENT_CONSUMABLES_BRACKET = 'ventilation consumables';
-  const VENT_CONSUMABLES_TARGET  = 'consumables | securement total cost';
-
-  let ventConsumablesValue = 0;
-  sectionsPass2WithTotals.forEach(s => {
-    s.items.forEach((item, idx) => {
-      if (!isSubtotalHeader(item.description)) return;
-      if (normalizeDesc(item.description) !== VENT_CONSUMABLES_BRACKET) return;
-      let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        // Exclude the target summary line itself to prevent circular compounding
-        if (normalizeDesc(s.items[j].description) === VENT_CONSUMABLES_TARGET) continue;
-        sum += s.items[j].total || 0;
-      }
-      ventConsumablesValue = sum;
-    });
-  });
-
-  // First pass: inject named bracket totals
-  const sectionsPass3a = sectionsPass2.map(s => ({
+  // Inject all named mirror targets
+  const sectionsPass3 = sectionsPass2.map(s => ({
     ...s,
     items: s.items.map(item => {
-      if (normalizeDesc(item.description) === LEAD_VENT_TARGET) {
-        console.log('[Pass3a] Setting Lead Vent Total:', leadVentValue, 'for:', item.description);
-        return { ...item, total: leadVentValue };
-      }
-      if (normalizeDesc(item.description) === VENT_TECH_TARGET) {
-        console.log('[Pass3a] Setting Vent Tech Total:', ventTechValue, 'for:', item.description);
-        return { ...item, total: ventTechValue };
-      }
-      if (isLogisticsTarget(item.description)) {
-        console.log('[Pass3a] Setting Logistics Total:', logisticsValue, 'for:', item.description);
-        return { ...item, total: logisticsValue };
-      }
-      if (normalizeDesc(item.description) === VENT_EQUIP_TOTAL_TARGET) {
-        console.log('[Pass3a] Setting Vent Equip Total:', ventEquipValue, 'for:', item.description);
-        return { ...item, total: ventEquipValue };
-      }
-      if (normalizeDesc(item.description) === VENT_CONSUMABLES_TARGET) {
-        console.log('[Pass3a] Setting Vent Consumables Total:', ventConsumablesValue, 'for:', item.description);
-        return { ...item, total: ventConsumablesValue };
-      }
-      // Ensure all other items have their totals calculated
-      return ensureItemTotal(item);
+      const n = normalizeDesc(item.description);
+      if (n === LEAD_VENT_TARGET)         return { ...item, total: leadVentValue };
+      if (n === VENT_TECH_TARGET)         return { ...item, total: ventTechValue };
+      if (isLogisticsTarget(item.description)) return { ...item, total: logisticsValue };
+      if (n === VENT_EQUIP_TOTAL_TARGET)  return { ...item, total: ventEquipValue };
+      if (n === VENT_CONSUMABLES_TARGET)  return { ...item, total: ventConsumablesValue };
+      return item;
     }),
   }));
-  
-  console.log('[Pass3a] Sample section after named brackets:', sectionsPass3a.find(s => normalizeDesc(s.title) === 'total cost for dcsm')?.items.filter(i => normalizeDesc(i.description) === 'dcsm est total'));
 
-  // Second pass: inject totals for ALL generic bracket items (sum items below each bracket)
-  const sectionsPass3 = sectionsPass3a.map(s => ({
+  // After named mirrors are set, recompute ALL bracket totals from fresh leaves
+  // This ensures any bracket that wraps the named mirror items reflects the latest values.
+  const sectionsPass3WithBrackets = sectionsPass3.map(s => ({
     ...s,
-    items: s.items.map((item, idx) => {
-      if (!isSubtotalHeader(item.description)) return item;
-      // Check if this bracket already has a non-zero total (from Pass 3a)
-      if (item.total && item.total > 0) {
-        console.log('[Pass3] Keeping existing bracket total:', item.total, 'for:', item.description);
-        return item;
-      }
-      // Calculate sum of all items below this bracket until next bracket
-      let sum = 0;
-      for (let j = idx + 1; j < s.items.length; j++) {
-        if (isSubtotalHeader(s.items[j].description)) break;
-        if (isSpacer(s.items[j].description)) continue;
-        sum += s.items[j].total || 0;
-      }
-      if (normalizeDesc(item.description) === 'dcsm est total') {
-        console.log('[Pass3] DCSM Est Total - bracket sum:', sum, 'for:', item.description);
-      }
-      return { ...item, total: sum > 0 ? sum : 0 };
-    }),
-  }));
-  
-  console.log('[Pass3] Sample section after generic brackets:', sectionsPass3.find(s => normalizeDesc(s.title) === 'total cost for dcsm')?.items.filter(i => normalizeDesc(i.description) === 'dcsm est total'));
-
-  // Pass 4: "Ventilation Total Cost" = simplified formula
-  // Ensure all items have totals calculated first, then sum section totals
-  const sectionsPass3WithCalculatedTotals = sectionsPass3.map(s => ({
-    ...s,
-    items: s.items.map(ensureItemTotal),
+    items: injectBracketTotals(s.items),
   }));
 
-  console.log('[Pass4] All sections with their items:');
-  sectionsPass3WithCalculatedTotals.forEach(s => {
-    console.log(`  Section: "${s.title}" (normalized: "${normalizeDesc(s.title)}")`);
-    console.log(`    Items count: ${s.items.length}`);
-    s.items.forEach(item => {
-      console.log(`      - "${item.description}" | qty:${item.quantity} price:${item.unit_price} markup:${item.markup}% total:${item.total}`);
-    });
-  });
-
-  const ventLabourSection = sectionsPass3WithCalculatedTotals.find(s => 
-    normalizeDesc(s.title) === 'ventilation total labour | logistics cost'
-  );
-  const equipConsumableSection = sectionsPass3WithCalculatedTotals.find(s => 
-    normalizeDesc(s.title) === 'ventilation total equipment | consumable costs'
-  );
-
-  console.log('[Pass4] Found ventLabourSection:', !!ventLabourSection, 'equipConsumableSection:', !!equipConsumableSection);
-  if (ventLabourSection) {
-    console.log('[Pass4] ventLabourSection items:', ventLabourSection.items.map(i => `"${i.description}" total:${i.total}`));
-  }
-  if (equipConsumableSection) {
-    console.log('[Pass4] equipConsumableSection items:', equipConsumableSection.items.map(i => `"${i.description}" total:${i.total}`));
-  }
-  
-  const ventLabourTotal = ventLabourSection ? getSectionTotal(ventLabourSection.items) : 0;
-  const equipConsumableTotal = equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0;
+  // ── PASS 4: inject "Ventilation Total Cost" ────────────────────────────────
+  // = sum of "Ventilation Total Labour | Logistics Cost" + "Ventilation Total Equipment | Consumable Costs" sections
+  const ventLabourSection      = sectionsPass3WithBrackets.find(s => normalizeDesc(s.title) === 'ventilation total labour | logistics cost');
+  const equipConsumableSection = sectionsPass3WithBrackets.find(s => normalizeDesc(s.title) === 'ventilation total equipment | consumable costs');
+  const ventLabourTotal        = ventLabourSection      ? getSectionTotal(ventLabourSection.items)      : 0;
+  const equipConsumableTotal   = equipConsumableSection ? getSectionTotal(equipConsumableSection.items) : 0;
   const ventilationSectionTotal = ventLabourTotal + equipConsumableTotal;
-  
-  console.log('[Pass4] Ventilation Total Labour | Logistics Cost section total:', ventLabourTotal);
-  console.log('[Pass4] Total Equipment | Consumable Costs section total:', equipConsumableTotal);
-  console.log('[Pass4] Ventilation Total Cost:', ventilationSectionTotal);
 
-  const sectionsPass4 = sectionsPass3.map(s => ({
+  const sectionsPass4 = sectionsPass3WithBrackets.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
@@ -858,173 +709,80 @@ export default function CreateEstimatePanel() {
     }),
   }));
 
-  // Pass 5: Auto-create brackets in Project Totals section first, then inject values
-  const dcsmHoursValue = col2Sum;
-  const ventHoursValue = ventCol2Sum;
+  // ── PASS 5: inject labour hours into "Project Totals" section ──────────────
+  const dcsmHoursValue         = col2Sum;
+  const ventHoursValue         = ventCol2Sum;
   const totalProjectLabourHours = dcsmHoursValue + ventHoursValue;
-  console.log('[CreateEstimatePanel] Total Project Labour Hours:', totalProjectLabourHours, '= DCSM:', dcsmHoursValue, '+ Vent:', ventHoursValue);
 
-  // Auto-create brackets in Project Totals section if missing (do this BEFORE injecting values)
+  // Auto-create hour bracket items if missing
   const sectionsWithAutoBrackets = sectionsPass4.map(s => {
     if (normalizeDesc(s.title) !== 'project totals') return s;
     const existingDescs = s.items.map(i => normalizeDesc(i.description));
     const newBrackets = [];
-    
-    if (!existingDescs.includes('dcsm est total hours') && dcsmHoursValue > 0) {
-      newBrackets.push({
-        id: Date.now() + 1,
-        description: '[DCSM Est Total Hours]',
-        quantity: 1,
-        unit_price: 0,
-        markup: 0,
-        total: 0,
-      });
-    }
-    if (!existingDescs.includes('total ventilation labour hours') && ventHoursValue > 0) {
-      newBrackets.push({
-        id: Date.now() + 2,
-        description: '[Total Ventilation Labour Hours]',
-        quantity: 1,
-        unit_price: 0,
-        markup: 0,
-        total: 0,
-      });
-    }
-    if (!existingDescs.includes('total project labour hours') && totalProjectLabourHours > 0) {
-      newBrackets.push({
-        id: Date.now() + 3,
-        description: '[Total Project Labour Hours]',
-        quantity: 1,
-        unit_price: 0,
-        markup: 0,
-        total: 0,
-      });
-    }
-    
-    if (newBrackets.length > 0) {
-      console.log('[CreateEstimatePanel] Auto-creating brackets:', newBrackets.map(b => b.description));
-      return { ...s, items: [...s.items, ...newBrackets] };
-    }
-    return s;
+    if (!existingDescs.includes('dcsm est total hours') && dcsmHoursValue > 0)
+      newBrackets.push({ id: Date.now() + 1, description: '[DCSM Est Total Hours]',           quantity: 1, unit_price: 0, markup: 0, total: 0 });
+    if (!existingDescs.includes('total ventilation labour hours') && ventHoursValue > 0)
+      newBrackets.push({ id: Date.now() + 2, description: '[Total Ventilation Labour Hours]',  quantity: 1, unit_price: 0, markup: 0, total: 0 });
+    if (!existingDescs.includes('total project labour hours') && totalProjectLabourHours > 0)
+      newBrackets.push({ id: Date.now() + 3, description: '[Total Project Labour Hours]',      quantity: 1, unit_price: 0, markup: 0, total: 0 });
+    return newBrackets.length > 0 ? { ...s, items: [...s.items, ...newBrackets] } : s;
   });
 
-  // Pass 5: Inject mirrored values into Project Totals section (now includes auto-created brackets)
   const sectionsPass5 = sectionsWithAutoBrackets.map(s => ({
     ...s,
     items: s.items.map(item => {
+      if (!isSubtotalHeader(item.description)) return item;
       const n = normalizeDesc(item.description);
-      // Inject DCSM Est Total Hours
-      if (isSubtotalHeader(item.description) && n === 'dcsm est total hours') {
-        return { ...item, unit_price: dcsmHoursValue, quantity: 1, markup: 0, total: dcsmHoursValue };
-      }
-      // Inject Total Ventilation Labour Hours
-      if (isSubtotalHeader(item.description) && n === 'total ventilation labour hours') {
-        return { ...item, unit_price: ventHoursValue, quantity: 1, markup: 0, total: ventHoursValue };
-      }
-      // Inject [Total Project Labour Hours] (sum of the two above)
-      if (isSubtotalHeader(item.description) && n === 'total project labour hours') {
-        return { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours };
-      }
+      if (n === 'dcsm est total hours')          return { ...item, unit_price: dcsmHoursValue,          quantity: 1, markup: 0, total: dcsmHoursValue };
+      if (n === 'total ventilation labour hours') return { ...item, unit_price: ventHoursValue,          quantity: 1, markup: 0, total: ventHoursValue };
+      if (n === 'total project labour hours')     return { ...item, unit_price: totalProjectLabourHours, quantity: 1, markup: 0, total: totalProjectLabourHours };
       return item;
     }),
   }));
 
-  // Compute Col 14 total from the linked project's calculation_grid (sum of all Col14 values)
+  // ── PASS 6 (Final): inject [Total Project Cost] and ensure DCSM/Vent totals persist ──
+  // projectCol14Total: sum of all _col14 values in the linked project's calculation_grid
   const projectCol14Total = useMemo(() => {
-    if (!linkedProject) {
-      console.log('[CreateEstimatePanel] No linked project');
-      return 0;
-    }
+    if (!linkedProject) return 0;
     const calcGrid = linkedProject.calculation_grid || {};
-    console.log('[CreateEstimatePanel] Full calculation_grid:', calcGrid);
-    let total = 0;
-    Object.entries(calcGrid).forEach(([key, value]) => {
-      if (key.includes('_col14')) {
-        total += (value || 0);
-      }
-    });
-    console.log('[CreateEstimatePanel] Col14 total:', total, 'from keys:', Object.keys(calcGrid).filter(k => k.includes('_col14')), 'calcGrid keys count:', Object.keys(calcGrid).length);
-    return total;
+    return Object.entries(calcGrid).reduce((sum, [key, value]) => key.includes('_col14') ? sum + (value || 0) : sum, 0);
   }, [linkedProject]);
 
-  // ── Conventional Costs Total (computed early from sectionsPass5) ──────────
-  // Sum totals of all regular line items whose inventory category is "CONVENTIONAL COSTS"
-  const conventionalCostsTotal = useMemo(() => {
-    let sum = 0;
-    sectionsPass5.forEach(s => {
-      s.items.forEach(item => {
-        if (isSubtotalHeader(item.description) || isSpacer(item.description)) return;
-        const desc = (item.description || '').toLowerCase();
-        const match = inventory.find(i =>
-          (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc
-        );
-        if (match && (match.category || '').toLowerCase() === 'conventional costs') {
-          sum += item.total || 0;
-        }
-      });
+  // conventionalCostsTotal: sum of leaf item totals whose inventory category = "conventional costs"
+  let conventionalCostsTotal = 0;
+  sectionsPass5.forEach(s => {
+    s.items.forEach(item => {
+      if (isSubtotalHeader(item.description) || isSpacer(item.description)) return;
+      const desc = (item.description || '').toLowerCase();
+      const match = inventory.find(i => (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc);
+      if (match && (match.category || '').toLowerCase() === 'conventional costs') {
+        conventionalCostsTotal += item.total || 0;
+      }
     });
-    return sum;
-  }, [sectionsPass5, inventory]);
+  });
 
-  // Inject "[Total Project Cost]" = Col 14 total minus Conventional Costs
+  // [Total Project Cost] = Col14 total − Conventional Costs (only when the bracket exists)
   const PROJECT_COST_BRACKET = 'total project cost';
-  const projectCostValue = useMemo(() => {
-    let value = 0;
-    let found = false;
-    sectionsPass5.forEach(s => {
-      s.items.forEach((item) => {
-        if (!isSubtotalHeader(item.description)) return;
-        if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
-        found = true;
-        value = projectCol14Total - conventionalCostsTotal;
-      });
-    });
-    console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', found, 'value:', value, '(col14:', projectCol14Total, '- conventional:', conventionalCostsTotal, ')');
-    return value;
-  }, [sectionsPass5, projectCol14Total, conventionalCostsTotal]);
-
-  // Compute Ventilation Total Cost once and apply it in final aggregation
-  const ventTotalCostValue = ventilationSectionTotal;
-  console.log('[Final] Ventilation Total Cost value:', ventTotalCostValue);
+  const hasTotalProjectCostBracket = sectionsPass5.some(s =>
+    s.items.some(i => isSubtotalHeader(i.description) && normalizeDesc(i.description) === PROJECT_COST_BRACKET)
+  );
+  const projectCostValue = hasTotalProjectCostBracket ? (projectCol14Total - conventionalCostsTotal) : 0;
 
   const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      // Inject Total Project Cost
-      if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET) {
+      if (isSubtotalHeader(item.description) && n === PROJECT_COST_BRACKET)
         return { ...item, total: projectCostValue };
-      }
-      // Inject Ventilation Total Cost (computed from Pass 4)
-      if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
-        console.log('[Final] MATCHED ventilation total cost item:', item.description);
-        console.log('[Final] Setting Ventilation Total Cost:', ventTotalCostValue, 'for item:', item.description);
-        return { ...item, total: ventTotalCostValue };
-      }
-      // Inject DCSM Est Total (ensure it persists through all passes)
-      if (n === 'dcsm est total') {
-        console.log('[Final] DCSM Est Total - item:', item.description, 'section:', s.title, 'current total:', item.total, 'injected value:', dcsmTotal);
+      if (n === 'ventilation total cost' || n === 'total cost for ventilation')
+        return { ...item, total: ventilationSectionTotal };
+      if (n === 'dcsm est total')
         return { ...item, total: dcsmTotal };
-      }
       return item;
     }),
   }));
-  
-  // Debug: check what's in the final sections
-  console.log('[Final] Final sections check:');
-  sectionsWithAggregate.forEach(s => {
-    s.items.forEach(item => {
-      const n = normalizeDesc(item.description);
-      if (n === 'ventilation total cost' || n === 'total cost for ventilation' || n === 'dcsm est total') {
-        console.log(`  [Final Check] Section: "${s.title}", Item: "${item.description}", Normalized: "${n}", Total: ${item.total}`);
-      }
-    });
-  });
-
-
 
   // ── Totals ─────────────────────────────────────────────────────────────────
-  // Use [Total Project Cost] bracket value as the subtotal (not sum of all items)
   const subtotal = projectCostValue;
   const taxAmount = subtotal * (clientInfo.tax_rate / 100);
   const total = subtotal + taxAmount - (clientInfo.discount || 0);
