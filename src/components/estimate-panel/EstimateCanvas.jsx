@@ -243,7 +243,7 @@ export default function EstimateCanvas({
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-foreground">
                 <span>Total Cost</span>
-                <span className="text-primary">${conventionalCostsTotal.toFixed(2)}</span>
+                <span>${conventionalCostsTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold mt-2">
                 <span className="text-muted-foreground">Cost per manway/day</span>
