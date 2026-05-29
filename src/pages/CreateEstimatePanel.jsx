@@ -751,15 +751,11 @@ export default function CreateEstimatePanel() {
     }),
   }));
 
-  // ── PASS 6 (Final): inject [Total Project Cost] and ensure DCSM/Vent totals persist ──
-  // projectCol14Total: sum of all _col14 values in the linked project's calculation_grid
-  const projectCol14Total = useMemo(() => {
-    if (!linkedProject) return 0;
-    const calcGrid = linkedProject.calculation_grid || {};
-    return Object.entries(calcGrid).reduce((sum, [key, value]) => key.includes('_col14') ? sum + (value || 0) : sum, 0);
-  }, [linkedProject]);
+  // ── PASS 6 (Final): inject [Total Project Cost] ───────────────────────────
+  // [Total Project Cost] = getSectionTotal("Total Cost for DCSM") + getSectionTotal("Total Cost for Ventilation")
+  const PROJECT_COST_BRACKET = 'total project cost';
 
-  // conventionalCostsTotal: sum of leaf item totals whose inventory category = "conventional costs"
+  // conventionalCostsTotal: still needed for the Summary section display
   let conventionalCostsTotal = 0;
   sectionsPass5.forEach(s => {
     s.items.forEach(item => {
@@ -772,12 +768,11 @@ export default function CreateEstimatePanel() {
     });
   });
 
-  // [Total Project Cost] = Col14 total − Conventional Costs (only when the bracket exists)
-  const PROJECT_COST_BRACKET = 'total project cost';
-  const hasTotalProjectCostBracket = sectionsPass5.some(s =>
-    s.items.some(i => isSubtotalHeader(i.description) && normalizeDesc(i.description) === PROJECT_COST_BRACKET)
-  );
-  const projectCostValue = hasTotalProjectCostBracket ? (projectCol14Total - conventionalCostsTotal) : 0;
+  const PROJECT_COST_SOURCES = ['total cost for dcsm', 'total cost for ventilation', 'total costs for dcsm', 'total costs for ventilation'];
+  const projectCostValue = sectionsPass5.reduce((sum, s) => {
+    if (!PROJECT_COST_SOURCES.includes(normalizeDesc(s.title))) return sum;
+    return sum + getSectionTotal(s.items);
+  }, 0);
 
   const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
