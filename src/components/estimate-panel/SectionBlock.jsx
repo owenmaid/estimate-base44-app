@@ -192,7 +192,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
   // For "Indirects Total" (and any section named this way), always sum leaf items only — ignoring bracket subtotals.
   // For all other sections with brackets, sum the bracket subtotals to avoid double-counting.
   // For sections with no brackets, sum leaf items directly.
-  const isIndirectsSection = normalizeDesc(section.title) === 'indirects total';
+  const isIndirectsSection = normalizeDesc(section.title) === 'indirects total' || normalizeDesc(section.title) === 'directs total';
   const leafTotal = itemsToRender
     .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
     .reduce((s, i) => s + (i.total || 0), 0);
