@@ -926,7 +926,26 @@ export default function CreateEstimatePanel() {
     return total;
   }, [linkedProject]);
 
-  // Inject "[Total Project Cost]" = Col 14 total from Calculation Engine
+  // ── Conventional Costs Total (computed early from sectionsPass5) ──────────
+  // Sum totals of all regular line items whose inventory category is "CONVENTIONAL COSTS"
+  const conventionalCostsTotal = useMemo(() => {
+    let sum = 0;
+    sectionsPass5.forEach(s => {
+      s.items.forEach(item => {
+        if (isSubtotalHeader(item.description) || isSpacer(item.description)) return;
+        const desc = (item.description || '').toLowerCase();
+        const match = inventory.find(i =>
+          (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc
+        );
+        if (match && (match.category || '').toLowerCase() === 'conventional costs') {
+          sum += item.total || 0;
+        }
+      });
+    });
+    return sum;
+  }, [sectionsPass5, inventory]);
+
+  // Inject "[Total Project Cost]" = Col 14 total minus Conventional Costs
   const PROJECT_COST_BRACKET = 'total project cost';
   const projectCostValue = useMemo(() => {
     let value = 0;
@@ -936,12 +955,12 @@ export default function CreateEstimatePanel() {
         if (!isSubtotalHeader(item.description)) return;
         if (normalizeDesc(item.description) !== PROJECT_COST_BRACKET) return;
         found = true;
-        value = projectCol14Total;
+        value = projectCol14Total - conventionalCostsTotal;
       });
     });
-    console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', found, 'value:', value);
+    console.log('[CreateEstimatePanel] Found [Total Project Cost] bracket:', found, 'value:', value, '(col14:', projectCol14Total, '- conventional:', conventionalCostsTotal, ')');
     return value;
-  }, [sectionsPass5, projectCol14Total]);
+  }, [sectionsPass5, projectCol14Total, conventionalCostsTotal]);
 
   // Compute Ventilation Total Cost once and apply it in final aggregation
   const ventTotalCostValue = ventilationSectionTotal;
@@ -981,24 +1000,7 @@ export default function CreateEstimatePanel() {
     });
   });
 
-  // ── Conventional Costs Total ───────────────────────────────────────────────
-  // Sum totals of all regular line items whose inventory category is "CONVENTIONAL COSTS"
-  const conventionalCostsTotal = useMemo(() => {
-    let sum = 0;
-    sectionsWithAggregate.forEach(s => {
-      s.items.forEach(item => {
-        if (isSubtotalHeader(item.description) || isSpacer(item.description)) return;
-        const desc = (item.description || '').toLowerCase();
-        const match = inventory.find(i =>
-          (i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc
-        );
-        if (match && (match.category || '').toLowerCase() === 'conventional costs') {
-          sum += item.total || 0;
-        }
-      });
-    });
-    return sum;
-  }, [sectionsWithAggregate, inventory]);
+
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   // Use [Total Project Cost] bracket value as the subtotal (not sum of all items)
