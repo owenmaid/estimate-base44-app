@@ -532,41 +532,10 @@ export default function CreateEstimatePanel() {
       return titleList.includes(title) ? sum + getSectionTotal(s.items) : sum;
     }, 0);
 
-  // Pre-pass: compute bracket totals for raw sections so section header totals are accurate
-  // This ensures getSectionTotal on source sections uses correct bracket sums
-  const sectionsPrePass = sections.map(s => ({
-    ...s,
-    items: (() => {
-      // First ensure all leaf items have totals
-      const withTotals = s.items.map(ensureItemTotal);
-      // Then inject bracket totals = sum of leaves below each bracket
-      return withTotals.map((item, idx) => {
-        if (!isSubtotalHeader(item.description)) return item;
-        if (item.total && item.total > 0) return item; // already has a value
-        let sum = 0;
-        for (let j = idx + 1; j < withTotals.length; j++) {
-          if (isSubtotalHeader(withTotals[j].description)) break;
-          if (isSpacer(withTotals[j].description)) continue;
-          sum += withTotals[j].total || 0;
-        }
-        return { ...item, total: sum };
-      });
-    })(),
-  }));
-
   // Pass 1: inject "Total Labour | Logistics Cost" = sum of Indirects + Directs + Support & Logistics
   const LABOUR_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
   const LABOUR_TARGET  = 'total labour | logistics cost';
-  const labourTotal = sumSectionsByTitle(sectionsPrePass, LABOUR_SOURCES);
-
-  const sectionsPass1 = sectionsPrePass.map(s => ({
-    ...s,
-    items: s.items.map(item =>
-      normalizeDesc(item.description) === LABOUR_TARGET
-        ? { ...item, total: labourTotal }
-        : item
-    ),
-  }));
+  // labourTotal is computed after ensureItemTotal is defined (see below)
 
   // Helper to ensure item totals and unit_price are calculated if missing (must be defined before use)
   const ensureItemTotal = (item) => {
@@ -587,6 +556,36 @@ export default function CreateEstimatePanel() {
     }
     return item;
   };
+
+  // Pre-pass: compute bracket totals for raw sections so LABOUR_SOURCES getSectionTotal is accurate
+  const sectionsPrePass = sections.map(s => ({
+    ...s,
+    items: (() => {
+      const withTotals = s.items.map(ensureItemTotal);
+      return withTotals.map((item, idx) => {
+        if (!isSubtotalHeader(item.description)) return item;
+        if (item.total && item.total > 0) return item;
+        let sum = 0;
+        for (let j = idx + 1; j < withTotals.length; j++) {
+          if (isSubtotalHeader(withTotals[j].description)) break;
+          if (isSpacer(withTotals[j].description)) continue;
+          sum += withTotals[j].total || 0;
+        }
+        return { ...item, total: sum };
+      });
+    })(),
+  }));
+
+  const labourTotal = sumSectionsByTitle(sectionsPrePass, LABOUR_SOURCES);
+
+  const sectionsPass1 = sectionsPrePass.map(s => ({
+    ...s,
+    items: s.items.map(item =>
+      normalizeDesc(item.description) === LABOUR_TARGET
+        ? { ...item, total: labourTotal }
+        : item
+    ),
+  }));
 
   // Pass 2: inject "DCSM Est Total" = sum of "Total Labour | Logistics Cost" + "Total Equipment | Consumables Cost" sections
   // First ensure all items in sectionsPass1 have totals calculated before summing
