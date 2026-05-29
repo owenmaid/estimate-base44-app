@@ -593,10 +593,17 @@ export default function CreateEstimatePanel() {
   }));
 
   // ── PASS 2: inject "DCSM Est Total" ────────────────────────────────────────
-  // = sum of "Total Labour | Logistics Cost" section + "Total Equipment | Consumables Cost" section
-  const DCSM_SOURCES = ['total labour | logistics cost', 'total equipment | consumables cost'];
+  // = sum of ALL leaf items (excluding bracketed subtotals) across:
+  //   Indirects Total + Directs Total + Support and Logistics + Total Equipment | Consumables Cost
+  const DCSM_LEAF_SOURCES = ['indirects total', 'directs total', 'support and logistics', 'total equipment | consumables cost'];
   const DCSM_TARGET  = 'dcsm est total';
-  const dcsmTotal = sumSectionsByTitle(sectionsPass1, DCSM_SOURCES);
+  const dcsmTotal = sectionsPass1.reduce((sum, s) => {
+    if (!DCSM_LEAF_SOURCES.includes(normalizeDesc(s.title))) return sum;
+    return sum + s.items.reduce((itemSum, item) => {
+      if (isSubtotalHeader(item.description) || isSpacer(item.description)) return itemSum;
+      return itemSum + (item.total || 0);
+    }, 0);
+  }, 0);
 
   const sectionsPass2 = sectionsPass1.map(s => ({
     ...s,
