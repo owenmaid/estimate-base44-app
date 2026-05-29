@@ -245,9 +245,13 @@ export default function EstimateCanvas({
                 <span>Total Cost</span>
                 <span className="text-primary">${conventionalCostsTotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
-                <span>Cost per manway/day</span>
-                <span>$0.00</span>
+              <div className="flex justify-between items-center text-xs font-bold mt-2">
+                <span className="text-muted-foreground">Cost per manway/day</span>
+                <span style={{ color: '#dc6e1e' }}>
+                  {(durationDays > 0 && manwayAvgDCSM > 0)
+                    ? `$${((conventionalCostsTotal / durationDays) / manwayAvgDCSM).toFixed(2)}`
+                    : '$0.00'}
+                </span>
               </div>
             </>
           )
