@@ -188,14 +188,18 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
 
   const subtotalMap = buildSubtotals(itemsToRender);
 
-  // Section total: if the section has bracket headers, sum the bracket subtotals (avoids double-counting raw children).
-  // Otherwise sum raw leaf items directly.
+  // Section total:
+  // For "Indirects Total" (and any section named this way), always sum leaf items only — ignoring bracket subtotals.
+  // For all other sections with brackets, sum the bracket subtotals to avoid double-counting.
+  // For sections with no brackets, sum leaf items directly.
+  const isIndirectsSection = normalizeDesc(section.title) === 'indirects total';
+  const leafTotal = itemsToRender
+    .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
+    .reduce((s, i) => s + (i.total || 0), 0);
   const bracketItems = itemsToRender.filter(i => isSubtotalHeader(i.description));
-  const sectionTotal = bracketItems.length > 0
-    ? bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0)
-    : itemsToRender
-        .filter(i => !isSubtotalHeader(i.description) && !isSpacer(i.description))
-        .reduce((s, i) => s + (i.total || 0), 0);
+  const sectionTotal = isIndirectsSection || bracketItems.length === 0
+    ? leafTotal
+    : bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
