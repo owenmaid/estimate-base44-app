@@ -182,15 +182,27 @@ export default function CreateEstimatePanel() {
         if (!isSwitch && (item.unit_price || 0) !== 0) return item;
 
         const col14 = lookupCol14(item.description, col14Map, inventory);
-        if (col14 == null || col14 <= 0) {
-          // If switching, zero items that have no col14 match in the new project
-          return isSwitch ? { ...item, unit_price: 0, total: 0 } : item;
-        }
-
         const markup = item.markup || 0;
         const qty = item.quantity || 1;
-        const markedUp = col14 * (1 + markup / 100);
-        return { ...item, unit_price: col14, total: markedUp * qty };
+
+        if (col14 != null && col14 > 0) {
+          const markedUp = col14 * (1 + markup / 100);
+          return { ...item, unit_price: col14, total: markedUp * qty };
+        }
+
+        // No Col14 match — try inventory unit_cost as fallback (e.g. Conventional Costs)
+        const invItem = inventory.find(i =>
+          (i.name || '').toLowerCase() === (item.description || '').toLowerCase() ||
+          (i.sku || '').toLowerCase() === (item.description || '').toLowerCase()
+        );
+        if (invItem && (invItem.unit_cost || 0) > 0) {
+          const unitCost = invItem.unit_cost;
+          const markedUp = unitCost * (1 + markup / 100);
+          return { ...item, unit_price: unitCost, total: markedUp * qty };
+        }
+
+        // Truly no match — zero on switch, leave unchanged on first link
+        return isSwitch ? { ...item, unit_price: 0, total: 0 } : item;
       }),
     })));
   }, [linkedProject, inventory]);
