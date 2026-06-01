@@ -353,12 +353,11 @@ export default function ProjectCostDashboard() {
     return Object.values(monthBuckets).filter(b => b.total > 0);
   };
 
-  // Build equipment-only monthly/daily area data for a single project
+  // Build equipment-only monthly/daily area data split by ventilation vs non-ventilation
   const buildEquipmentAreaDataForProject = (project, granularity) => {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const equipmentRows = project.equipment_rows || [];
     const equipmentGrid = project.equipment_grid || {};
-    const typeGrid = project.type_grid || {};
 
     const dateTotals = {};
 
@@ -366,23 +365,25 @@ export default function ProjectCostDashboard() {
       const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
       if (inv?.item_group !== 'Equipment Group') return;
       const regRate = inv?.reg ?? null;
+      const isVent = (inv?.category || '').toLowerCase().includes('vent');
 
       Object.entries(equipmentGrid).forEach(([key, value]) => {
         if (!key.startsWith(`${row.id}_`)) return;
         const dateStr = key.slice(`${row.id}_`.length);
         const num = parseInt(value, 10);
         if (isNaN(num) || num <= 0) return;
-        const reg = regRate != null ? num * regRate : 0;
-        if (!dateTotals[dateStr]) dateTotals[dateStr] = { reg: 0 };
-        dateTotals[dateStr].reg += reg;
+        const cost = regRate != null ? num * regRate : 0;
+        if (!dateTotals[dateStr]) dateTotals[dateStr] = { vent: 0, nonVent: 0 };
+        if (isVent) dateTotals[dateStr].vent += cost;
+        else dateTotals[dateStr].nonVent += cost;
       });
     });
 
     if (granularity === 'day') {
       return Object.entries(dateTotals)
-        .filter(([, c]) => c.reg > 0)
+        .filter(([, c]) => c.vent + c.nonVent > 0)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([dateStr, c]) => ({ label: dateStr, reg: c.reg }));
+        .map(([dateStr, c]) => ({ label: dateStr, vent: c.vent, nonVent: c.nonVent }));
     }
 
     const monthBuckets = {};
@@ -393,12 +394,13 @@ export default function ProjectCostDashboard() {
       const month = parseInt(parts[1], 10);
       if (isNaN(year) || isNaN(month)) return;
       const key = `${year}-${String(month).padStart(2, '0')}`;
-      if (!monthBuckets[key]) monthBuckets[key] = { label: `${MONTHS[month - 1]} ${year}`, sortKey: key, reg: 0 };
-      monthBuckets[key].reg += costs.reg;
+      if (!monthBuckets[key]) monthBuckets[key] = { label: `${MONTHS[month - 1]} ${year}`, sortKey: key, vent: 0, nonVent: 0 };
+      monthBuckets[key].vent += costs.vent;
+      monthBuckets[key].nonVent += costs.nonVent;
     });
 
     return Object.values(monthBuckets)
-      .filter(b => b.reg > 0)
+      .filter(b => b.vent + b.nonVent > 0)
       .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   };
 
@@ -622,9 +624,13 @@ export default function ProjectCostDashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart key={`equip-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                 <defs>
-                  <linearGradient id="areaEquip" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="areaVent" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#f97316" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="areaNonVent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -643,10 +649,14 @@ export default function ProjectCostDashboard() {
                 />
                 <Tooltip
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
-                  formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 'Equipment']}
+                  formatter={(v, name) => [
+                    `$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                    name === 'vent' ? 'Ventilation' : 'Non-Ventilation'
+                  ]}
                 />
-                <Legend formatter={() => 'Equipment'} wrapperStyle={{ fontSize: 9 }} />
-                <Area type="monotone" dataKey="reg" stroke="#f97316" strokeWidth={2} fill="url(#areaEquip)" />
+                <Legend formatter={v => v === 'vent' ? 'Ventilation' : 'Non-Ventilation'} wrapperStyle={{ fontSize: 9 }} />
+                <Area type="monotone" dataKey="vent" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaVent)" />
+                <Area type="monotone" dataKey="nonVent" stackId="1" stroke="#a855f7" strokeWidth={2} fill="url(#areaNonVent)" />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
