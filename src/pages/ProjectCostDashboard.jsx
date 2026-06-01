@@ -23,6 +23,7 @@ export default function ProjectCostDashboard() {
   const [search, setSearch] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [chartGranularity, setChartGranularity] = useState('month'); // 'month' | 'day'
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -234,6 +235,72 @@ export default function ProjectCostDashboard() {
       .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   };
 
+  // Build daily area data for a single project (exact per-date costs, one point per day)
+  const buildDailyAreaDataForProject = (project) => {
+    const equipmentRows = project.equipment_rows || [];
+    const equipmentGrid = project.equipment_grid || {};
+    const typeGrid = project.type_grid || {};
+
+    const dateTotals = {};
+
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+      const regRate = inv?.reg ?? null;
+      const otRate = inv?.ot ?? null;
+      const isManpower = inv?.item_group === 'Manpower Group';
+
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+
+        const type = typeGrid[dateStr];
+        let regUnits = 0, otUnits = 0, specUnits = 0;
+
+        if (type === 'N') {
+          regUnits = isManpower ? num * 8 : num;
+          otUnits = isManpower ? num * Math.max(shiftHrs - 8, 0) : 0;
+        } else if (type === 'Sa') {
+          regUnits = isManpower ? num * 4 : num;
+          otUnits = isManpower ? num * Math.max(shiftHrs - 4, 0) : 0;
+        } else if (type === 'Su') {
+          otUnits = isManpower ? num * shiftHrs : 0;
+          regUnits = isManpower ? 0 : num;
+        } else if (type === 'St') {
+          specUnits = isManpower ? num * shiftHrs : 0;
+          regUnits = isManpower ? 0 : num;
+        } else {
+          regUnits = isManpower ? num * shiftHrs : num;
+        }
+
+        const reg = regRate != null ? regUnits * regRate : 0;
+        const ot = otRate != null ? otUnits * otRate : 0;
+        const spec = otRate != null && specUnits > 0
+          ? (specUnits * 2 * (4 / (shiftHrs * 2)) * otRate) + (specUnits * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+          : 0;
+
+        if (!dateTotals[dateStr]) dateTotals[dateStr] = { reg: 0, ot: 0, spec: 0 };
+        dateTotals[dateStr].reg += reg;
+        dateTotals[dateStr].ot += ot;
+        dateTotals[dateStr].spec += spec;
+      });
+    });
+
+    return Object.entries(dateTotals)
+      .filter(([, c]) => c.reg + c.ot + c.spec > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dateStr, c]) => ({
+        label: dateStr, // YYYY-MM-DD — shown on X axis
+        reg: c.reg,
+        ot: c.ot,
+        spec: c.spec,
+        total: c.reg + c.ot + c.spec,
+      }));
+  };
+
   // Build monthly area data (even-spread) for a list of projects — used for all-projects view
   const buildMonthlyAreaDataAllProjects = (projectList) => {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -286,13 +353,16 @@ export default function ProjectCostDashboard() {
     return Object.values(monthBuckets).filter(b => b.total > 0);
   };
 
-  // Monthly area chart data — exact per-date for selected project, even-spread for all
+  // Area chart data — respects granularity toggle; day view only available for selected project
   const monthlyAreaData = useMemo(() => {
+    if (selectedProject && chartGranularity === 'day') {
+      return buildDailyAreaDataForProject(selectedProject);
+    }
     if (selectedProject) {
       return buildMonthlyAreaDataForProject(selectedProject);
     }
     return buildMonthlyAreaDataAllProjects(allProjectsSummary);
-  }, [allProjectsSummary, selectedProject, inventoryValueMap]);
+  }, [allProjectsSummary, selectedProject, inventoryValueMap, chartGranularity]);
 
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
@@ -440,16 +510,40 @@ export default function ProjectCostDashboard() {
         </CardContent>
       </Card>
 
-      {/* Monthly Cost Area Chart */}
+      {/* Monthly / Daily Cost Area Chart */}
       {monthlyAreaData.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Total Project Cost Over Time (by Month)</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {selectedProject
-                ? `Exact daily costs grouped by month for: ${selectedProject.name}`
-                : "Each project's cost is distributed evenly across its scheduled months and summed per month across all projects."}
-            </p>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <CardTitle className="text-base">
+                  Total Project Cost Over Time ({chartGranularity === 'day' ? 'by Day' : 'by Month'})
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {selectedProject
+                    ? chartGranularity === 'day'
+                      ? `Exact cost per working day for: ${selectedProject.name}`
+                      : `Exact daily costs grouped by month for: ${selectedProject.name}`
+                    : "Each project's cost is distributed evenly across its scheduled months and summed per month across all projects."}
+                </p>
+              </div>
+              {selectedProject && (
+                <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
+                  <button
+                    onClick={() => setChartGranularity('month')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Month
+                  </button>
+                  <button
+                    onClick={() => setChartGranularity('day')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'day' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Day
+                  </button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -474,7 +568,7 @@ export default function ProjectCostDashboard() {
                   tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={false}
                   tickLine={false}
-                  interval="preserveStartEnd"
+                  interval={chartGranularity === 'day' ? Math.max(0, Math.floor(monthlyAreaData.length / 12)) : 'preserveStartEnd'}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
