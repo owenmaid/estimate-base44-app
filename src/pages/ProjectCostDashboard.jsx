@@ -355,14 +355,12 @@ export default function ProjectCostDashboard() {
 
   // Area chart data — respects granularity toggle; day view only available for selected project
   const monthlyAreaData = useMemo(() => {
-    if (selectedProject && chartGranularity === 'day') {
+    if (!selectedProject) return [];
+    if (chartGranularity === 'day') {
       return buildDailyAreaDataForProject(selectedProject);
     }
-    if (selectedProject) {
-      return buildMonthlyAreaDataForProject(selectedProject);
-    }
-    return buildMonthlyAreaDataAllProjects(allProjectsSummary);
-  }, [allProjectsSummary, selectedProject, inventoryValueMap, chartGranularity]);
+    return buildMonthlyAreaDataForProject(selectedProject);
+  }, [selectedProject?.id, inventoryValueMap, chartGranularity]);
 
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
@@ -547,7 +545,7 @@ export default function ProjectCostDashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+              <AreaChart key={`${selectedProject?.id}-${chartGranularity}`} data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                 <defs>
                   <linearGradient id="areaReg" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
