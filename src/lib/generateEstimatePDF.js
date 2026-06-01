@@ -164,83 +164,97 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
   // ── Customer details block ─────────────────────────────────────────────────
   const now = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateStr = `${String(now.getDate()).padStart(2,'0')}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
+  const dateStr = `${months[now.getMonth()]}-${String(now.getDate()).padStart(2,'0')},-${String(now.getFullYear()).slice(-2)}`;
 
-  const labelX  = margin;
-  const valueX  = margin + 105;
-  const dateLabelX = pageW - margin - 80;
-  const dateValueX = pageW - margin;
-  const rowGap = 13;
+  // Format dates to match app display (e.g. 2026-05-01 → 2026-05-01)
+  const fmtDate = (d) => d || '—';
+
+  // Layout: labels are RIGHT-aligned at labelRightX, values start at valueX (matching app)
+  // Right column: date labels right-aligned at dateRightX, values start after
+  const labelRightX = margin + 110;  // labels flush right here
+  const valueX      = margin + 118;  // values start here (orange)
+  const rightColX   = pageW - margin - 150; // right-side label area start
+  const rightValX   = pageW - margin;       // right-side values (right-aligned)
+  const rowGap = 14;
 
   doc.setFontSize(8.5);
 
-  const fields = [
+  const mainFields = [
     { label: 'Customer',               value: clientInfo.client_name    || '' },
     { label: 'Site / Location / Plant', value: clientInfo.client_address || '' },
     { label: 'Attention',              value: clientInfo.client_email   || '' },
     { label: 'Project Name',           value: clientInfo.project_name   || '' },
     { label: 'Project',                value: clientInfo.project_number || '' },
-    { label: 'Phone',                  value: clientInfo.client_phone   || '' },
   ];
 
-  // Format dates for right side
-  const fmtDate = (d) => {
-    if (!d) return '—';
-    const parts = d.split('-');
-    if (parts.length !== 3) return d;
-    return `${parts[2]}-${months[parseInt(parts[1], 10) - 1]}-${parts[0].slice(-2)}`;
-  };
+  const rightFields = [
+    { label: 'Date',       value: dateStr },
+    { label: 'Start Date', value: fmtDate(clientInfo.start_date) },
+    { label: 'End Date',   value: fmtDate(clientInfo.end_date) },
+  ];
 
-  fields.forEach((field, idx) => {
-    doc.setFont('helvetica', 'bold');
-    setColor(dark);
-    doc.text(field.label, labelX, y);
+  const totalRows = Math.max(mainFields.length, rightFields.length);
+  for (let idx = 0; idx < totalRows; idx++) {
+    const rowY = y + idx * rowGap;
 
+    // Left column: label right-aligned, value left-aligned in orange
+    if (idx < mainFields.length) {
+      const field = mainFields[idx];
+      doc.setFont('helvetica', 'bold');
+      setColor(dark);
+      doc.text(field.label, labelRightX, rowY, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      setColor(orange);
+      doc.text(field.value, valueX, rowY);
+    }
+
+    // Right column: label right-aligned, value right-aligned in orange
+    if (idx < rightFields.length) {
+      const rf = rightFields[idx];
+      doc.setFont('helvetica', 'bold');
+      setColor(dark);
+      doc.text(rf.label, rightColX, rowY, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      setColor(orange);
+      doc.text(rf.value, rightValX, rowY, { align: 'right' });
+    }
+  }
+
+  y += totalRows * rowGap + 6;
+
+  // Phone + Notes in a 2-column row (matching app layout)
+  if (clientInfo.client_phone || (clientInfo.notes && clientInfo.notes.trim())) {
+    const halfW = contentW / 2 - 8;
+    const notesX = margin + contentW / 2 + 4;
+
+    // Light background row
+    setFill([249, 250, 251]);
+    doc.rect(margin, y - 4, contentW, 36, 'F');
+    doc.setDrawColor(220, 215, 210);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, y - 4, contentW, 36, 'S');
+
+    // Phone label + value
     doc.setFont('helvetica', 'normal');
-    setColor(orange);
-    doc.text(field.value, valueX, y);
-
-    // Right-side: Date, Start Date, End Date on first three rows
-    if (idx === 0) {
-      doc.setFont('helvetica', 'bold');
-      setColor(dark);
-      doc.text('Date', dateLabelX, y);
-      doc.setFont('helvetica', 'normal');
-      setColor(orange);
-      doc.text(dateStr, dateValueX, y, { align: 'right' });
-    }
-    if (idx === 1) {
-      doc.setFont('helvetica', 'bold');
-      setColor(dark);
-      doc.text('Start Date', dateLabelX, y);
-      doc.setFont('helvetica', 'normal');
-      setColor(orange);
-      doc.text(fmtDate(clientInfo.start_date), dateValueX, y, { align: 'right' });
-    }
-    if (idx === 2) {
-      doc.setFont('helvetica', 'bold');
-      setColor(dark);
-      doc.text('End Date', dateLabelX, y);
-      doc.setFont('helvetica', 'normal');
-      setColor(orange);
-      doc.text(fmtDate(clientInfo.end_date), dateValueX, y, { align: 'right' });
-    }
-
-    y += rowGap;
-  });
-
-  y += 8;
-
-  if (clientInfo.notes && clientInfo.notes.trim()) {
-    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    setColor(muted);
+    doc.text('Phone', margin + 6, y + 4);
     doc.setFontSize(8.5);
     setColor(dark);
-    doc.text('Notes:', labelX, y);
-    doc.setFont('helvetica', 'normal');
-    setColor(orange);
-    const noteLines = doc.splitTextToSize(clientInfo.notes, contentW - 105);
-    doc.text(noteLines, valueX, y + 4);
-    y += noteLines.length * 13 + 4;
+    doc.text(clientInfo.client_phone || '', margin + 6, y + 18);
+
+    // Notes label + value
+    setColor(muted);
+    doc.setFontSize(7.5);
+    doc.text('Notes', notesX, y + 4);
+    doc.setFontSize(8.5);
+    setColor(dark);
+    if (clientInfo.notes && clientInfo.notes.trim()) {
+      const noteLines = doc.splitTextToSize(clientInfo.notes, halfW);
+      doc.text(noteLines[0] || '', notesX, y + 18);
+    }
+
+    y += 44;
   }
 
   // Separator
