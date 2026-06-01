@@ -200,20 +200,33 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeCatShape(i)} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 9, color: '#000000' }}
-                    formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
-                  />
-                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex items-center gap-3">
+                {/* Left-side legend */}
+                <div className="flex flex-col gap-1.5 min-w-0 flex-shrink-0 w-28">
+                  {pieData.map((entry, i) => (
+                    <div key={i} className="flex items-center gap-1.5 min-w-0">
+                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span className="text-[9px] text-muted-foreground truncate">{entry.name}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Doughnut chart */}
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
+                        {pieData.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeCatShape(i)} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 9, color: '#000000' }}
+                        formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </CardContent>
           </Card>
           <Card>
