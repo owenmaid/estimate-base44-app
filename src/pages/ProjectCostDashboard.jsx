@@ -354,33 +354,6 @@ export default function ProjectCostDashboard() {
         </CardContent>
       </Card>
 
-      {/* Bar Chart — Top Projects by Cost */}
-      {barData.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Top Projects by Total Cost</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                  labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ''}
-                  formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total']}
-                />
-                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} />
-                <Bar dataKey="reg" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="ot" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="spec" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Monthly Cost Area Chart */}
       {monthlyAreaData.length > 0 && (
         <Card>
@@ -433,6 +406,33 @@ export default function ProjectCostDashboard() {
                 <Area type="monotone" dataKey="ot" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
                 <Area type="monotone" dataKey="spec" stackId="1" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
               </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bar Chart — Top Projects by Cost */}
+      {barData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Top Projects by Total Cost</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ''}
+                  formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total']}
+                />
+                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} />
+                <Bar dataKey="reg" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="ot" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="spec" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
