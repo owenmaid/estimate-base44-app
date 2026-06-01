@@ -152,13 +152,18 @@ export default function ProjectDetailsSetup() {
     setEquipmentGrid(parsedGrid);
     setEquipmentRows(project.equipment_rows || []);
 
-    const start = parseISO(project.start_date);
-    const end = parseISO(project.end_date);
-    const allDates = eachDayOfInterval({ start, end });
-    setDates(allDates);
-    const mergedTypeGrid = buildTypeGridFromDates(allDates, project.type_grid || {}, statHolidays);
-    setTypeGrid(mergedTypeGrid);
-    setViewMonth(start);
+    if (project.start_date && project.end_date) {
+      const start = parseISO(project.start_date);
+      const end = parseISO(project.end_date);
+      const allDates = eachDayOfInterval({ start, end });
+      setDates(allDates);
+      const mergedTypeGrid = buildTypeGridFromDates(allDates, project.type_grid || {}, statHolidays);
+      setTypeGrid(mergedTypeGrid);
+      setViewMonth(start);
+    } else {
+      setDates([]);
+      setTypeGrid({});
+    }
     setDateOffset(0);
     setSelectedProjectId(projectId);
     localStorage.setItem('activeProjectId', projectId);
