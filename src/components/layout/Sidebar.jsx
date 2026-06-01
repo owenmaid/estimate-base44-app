@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
@@ -20,6 +20,7 @@ const bottomSections = [
   ],
   [
     { label: 'Projects', path: '/projects', icon: FolderKanban },
+    { label: 'Cost Dashboard', path: '/project-cost-dashboard', icon: PieChart },
     { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
     { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
   ],

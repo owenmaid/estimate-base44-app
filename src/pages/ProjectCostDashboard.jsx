@@ -1,0 +1,398 @@
+import React, { useState, useMemo } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
+import ProjectCostBreakdown from '@/components/projects/ProjectCostBreakdown';
+
+const STATUS_STYLES = {
+  active:    'bg-green-500/15 text-green-400 border-green-500/30',
+  planning:  'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  on_hold:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+  completed: 'bg-muted text-muted-foreground border-border',
+};
+const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
+
+export default function ProjectCostDashboard() {
+  const [search, setSearch] = useState('');
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date'),
+  });
+
+  const { data: inventory = [] } = useQuery({
+    queryKey: ['inventory-equipment'],
+    queryFn: () => base44.entities.InventoryItem.list(),
+  });
+
+  // Build inventory lookup map
+  const inventoryValueMap = useMemo(() => {
+    const byId = {};
+    const byName = {};
+    inventory.forEach(item => {
+      const regVal = item.reg_value === '' || item.reg_value === undefined ? null : Number(item.reg_value);
+      const otVal = item.ot_value === '' || item.ot_value === undefined ? null : Number(item.ot_value);
+      const entry = {
+        reg: isNaN(regVal) ? null : regVal,
+        ot: isNaN(otVal) ? null : otVal,
+        item_group: item.item_group,
+        category: item.category,
+        name: item.name,
+      };
+      if (item.id) byId[item.id] = entry;
+      if (item.name) byName[item.name.toLowerCase()] = entry;
+      if (item.sku) byName[item.sku.toLowerCase()] = entry;
+    });
+    return { byId, byName };
+  }, [inventory]);
+
+  // Compute costs for any project
+  const computeProjectCosts = (project) => {
+    const equipmentRows = project.equipment_rows || [];
+    const equipmentGrid = project.equipment_grid || {};
+    const typeGrid = project.type_grid || {};
+
+    const rowCosts = equipmentRows.map(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+      const regRate = inv?.reg ?? null;
+      const otRate = inv?.ot ?? null;
+      const isManpower = inv?.item_group === 'Manpower Group';
+
+      let col1 = 0, col4 = 0, col5 = 0, col6 = 0, col7 = 0, col8 = 0;
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        col1 += num;
+        const type = typeGrid[dateStr];
+        if (type === 'N') { col4 += num * 8; col5 += num * Math.max(shiftHrs - 8, 0); }
+        else if (type === 'Sa') { col4 += num * 4; col6 += num * Math.max(shiftHrs - 4, 0); }
+        else if (type === 'Su') col7 += num * shiftHrs;
+        else if (type === 'St') col8 += num * shiftHrs;
+      });
+
+      const effCol5 = isManpower ? col5 : 0;
+      const effCol6 = isManpower ? col6 : 0;
+      const effCol7 = isManpower ? col7 : 0;
+      const effCol8 = isManpower ? col8 : 0;
+      const regCost = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
+      const otCost = otRate != null ? ((effCol5 + effCol6 + effCol7) * otRate) : 0;
+      const specialCost = otRate != null
+        ? (effCol8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (effCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+        : 0;
+
+      return {
+        rowId: row.id,
+        label: row.label,
+        item_group: inv?.item_group || 'Unknown',
+        category: inv?.category || 'Uncategorized',
+        regCost,
+        otCost,
+        specialCost,
+        total: regCost + otCost + specialCost,
+      };
+    });
+
+    const totalReg = rowCosts.reduce((s, r) => s + r.regCost, 0);
+    const totalOT = rowCosts.reduce((s, r) => s + r.otCost, 0);
+    const totalSpec = rowCosts.reduce((s, r) => s + r.specialCost, 0);
+    const grandTotal = totalReg + totalOT + totalSpec;
+
+    return { rowCosts, totalReg, totalOT, totalSpec, grandTotal };
+  };
+
+  // All-projects summary for the overview cards
+  const allProjectsSummary = useMemo(() => {
+    return projects.map(p => {
+      const costs = computeProjectCosts(p);
+      return { ...p, costs };
+    });
+  }, [projects, inventoryValueMap]);
+
+  const totalGrandRevenue = allProjectsSummary.reduce((s, p) => s + p.costs.grandTotal, 0);
+
+  // Filtered projects for search dropdown
+  const filteredProjects = useMemo(() => {
+    if (!search) return projects;
+    const q = search.toLowerCase();
+    return projects.filter(p =>
+      p.name?.toLowerCase().includes(q) ||
+      p.project_number?.toLowerCase().includes(q) ||
+      p.client?.toLowerCase().includes(q)
+    );
+  }, [projects, search]);
+
+  // Bar chart data — top projects by cost
+  const barData = useMemo(() => {
+    return allProjectsSummary
+      .filter(p => p.costs.grandTotal > 0)
+      .sort((a, b) => b.costs.grandTotal - a.costs.grandTotal)
+      .slice(0, 8)
+      .map(p => ({
+        name: p.project_number ? `${p.project_number}` : (p.name?.slice(0, 12) || 'N/A'),
+        fullName: p.name,
+        total: p.costs.grandTotal,
+        reg: p.costs.totalReg,
+        ot: p.costs.totalOT,
+        spec: p.costs.totalSpec,
+      }));
+  }, [allProjectsSummary]);
+
+  const fmt = (n) => `$${n.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
+
+  return (
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Project Cost Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-1">Interactive cost breakdown across all projects</p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/projects"><FolderKanban className="h-4 w-4 mr-1.5" /> All Projects</Link>
+        </Button>
+      </div>
+
+      {/* Overview KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Projects</span>
+              <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                <FolderKanban className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold">{projects.length}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {projects.filter(p => p.status === 'active').length} active
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Cost Value</span>
+              <div className="h-8 w-8 rounded-lg bg-green-500/15 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-green-400" />
+              </div>
+            </div>
+            <div className="text-2xl font-bold">{fmt(totalGrandRevenue)}</div>
+            <div className="text-xs text-muted-foreground mt-1">across all projects</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Manpower Cost</span>
+              <div className="h-8 w-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                <Users className="h-4 w-4 text-blue-400" />
+              </div>
+            </div>
+            <div className="text-2xl font-bold">
+              {fmt(allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Manpower Group').reduce((a, r) => a + r.total, 0), 0))}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">manpower group</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Equipment Cost</span>
+              <div className="h-8 w-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+                <Wrench className="h-4 w-4 text-orange-400" />
+              </div>
+            </div>
+            <div className="text-2xl font-bold">
+              {fmt(allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Equipment Group').reduce((a, r) => a + r.total, 0), 0))}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">equipment group</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Project Selector */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Search className="h-4 w-4 text-primary" />
+            Select a Project to View Cost Breakdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative max-w-xl">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9 pr-10"
+              placeholder="Search by project name, number, or client..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
+              onFocus={() => setShowDropdown(true)}
+            />
+            {search && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => { setSearch(''); setShowDropdown(false); }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            {showDropdown && (search || true) && filteredProjects.length > 0 && (
+              <div className="absolute top-full mt-1 w-full bg-card border border-border rounded-lg shadow-xl z-20 max-h-72 overflow-y-auto">
+                {filteredProjects.map(p => {
+                  const costs = computeProjectCosts(p);
+                  return (
+                    <button
+                      key={p.id}
+                      className="w-full text-left px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border last:border-b-0 flex items-center justify-between gap-3"
+                      onClick={() => {
+                        setSelectedProject(p);
+                        setSearch(p.name || '');
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm truncate">{p.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {p.project_number && <span className="mr-2">#{p.project_number}</span>}
+                          {p.client && <span>{p.client}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
+                        {costs.grandTotal > 0 && (
+                          <span className="text-xs font-semibold text-primary">{fmt(costs.grandTotal)}</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {selectedProject && selectedCosts && (
+            <div className="mt-6 border-t border-border pt-6">
+              <ProjectCostBreakdown
+                project={selectedProject}
+                costs={selectedCosts}
+                fmt={fmt}
+                onClose={() => { setSelectedProject(null); setSearch(''); }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Bar Chart — Top Projects by Cost */}
+      {barData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Top Projects by Total Cost</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ''}
+                  formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total']}
+                />
+                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} />
+                <Bar dataKey="reg" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="ot" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="spec" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* All Projects Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">All Projects — Cost Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-secondary/60 border-b border-border">
+                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Project</th>
+                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Number</th>
+                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Client</th>
+                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Reg Cost</th>
+                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">OT Cost</th>
+                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Special</th>
+                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Total</th>
+                  <th className="px-4 py-3 text-center font-semibold text-muted-foreground"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingProjects ? (
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground text-sm">Loading projects...</td></tr>
+                ) : allProjectsSummary.length === 0 ? (
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground text-sm">No projects found</td></tr>
+                ) : (
+                  allProjectsSummary.map(p => (
+                    <tr
+                      key={p.id}
+                      className={`border-b border-border hover:bg-secondary/20 transition-colors cursor-pointer ${selectedProject?.id === p.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                      onClick={() => { setSelectedProject(p); setSearch(p.name || ''); setShowDropdown(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      <td className="px-4 py-3 font-medium">{p.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{p.project_number || '—'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{p.client || '—'}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalReg > 0 ? fmt(p.costs.totalReg) : '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalOT > 0 ? fmt(p.costs.totalOT) : '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalSpec > 0 ? fmt(p.costs.totalSpec) : '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-primary">{p.costs.grandTotal > 0 ? fmt(p.costs.grandTotal) : '—'}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild onClick={e => e.stopPropagation()}>
+                          <Link to={`/project-planning/${p.id}`}><ExternalLink className="h-3.5 w-3.5" /></Link>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              {allProjectsSummary.length > 0 && (
+                <tfoot>
+                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
+                    <td colSpan={4} className="px-4 py-3 text-muted-foreground">Totals</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalReg, 0))}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalOT, 0))}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalSpec, 0))}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs text-primary">{fmt(totalGrandRevenue)}</td>
+                    <td />
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
