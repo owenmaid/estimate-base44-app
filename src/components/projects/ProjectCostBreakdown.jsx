@@ -232,20 +232,33 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Group</div>
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={65} outerRadius={104} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
-                    {groupPieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeGrpShape(i)} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 11, color: '#000000' }}
-                    formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
-                  />
-                  <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex items-center gap-3">
+                {/* Left-side legend */}
+                <div className="flex flex-col gap-2 flex-shrink-0" style={{ width: 'max-content', maxWidth: '45%' }}>
+                  {groupPieData.map((entry, i) => (
+                    <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span className="text-[10px] text-muted-foreground">{entry.name}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Doughnut chart */}
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={65} outerRadius={104} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
+                        {groupPieData.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeGrpShape(i)} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 11, color: '#000000' }}
+                        formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
