@@ -15,10 +15,10 @@ const STATUS_STYLES = {
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
 // Glass base colors: vivid but semi-transparent
-const PIE_COLORS = ['hsla(25,90%,58%,0.45)', 'hsla(217,91%,60%,0.45)', 'hsla(38,92%,50%,0.45)', 'hsla(158,64%,52%,0.45)', 'hsla(262,83%,58%,0.45)', 'hsla(0,72%,51%,0.45)'];
+const PIE_COLORS = ['hsl(25,90%,58%)', 'hsl(217,91%,60%)', 'hsl(38,92%,50%)', 'hsl(158,64%,52%)', 'hsl(262,83%,58%)', 'hsl(0,72%,51%)'];
 const PIE_GLOWS  = ['rgba(234,115,27,0.5)',   'rgba(59,130,246,0.5)',   'rgba(245,158,11,0.5)',  'rgba(16,185,129,0.5)',  'rgba(139,92,246,0.5)',  'rgba(239,68,68,0.5)'];
 // Solid versions for the rim / edge strokes
-const PIE_SOLID  = ['hsla(25,90%,70%,0.7)',   'hsla(217,91%,72%,0.7)', 'hsla(38,92%,65%,0.7)', 'hsla(158,64%,65%,0.7)', 'hsla(262,83%,72%,0.7)', 'hsla(0,72%,65%,0.7)'];
+const PIE_SOLID  = ['hsl(25,90%,70%)',   'hsl(217,91%,72%)', 'hsl(38,92%,65%)', 'hsl(158,64%,65%)', 'hsl(262,83%,72%)', 'hsl(0,72%,65%)'];
 
 const toRad = (deg) => (deg * Math.PI) / 180;
 
