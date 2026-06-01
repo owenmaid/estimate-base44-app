@@ -369,8 +369,8 @@ export default function ProjectCostDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Project Cost Dashboard</h1>
-          <p className="text-muted-foreground text-xs mt-1">Interactive cost breakdown across all projects</p>
+          <h1 className="text-lg font-bold tracking-tight">Project Cost Dashboard</h1>
+          <p className="text-muted-foreground text-[9px] mt-1">Interactive cost breakdown across all projects</p>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/projects"><FolderKanban className="h-4 w-4 mr-1.5" /> All Projects</Link>
