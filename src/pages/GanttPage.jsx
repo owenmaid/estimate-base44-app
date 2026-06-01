@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, FolderKanban } from 'lucide-react';
+import { FolderKanban } from 'lucide-react';
 import { addDays, format, startOfWeek, differenceInDays, parseISO, isValid, isSameDay } from 'date-fns';
 
 const STATUS_COLORS = {
@@ -25,6 +25,9 @@ const STATUS_STYLES = {
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
 const TOTAL_WEEKS = 16;
+// Total scrollable range: 52 weeks back to 52 weeks forward = 104 weeks
+const SCROLL_RANGE_WEEKS = 104;
+const SCROLL_ORIGIN_WEEKS = 52; // how many weeks before "today" the scroll starts
 
 export default function GanttPage() {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -98,16 +101,28 @@ export default function GanttPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setWeekOffset(0)}>Today</Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset(o => o - TOTAL_WEEKS)}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <span className="text-sm text-muted-foreground min-w-max">
             {format(weeks[0], 'MMM d')} – {format(addDays(weeks[TOTAL_WEEKS - 1], 6), 'MMM d, yyyy')}
           </span>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset(o => o + TOTAL_WEEKS)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
+      </div>
+
+      {/* Horizontal scroll bar for date navigation */}
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), -SCROLL_ORIGIN_WEEKS * 7), 'MMM yyyy')}
+        </span>
+        <input
+          type="range"
+          min={-SCROLL_ORIGIN_WEEKS}
+          max={SCROLL_RANGE_WEEKS - SCROLL_ORIGIN_WEEKS - TOTAL_WEEKS}
+          value={weekOffset}
+          onChange={e => setWeekOffset(Number(e.target.value))}
+          className="flex-1 accent-primary cursor-pointer h-1.5"
+        />
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), (SCROLL_RANGE_WEEKS - SCROLL_ORIGIN_WEEKS) * 7), 'MMM yyyy')}
+        </span>
       </div>
 
       <Card className="overflow-hidden">
