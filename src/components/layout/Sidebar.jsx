@@ -9,7 +9,6 @@ const navItems = [
   { label: 'New Estimate', path: '/estimates/new', icon: FilePlus },
   { label: 'Create Estimate Panel', path: '/create-estimate-panel', icon: PanelLeftOpen },
   { label: 'All Estimates', path: '/estimates', icon: FileText },
-  { label: 'Projects', path: '/projects', icon: FolderKanban },
   { label: 'Templates', path: '/project-templates', icon: LayoutTemplate },
   { label: 'Inventory', path: '/inventory', icon: Package },
 ];
@@ -18,6 +17,7 @@ const bottomItems = [
   { label: 'Calendar', path: '/calendar', icon: Calendar },
   { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
   { label: 'Resources', path: '/resources', icon: Users },
+  { label: 'Projects', path: '/projects', icon: FolderKanban },
   { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
   { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
   { label: 'Manpower Estimation', path: '/calculation-routing', icon: GitBranch },
