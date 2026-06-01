@@ -353,6 +353,55 @@ export default function ProjectCostDashboard() {
     return Object.values(monthBuckets).filter(b => b.total > 0);
   };
 
+  // Build equipment-only monthly/daily area data for a single project
+  const buildEquipmentAreaDataForProject = (project, granularity) => {
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const equipmentRows = project.equipment_rows || [];
+    const equipmentGrid = project.equipment_grid || {};
+    const typeGrid = project.type_grid || {};
+
+    const dateTotals = {};
+
+    equipmentRows.forEach(row => {
+      const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+      if (inv?.item_group !== 'Equipment Group') return;
+      const regRate = inv?.reg ?? null;
+
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        const reg = regRate != null ? num * regRate : 0;
+        if (!dateTotals[dateStr]) dateTotals[dateStr] = { reg: 0 };
+        dateTotals[dateStr].reg += reg;
+      });
+    });
+
+    if (granularity === 'day') {
+      return Object.entries(dateTotals)
+        .filter(([, c]) => c.reg > 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([dateStr, c]) => ({ label: dateStr, reg: c.reg }));
+    }
+
+    const monthBuckets = {};
+    Object.entries(dateTotals).forEach(([dateStr, costs]) => {
+      const parts = dateStr.split('-');
+      if (parts.length < 2) return;
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      if (isNaN(year) || isNaN(month)) return;
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      if (!monthBuckets[key]) monthBuckets[key] = { label: `${MONTHS[month - 1]} ${year}`, sortKey: key, reg: 0 };
+      monthBuckets[key].reg += costs.reg;
+    });
+
+    return Object.values(monthBuckets)
+      .filter(b => b.reg > 0)
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  };
+
   // Area chart data — respects granularity toggle; day view only available for selected project
   const monthlyAreaData = useMemo(() => {
     if (!selectedProject) return [];
@@ -360,6 +409,11 @@ export default function ProjectCostDashboard() {
       return buildDailyAreaDataForProject(selectedProject);
     }
     return buildMonthlyAreaDataForProject(selectedProject);
+  }, [selectedProject?.id, inventoryValueMap, chartGranularity]);
+
+  const equipmentAreaData = useMemo(() => {
+    if (!selectedProject) return [];
+    return buildEquipmentAreaDataForProject(selectedProject, chartGranularity);
   }, [selectedProject?.id, inventoryValueMap, chartGranularity]);
 
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
@@ -532,6 +586,58 @@ export default function ProjectCostDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Equipment Cost Over Time Chart */}
+      {selectedProject && equipmentAreaData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <CardTitle className="text-sm">
+                  Equipment Cost Over Time ({chartGranularity === 'day' ? 'by Day' : 'by Month'})
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {chartGranularity === 'day'
+                    ? `Equipment group costs per working day for: ${selectedProject.name}`
+                    : `Equipment group costs grouped by month for: ${selectedProject.name}`}
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart key={`equip-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <defs>
+                  <linearGradient id="areaEquip" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#f97316" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'}
+                />
+                <YAxis
+                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`}
+                />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
+                  formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 'Equipment']}
+                />
+                <Legend formatter={() => 'Equipment'} wrapperStyle={{ fontSize: 9 }} />
+                <Area type="monotone" dataKey="reg" stroke="#f97316" strokeWidth={2} fill="url(#areaEquip)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Monthly / Daily Cost Area Chart */}
       {selectedProject && monthlyAreaData.length > 0 && (
