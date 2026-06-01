@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, CheckCircle2, Circle, LayoutTemplate, Pencil, X, Save, FileText, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 
 const TASK_TYPES = ['Manpower', 'Equipment', 'Logistics'];
 
@@ -193,6 +194,8 @@ export default function ProjectTemplates() {
   const [editing, setEditing] = useState(null);
   const [activeTab, setActiveTab] = useState('project');
   const isOpen = editing !== null;
+  const [confirmDeleteProjectTmpl, setConfirmDeleteProjectTmpl] = useState(null);
+  const [confirmDeleteEstimateTmpl, setConfirmDeleteEstimateTmpl] = useState(null);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['projectTemplates'],
@@ -331,7 +334,7 @@ export default function ProjectTemplates() {
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(tmpl)}>
                       <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(tmpl.id)}>
+                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setConfirmDeleteProjectTmpl(tmpl.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -362,7 +365,7 @@ export default function ProjectTemplates() {
               <EstimateTemplateCard
                 key={tmpl.id}
                 tmpl={tmpl}
-                onDelete={(id) => deleteEtMutation.mutate(id)}
+                onDelete={(id) => setConfirmDeleteEstimateTmpl(id)}
                 onLoad={handleLoadEstimateTemplate}
               />
             ))}
@@ -377,6 +380,22 @@ export default function ProjectTemplates() {
           onSaved={() => setEditing(null)}
         />
       )}
+
+      <ConfirmDeleteDialog
+        open={confirmDeleteProjectTmpl !== null}
+        title="Delete project template?"
+        description="This will permanently remove this project template. This action cannot be undone."
+        onCancel={() => setConfirmDeleteProjectTmpl(null)}
+        onConfirm={() => { deleteMutation.mutate(confirmDeleteProjectTmpl); setConfirmDeleteProjectTmpl(null); }}
+      />
+
+      <ConfirmDeleteDialog
+        open={confirmDeleteEstimateTmpl !== null}
+        title="Delete estimate template?"
+        description="This will permanently remove this estimate template. This action cannot be undone."
+        onCancel={() => setConfirmDeleteEstimateTmpl(null)}
+        onConfirm={() => { deleteEtMutation.mutate(confirmDeleteEstimateTmpl); setConfirmDeleteEstimateTmpl(null); }}
+      />
     </div>
   );
 }

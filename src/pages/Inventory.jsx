@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Pencil, Trash2, Package, AlertTriangle, XCircle, Archive, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import InventoryModal from '@/components/inventory/InventoryModal';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 
 const STATUS_CONFIG = {
   in_stock:     { label: 'In Stock',     style: 'bg-green-500/15 text-green-400 border-green-500/30',   icon: Package },
@@ -20,6 +21,7 @@ export default function Inventory() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [modalItem, setModalItem] = useState(null); // null = closed, false = new, object = edit
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const csvInputRef = useRef(null);
 
   const bulkCreateMutation = useMutation({
@@ -205,9 +207,9 @@ export default function Inventory() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setModalItem(item)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteMutation.mutate(item.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => setConfirmDeleteId(item.id)}>
+                           <Trash2 className="h-3.5 w-3.5" />
+                         </Button>
                       </div>
                     </td>
                   </tr>
@@ -225,6 +227,14 @@ export default function Inventory() {
           onSave={handleSave}
         />
       )}
+
+      <ConfirmDeleteDialog
+        open={confirmDeleteId !== null}
+        title="Delete inventory item?"
+        description="This will permanently remove this item from your inventory. This action cannot be undone."
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={() => { deleteMutation.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+      />
     </div>
   );
 }
