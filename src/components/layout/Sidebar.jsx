@@ -13,17 +13,25 @@ const navItems = [
   { label: 'Inventory', path: '/inventory', icon: Package },
 ];
 
-const bottomItems = [
-  { label: 'Calendar', path: '/calendar', icon: Calendar },
-  { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
-  { label: 'Resources', path: '/resources', icon: Users },
-  { label: 'Projects', path: '/projects', icon: FolderKanban },
-  { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
-  { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
-  { label: 'Manpower Estimation', path: '/calculation-routing', icon: GitBranch },
-  { label: 'Control Page', path: '/control-page', icon: SlidersHorizontal },
-  { label: 'Settings', path: '/settings', icon: Settings },
-  { label: 'Help', path: '/help', icon: HelpCircle },
+const bottomSections = [
+  [
+    { label: 'Calendar', path: '/calendar', icon: Calendar },
+    { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
+  ],
+  [
+    { label: 'Projects', path: '/projects', icon: FolderKanban },
+    { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
+    { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
+  ],
+  [
+    { label: 'Manpower Estimation', path: '/calculation-routing', icon: GitBranch },
+    { label: 'Resources', path: '/resources', icon: Users },
+  ],
+  [
+    { label: 'Control Page', path: '/control-page', icon: SlidersHorizontal },
+    { label: 'Settings', path: '/settings', icon: Settings },
+    { label: 'Help', path: '/help', icon: HelpCircle },
+  ],
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -73,27 +81,31 @@ export default function Sidebar({ open, onClose }) {
           })}
         </nav>
 
-        {/* Bottom nav items */}
-        <div className="px-3 py-2 space-y-1 border-t border-border">
-          {bottomItems.map(item => {
-            const isActive = location.pathname.startsWith(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+        {/* Bottom nav items — 4 divided sections */}
+        <div className="px-3 py-2 border-t border-border">
+          {bottomSections.map((section, sIdx) => (
+            <div key={sIdx} className={cn("space-y-1 py-2", sIdx < bottomSections.length - 1 && "border-b border-border")}>
+              {section.map(item => {
+                const isActive = location.pathname.startsWith(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={onClose}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* User profile / logout */}
