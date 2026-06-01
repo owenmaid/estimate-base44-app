@@ -602,6 +602,20 @@ export default function ProjectCostDashboard() {
                     : `Equipment group costs grouped by month for: ${selectedProject.name}`}
                 </p>
               </div>
+              <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
+                <button
+                  onClick={() => setChartGranularity('month')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Month
+                </button>
+                <button
+                  onClick={() => setChartGranularity('day')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'day' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Day
+                </button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
