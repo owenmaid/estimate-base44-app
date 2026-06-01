@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const ITEM_GROUPS = ['Service Group', 'Equipment Group', 'Manpower Group', 'Totals Group'];
 
 const EMPTY_FORM = {
-  name: '', sku: '', category: '', item_group: '', quantity: 0, unit: 'pcs',
+  name: '', sku: '', category: '', item_group: '', sub_group_01: '', sub_group_02: '', quantity: 0, unit: 'pcs',
   unit_cost: '', reg_value: '', ot_value: '', supplier: '', location: '', min_stock: 0, notes: '', status: 'in_stock',
 };
 
@@ -107,6 +107,14 @@ export default function InventoryModal({ item, onClose, onSave }) {
             <div>
               <Label>Storage Location</Label>
               <Input value={form.location} onChange={e => set('location', e.target.value)} placeholder="e.g. Warehouse A" />
+            </div>
+            <div>
+              <Label>Sub Group 01</Label>
+              <Input value={form.sub_group_01} onChange={e => set('sub_group_01', e.target.value)} placeholder="Sub Group 01 value" />
+            </div>
+            <div>
+              <Label>Sub Group 02</Label>
+              <Input value={form.sub_group_02} onChange={e => set('sub_group_02', e.target.value)} placeholder="Sub Group 02 value" />
             </div>
             <div className="col-span-2">
               <Label>Status</Label>

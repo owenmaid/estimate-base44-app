@@ -24,6 +24,14 @@
       ],
       "description": "High-level group classification for the inventory item"
     },
+    "sub_group_01": {
+      "type": "string",
+      "description": "Sub Group 01 classification"
+    },
+    "sub_group_02": {
+      "type": "string",
+      "description": "Sub Group 02 classification"
+    },
     "quantity": {
       "type": "number",
       "default": 0,
