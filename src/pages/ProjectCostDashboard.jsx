@@ -365,7 +365,7 @@ export default function ProjectCostDashboard() {
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-5 lg:p-7 max-w-7xl mx-auto space-y-7">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
