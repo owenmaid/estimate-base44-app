@@ -185,7 +185,7 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
+                    contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 9, color: '#000000' }}
                     formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
                   />
                   <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
@@ -204,7 +204,7 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                    contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 11, color: '#000000' }}
                     formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
                   />
                   <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: 11 }} />
