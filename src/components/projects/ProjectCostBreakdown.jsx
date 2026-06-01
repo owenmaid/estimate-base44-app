@@ -202,11 +202,11 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
               <div className="flex items-center gap-3">
                 {/* Left-side legend */}
-                <div className="flex flex-col gap-2 flex-shrink-0 w-36">
+                <div className="flex flex-col gap-2 flex-shrink-0" style={{ minWidth: 0, width: 'max-content', maxWidth: '45%' }}>
                   {pieData.map((entry, i) => (
-                    <div key={i} className="flex items-start gap-1.5">
-                      <span className="h-2 w-2 rounded-full flex-shrink-0 mt-0.5" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      <span className="text-[10px] text-muted-foreground leading-tight break-words">{entry.name}</span>
+                    <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span className="text-[10px] text-muted-foreground">{entry.name}</span>
                     </div>
                   ))}
                 </div>
