@@ -77,7 +77,7 @@ function getSectionTotal(section) {
   return bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0);
 }
 
-export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {} }) {
+export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {}, manwayAvgDCSM = 0, conventionalCostsTotal = 0 }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -428,17 +428,25 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
       return diff > 0 ? diff : 0;
     })();
 
+    const manwayStr = manwayAvgDCSM > 0 ? manwayAvgDCSM.toFixed(2) : '0';
+    const costPerManwayDay = (durationDays > 0 && manwayAvgDCSM > 0)
+      ? fmtMoney((subtotal / durationDays) / manwayAvgDCSM)
+      : '$0.00';
+    const convCostPerManwayDay = (durationDays > 0 && manwayAvgDCSM > 0)
+      ? fmtMoney((conventionalCostsTotal / durationDays) / manwayAvgDCSM)
+      : '$0.00';
+
     const leftRows  = [
-      { label: 'Number of Manways (Averaged out over duration) DCSM', value: '' },
+      { label: 'Number of Manways (Averaged out over duration) DCSM', value: manwayStr },
       { label: 'Number of days DCSM',                                  value: String(durationDays) },
-      { label: 'Total Cost',                                            value: fmtMoney(subtotal),  bold: true },
-      { label: 'Cost per manway/day',                                  value: '$0.00',              bold: true, primary: true },
+      { label: 'Total Cost',                                            value: fmtMoney(subtotal),     bold: true },
+      { label: 'Cost per manway/day',                                  value: costPerManwayDay,        bold: true, primary: true },
     ];
     const rightRows = [
-      { label: 'Number of Manways (Averaged out over duration)', value: '' },
+      { label: 'Number of Manways (Averaged out over duration)', value: manwayStr },
       { label: 'Number of days',                                  value: String(durationDays) },
-      { label: 'Total Cost',                                      value: fmtMoney(total),  bold: true },
-      { label: 'Cost per manway/day',                             value: '$0.00',          bold: true, primary: true },
+      { label: 'Total Cost',                                      value: fmtMoney(conventionalCostsTotal), bold: true },
+      { label: 'Cost per manway/day',                             value: convCostPerManwayDay,             bold: true, primary: true },
     ];
 
     const rowSpacing = 22;

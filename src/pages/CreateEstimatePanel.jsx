@@ -900,7 +900,7 @@ export default function CreateEstimatePanel() {
           </button>
           <button
             onClick={async () => {
-              await generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls });
+              await generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls, manwayAvgDCSM, conventionalCostsTotal });
             }}
             className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
             title="Download PDF"
