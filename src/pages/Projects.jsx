@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,47 @@ import { Link } from 'react-router-dom';
 import ProjectModal from '@/components/projects/ProjectModal';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Compute total cost from Project Details Setup equipment rows
+function computeSetupTotal(project, inventoryMap) {
+  const rows = project.equipment_rows || [];
+  const eGrid = project.equipment_grid || {};
+  const tGrid = project.type_grid || {};
+  let grandTotal = 0;
+
+  rows.forEach(row => {
+    const label = (row.label || '').toLowerCase();
+    const isSpecial = label.includes('pre-work') || label.includes('post-work');
+    const shiftHrs = isSpecial ? 10 : 12;
+    const inv = inventoryMap[String(row.item_id)] ?? inventoryMap[label] ?? null;
+    const regRate = inv?.reg_value != null ? Number(inv.reg_value) : null;
+    const otRate = inv?.ot_value != null ? Number(inv.ot_value) : null;
+    const isManpower = inv?.item_group === 'Manpower Group';
+
+    let col1 = 0, col4 = 0, col5 = 0, col6 = 0, col7 = 0, col8 = 0;
+    Object.entries(eGrid).forEach(([key, value]) => {
+      if (!key.startsWith(`${row.id}_`)) return;
+      const dateStr = key.slice(`${row.id}_`.length);
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num <= 0) return;
+      col1 += num;
+      const type = tGrid[dateStr] || '';
+      if (type === 'N') { col4 += num * 8; col5 += num * Math.max(shiftHrs - 8, 0); }
+      else if (type === 'Sa') { col4 += num * 4; col6 += num * Math.max(shiftHrs - 4, 0); }
+      else if (type === 'Su') { col7 += num * shiftHrs; }
+      else if (type === 'St') { col8 += num * shiftHrs; }
+    });
+
+    const regCost = regRate != null ? (isManpower ? col4 : col1) * regRate : 0;
+    const otCost = otRate != null ? (col5 + col6 + col7) * otRate : 0;
+    const specialCost = otRate != null
+      ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+      : 0;
+    grandTotal += regCost + otCost + specialCost;
+  });
+
+  return grandTotal;
+}
 
 const STATUS_STYLES = {
   active: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -32,6 +73,21 @@ export default function Projects() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
   });
+
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ['inventoryAll'],
+    queryFn: () => base44.entities.InventoryItem.list(),
+  });
+
+  // Build a lookup map by id and by lowercase name for fast access
+  const inventoryMap = useMemo(() => {
+    const map = {};
+    inventoryItems.forEach(i => {
+      if (i.id) map[String(i.id)] = i;
+      if (i.name) map[(i.name || '').toLowerCase()] = i;
+    });
+    return map;
+  }, [inventoryItems]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Project.create({ ...data, progress: 0, tasks: 0, done: 0 }),
@@ -124,9 +180,7 @@ export default function Projects() {
                   <th className="text-left px-4 py-3 font-medium">End Date</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-left px-4 py-3 font-medium">Client</th>
-                  <th className="text-right px-4 py-3 font-medium">Subtotal</th>
-                  <th className="text-right px-4 py-3 font-medium">Tax Amount</th>
-                  <th className="text-right px-4 py-3 font-medium">Total</th>
+                  <th className="text-right px-4 py-3 font-medium" colSpan={3}>Total (from Setup)</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -141,10 +195,7 @@ export default function Projects() {
                     STATUS_LABELS[p.status]?.toLowerCase().includes(q)
                   );
                 }).map(project => {
-                  const tasks = project.task_list || [];
-                  const subtotal = tasks.reduce((s, t) => s + (t.subtotal || 0), 0);
-                  const taxAmount = tasks.reduce((s, t) => s + (t.tax_amount || 0), 0);
-                  const total = tasks.reduce((s, t) => s + (t.total || 0), 0);
+                  const total = computeSetupTotal(project, inventoryMap);
                   const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' });
                   return (
                     <tr key={project.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
@@ -158,9 +209,7 @@ export default function Projects() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{project.client || '—'}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">{fmt(subtotal)}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">{fmt(taxAmount)}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-primary">{fmt(total)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-primary" colSpan={3}>{fmt(total)}</td>
                       <td className="px-4 py-3 text-right">
                         <Link to={`/project-planning/${project.id}`}>
                           <Button variant="ghost" size="sm">
