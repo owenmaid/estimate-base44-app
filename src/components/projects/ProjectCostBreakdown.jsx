@@ -118,8 +118,8 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none">
-                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />)}
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
+                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} />)}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
@@ -135,8 +135,8 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Group</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none">
-                    {groupPieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />)}
+                  <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
+                    {groupPieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} />)}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
