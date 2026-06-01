@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area } from 'recharts';
 import ProjectCostBreakdown from '@/components/projects/ProjectCostBreakdown';
 
 const STATUS_STYLES = {
@@ -151,6 +151,62 @@ export default function ProjectCostDashboard() {
   }, [allProjectsSummary]);
 
   const fmt = (n) => `$${n.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Monthly area chart data — distribute each project's total cost across its active months
+  const monthlyAreaData = useMemo(() => {
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // Find the year range to plot. Use current year as default, expand if projects span multiple years.
+    const currentYear = new Date().getFullYear();
+    const allYears = new Set([currentYear]);
+    allProjectsSummary.forEach(p => {
+      if (p.start_date) allYears.add(new Date(p.start_date).getFullYear());
+      if (p.end_date) allYears.add(new Date(p.end_date).getFullYear());
+    });
+    const minYear = Math.min(...allYears);
+    const maxYear = Math.max(...allYears);
+
+    // Build list of all months from minYear to maxYear
+    const monthBuckets = {};
+    for (let y = minYear; y <= maxYear; y++) {
+      for (let m = 0; m < 12; m++) {
+        const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+        monthBuckets[key] = { label: `${MONTHS[m]} ${y}`, total: 0, reg: 0, ot: 0, spec: 0 };
+      }
+    }
+
+    // For each project with dates and a non-zero cost, spread cost evenly across its months
+    allProjectsSummary.forEach(p => {
+      if (!p.start_date || !p.end_date || p.costs.grandTotal <= 0) return;
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      if (end < start) return;
+
+      // Collect all months the project spans
+      const projectMonths = [];
+      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+      while (cur <= endMonth) {
+        const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
+        if (monthBuckets[key] !== undefined) projectMonths.push(key);
+        cur.setMonth(cur.getMonth() + 1);
+      }
+      if (projectMonths.length === 0) return;
+
+      const perMonth = p.costs.grandTotal / projectMonths.length;
+      const perReg = p.costs.totalReg / projectMonths.length;
+      const perOT = p.costs.totalOT / projectMonths.length;
+      const perSpec = p.costs.totalSpec / projectMonths.length;
+
+      projectMonths.forEach(key => {
+        monthBuckets[key].total += perMonth;
+        monthBuckets[key].reg += perReg;
+        monthBuckets[key].ot += perOT;
+        monthBuckets[key].spec += perSpec;
+      });
+    });
+
+    return Object.values(monthBuckets).filter(b => b.total > 0);
+  }, [allProjectsSummary]);
 
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
@@ -320,6 +376,63 @@ export default function ProjectCostDashboard() {
                 <Bar dataKey="ot" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="spec" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
               </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Monthly Cost Area Chart */}
+      {monthlyAreaData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Total Project Cost Over Time (by Month)</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Each project's cost is distributed evenly across its scheduled months and summed per month across all projects.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <defs>
+                  <linearGradient id="areaReg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="areaOT" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="areaSpec" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`}
+                />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                  formatter={(v, name) => [
+                    `$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                    name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total'
+                  ]}
+                />
+                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 11 }} />
+                <Area type="monotone" dataKey="reg" stackId="1" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#areaReg)" />
+                <Area type="monotone" dataKey="ot" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
+                <Area type="monotone" dataKey="spec" stackId="1" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
