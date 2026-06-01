@@ -14,65 +14,88 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
-const PIE_COLORS = ['hsla(25,90%,52%,0.6)', 'rgba(59,130,246,0.6)', 'rgba(245,158,11,0.6)', 'rgba(16,185,129,0.6)', 'rgba(139,92,246,0.6)', 'rgba(239,68,68,0.6)'];
-const PIE_GLOWS  = ['rgba(234,115,27,0.7)',  'rgba(59,130,246,0.7)', 'rgba(245,158,11,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'];
+// Glass base colors: vivid but semi-transparent
+const PIE_COLORS = ['hsla(25,90%,58%,0.45)', 'hsla(217,91%,60%,0.45)', 'hsla(38,92%,50%,0.45)', 'hsla(158,64%,52%,0.45)', 'hsla(262,83%,58%,0.45)', 'hsla(0,72%,51%,0.45)'];
+const PIE_GLOWS  = ['rgba(234,115,27,0.5)',   'rgba(59,130,246,0.5)',   'rgba(245,158,11,0.5)',  'rgba(16,185,129,0.5)',  'rgba(139,92,246,0.5)',  'rgba(239,68,68,0.5)'];
+// Solid versions for the rim / edge strokes
+const PIE_SOLID  = ['hsla(25,90%,70%,0.7)',   'hsla(217,91%,72%,0.7)', 'hsla(38,92%,65%,0.7)', 'hsla(158,64%,65%,0.7)', 'hsla(262,83%,72%,0.7)', 'hsla(0,72%,65%,0.7)'];
 
-// Custom arc shape: base fill + glow filter + top-right shine overlay
+const toRad = (deg) => (deg * Math.PI) / 180;
+
+const donutPath = (cx, cy, ir, or, startDeg, endDeg) => {
+  const start = toRad(-startDeg);
+  const end   = toRad(-endDeg);
+  const cosS = Math.cos(start), sinS = Math.sin(start);
+  const cosE = Math.cos(end),   sinE = Math.sin(end);
+  const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
+  return [
+    `M ${cx + or * cosS} ${cy + or * sinS}`,
+    `A ${or} ${or} 0 ${largeArc} 0 ${cx + or * cosE} ${cy + or * sinE}`,
+    `L ${cx + ir * cosE} ${cy + ir * sinE}`,
+    `A ${ir} ${ir} 0 ${largeArc} 1 ${cx + ir * cosS} ${cy + ir * sinS}`,
+    'Z',
+  ].join(' ');
+};
+
+// Custom arc shape: glass effect — translucent base + specular highlight + rim light + refraction edge
 const GlowArc = (props) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index, prefix } = props;
 
-  const toRad = (deg) => (deg * Math.PI) / 180;
+  const path      = donutPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle);
+  // Slightly thinner path for the inner rim glow
+  const rimPath   = donutPath(cx, cy, innerRadius + 2, outerRadius - 2, startAngle, endAngle);
 
-  const arcPath = (cx, cy, r, startDeg, endDeg) => {
-    const start = toRad(-startDeg);
-    const end   = toRad(-endDeg);
-    const x1 = cx + r * Math.cos(start);
-    const y1 = cy + r * Math.sin(start);
-    const x2 = cx + r * Math.cos(end);
-    const y2 = cy + r * Math.sin(end);
-    const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
-    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 0 ${x2} ${y2}`;
-  };
-
-  const donutPath = (cx, cy, ir, or, startDeg, endDeg) => {
-    const start = toRad(-startDeg);
-    const end   = toRad(-endDeg);
-    const cosS = Math.cos(start), sinS = Math.sin(start);
-    const cosE = Math.cos(end),   sinE = Math.sin(end);
-    const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
-    return [
-      `M ${cx + or * cosS} ${cy + or * sinS}`,
-      `A ${or} ${or} 0 ${largeArc} 0 ${cx + or * cosE} ${cy + or * sinE}`,
-      `L ${cx + ir * cosE} ${cy + ir * sinE}`,
-      `A ${ir} ${ir} 0 ${largeArc} 1 ${cx + ir * cosS} ${cy + ir * sinS}`,
-      'Z',
-    ].join(' ');
-  };
-
-  const path = donutPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle);
-  const glowId   = `${prefix}-glow-${index}`;
-  const shineId  = `${prefix}-shine-${index}`;
+  const glowId     = `${prefix}-glow-${index}`;
+  const blurId     = `${prefix}-blur-${index}`;
+  const shineId    = `${prefix}-shine-${index}`;
+  const rimId      = `${prefix}-rim-${index}`;
+  const refractId  = `${prefix}-refract-${index}`;
 
   return (
     <g>
       <defs>
-        <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+        {/* Soft outer glow */}
+        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
           <feFlood floodColor={PIE_GLOWS[index % PIE_GLOWS.length]} result="color" />
           <feComposite in="color" in2="blur" operator="in" result="glow" />
           <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-        {/* Shine gradient: light coming from top-right */}
-        <radialGradient id={shineId} cx="80%" cy="15%" r="65%" fx="80%" fy="15%">
-          <stop offset="0%"   stopColor="white" stopOpacity="0.45" />
-          <stop offset="45%"  stopColor="white" stopOpacity="0.10" />
+        {/* Frosted-glass inner blur */}
+        <filter id={blurId} x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur stdDeviation="1.2" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        {/* Primary specular highlight — top-right */}
+        <radialGradient id={shineId} cx="78%" cy="18%" r="55%" fx="78%" fy="18%">
+          <stop offset="0%"   stopColor="white" stopOpacity="0.75" />
+          <stop offset="30%"  stopColor="white" stopOpacity="0.25" />
+          <stop offset="70%"  stopColor="white" stopOpacity="0.05" />
           <stop offset="100%" stopColor="white" stopOpacity="0"    />
         </radialGradient>
+        {/* Secondary softer fill from top-left for depth */}
+        <radialGradient id={refractId} cx="20%" cy="25%" r="60%" fx="20%" fy="25%">
+          <stop offset="0%"   stopColor="white" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="white" stopOpacity="0"    />
+        </radialGradient>
+        {/* Inner rim light */}
+        <linearGradient id={rimId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor="white" stopOpacity="0.55" />
+          <stop offset="50%"  stopColor="white" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="white" stopOpacity="0.30" />
+        </linearGradient>
       </defs>
-      {/* Base arc with glow */}
+
+      {/* 1 — glow halo behind */}
       <path d={path} fill={fill} stroke="none" filter={`url(#${glowId})`} />
-      {/* Shine overlay */}
+      {/* 2 — frosted glass body */}
+      <path d={path} fill={fill} stroke="none" filter={`url(#${blurId})`} opacity="0.85" />
+      {/* 3 — top-right specular shine */}
       <path d={path} fill={`url(#${shineId})`} stroke="none" />
+      {/* 4 — secondary refraction from top-left */}
+      <path d={path} fill={`url(#${refractId})`} stroke="none" />
+      {/* 5 — bright rim edge stroke */}
+      <path d={rimPath} fill="none" stroke={PIE_SOLID[index % PIE_SOLID.length]} strokeWidth="1" opacity="0.6" />
     </g>
   );
 };
