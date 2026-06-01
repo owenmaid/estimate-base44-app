@@ -511,7 +511,7 @@ export default function ProjectCostDashboard() {
       </Card>
 
       {/* Monthly / Daily Cost Area Chart */}
-      {monthlyAreaData.length > 0 && (
+      {selectedProject && monthlyAreaData.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-4 flex-wrap">
