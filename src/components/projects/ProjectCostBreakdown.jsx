@@ -14,7 +14,7 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
-const PIE_COLORS = ['hsl(25,90%,52%)', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
+const PIE_COLORS = ['hsla(25,90%,52%,0.6)', 'rgba(59,130,246,0.6)', 'rgba(245,158,11,0.6)', 'rgba(16,185,129,0.6)', 'rgba(139,92,246,0.6)', 'rgba(239,68,68,0.6)'];
 const PIE_GLOWS = ['rgba(234,115,27,0.7)', 'rgba(59,130,246,0.7)', 'rgba(245,158,11,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'];
 
 export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
