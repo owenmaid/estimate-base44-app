@@ -152,20 +152,18 @@ export default function ProjectCostDashboard() {
 
   const fmt = (n) => `$${n.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  // Monthly area chart data — distribute each project's total cost across its active months
-  const monthlyAreaData = useMemo(() => {
+  // Helper: build monthly area data from a list of projects with costs
+  const buildMonthlyAreaData = (projectList) => {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    // Find the year range to plot. Use current year as default, expand if projects span multiple years.
     const currentYear = new Date().getFullYear();
     const allYears = new Set([currentYear]);
-    allProjectsSummary.forEach(p => {
+    projectList.forEach(p => {
       if (p.start_date) allYears.add(new Date(p.start_date).getFullYear());
       if (p.end_date) allYears.add(new Date(p.end_date).getFullYear());
     });
     const minYear = Math.min(...allYears);
     const maxYear = Math.max(...allYears);
 
-    // Build list of all months from minYear to maxYear
     const monthBuckets = {};
     for (let y = minYear; y <= maxYear; y++) {
       for (let m = 0; m < 12; m++) {
@@ -174,14 +172,12 @@ export default function ProjectCostDashboard() {
       }
     }
 
-    // For each project with dates and a non-zero cost, spread cost evenly across its months
-    allProjectsSummary.forEach(p => {
+    projectList.forEach(p => {
       if (!p.start_date || !p.end_date || p.costs.grandTotal <= 0) return;
       const start = new Date(p.start_date);
       const end = new Date(p.end_date);
       if (end < start) return;
 
-      // Collect all months the project spans
       const projectMonths = [];
       const cur = new Date(start.getFullYear(), start.getMonth(), 1);
       const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -206,7 +202,16 @@ export default function ProjectCostDashboard() {
     });
 
     return Object.values(monthBuckets).filter(b => b.total > 0);
-  }, [allProjectsSummary]);
+  };
+
+  // Monthly area chart data — scoped to selected project or all projects
+  const monthlyAreaData = useMemo(() => {
+    if (selectedProject) {
+      const costs = computeProjectCosts(selectedProject);
+      return buildMonthlyAreaData([{ ...selectedProject, costs }]);
+    }
+    return buildMonthlyAreaData(allProjectsSummary);
+  }, [allProjectsSummary, selectedProject]);
 
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
@@ -360,7 +365,9 @@ export default function ProjectCostDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Total Project Cost Over Time (by Month)</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Each project's cost is distributed evenly across its scheduled months and summed per month across all projects.
+              {selectedProject
+                ? `Showing cost for: ${selectedProject.name}`
+                : "Each project's cost is distributed evenly across its scheduled months and summed per month across all projects."}
             </p>
           </CardHeader>
           <CardContent>
