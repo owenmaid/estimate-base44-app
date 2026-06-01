@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, ExternalLink, ChevronDown, ChevronUp, Users, Wrench, DollarSign } from 'lucide-react';
+import { X, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -15,14 +15,76 @@ const STATUS_STYLES = {
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
 const PIE_COLORS = ['hsla(25,90%,52%,0.6)', 'rgba(59,130,246,0.6)', 'rgba(245,158,11,0.6)', 'rgba(16,185,129,0.6)', 'rgba(139,92,246,0.6)', 'rgba(239,68,68,0.6)'];
-const PIE_GLOWS = ['rgba(234,115,27,0.7)', 'rgba(59,130,246,0.7)', 'rgba(245,158,11,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'];
+const PIE_GLOWS  = ['rgba(234,115,27,0.7)',  'rgba(59,130,246,0.7)', 'rgba(245,158,11,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'];
+
+// Custom arc shape: base fill + glow filter + top-right shine overlay
+const GlowArc = (props) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index, prefix } = props;
+
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  const arcPath = (cx, cy, r, startDeg, endDeg) => {
+    const start = toRad(-startDeg);
+    const end   = toRad(-endDeg);
+    const x1 = cx + r * Math.cos(start);
+    const y1 = cy + r * Math.sin(start);
+    const x2 = cx + r * Math.cos(end);
+    const y2 = cy + r * Math.sin(end);
+    const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 0 ${x2} ${y2}`;
+  };
+
+  const donutPath = (cx, cy, ir, or, startDeg, endDeg) => {
+    const start = toRad(-startDeg);
+    const end   = toRad(-endDeg);
+    const cosS = Math.cos(start), sinS = Math.sin(start);
+    const cosE = Math.cos(end),   sinE = Math.sin(end);
+    const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
+    return [
+      `M ${cx + or * cosS} ${cy + or * sinS}`,
+      `A ${or} ${or} 0 ${largeArc} 0 ${cx + or * cosE} ${cy + or * sinE}`,
+      `L ${cx + ir * cosE} ${cy + ir * sinE}`,
+      `A ${ir} ${ir} 0 ${largeArc} 1 ${cx + ir * cosS} ${cy + ir * sinS}`,
+      'Z',
+    ].join(' ');
+  };
+
+  const path = donutPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle);
+  const glowId   = `${prefix}-glow-${index}`;
+  const shineId  = `${prefix}-shine-${index}`;
+
+  return (
+    <g>
+      <defs>
+        <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feFlood floodColor={PIE_GLOWS[index % PIE_GLOWS.length]} result="color" />
+          <feComposite in="color" in2="blur" operator="in" result="glow" />
+          <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        {/* Shine gradient: light coming from top-right */}
+        <radialGradient id={shineId} cx="80%" cy="15%" r="65%" fx="80%" fy="15%">
+          <stop offset="0%"   stopColor="white" stopOpacity="0.45" />
+          <stop offset="45%"  stopColor="white" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="white" stopOpacity="0"    />
+        </radialGradient>
+      </defs>
+      {/* Base arc with glow */}
+      <path d={path} fill={fill} stroke="none" filter={`url(#${glowId})`} />
+      {/* Shine overlay */}
+      <path d={path} fill={`url(#${shineId})`} stroke="none" />
+    </g>
+  );
+};
+
+const makeCatShape  = (i) => (props) => <GlowArc {...props} index={i} prefix="cat" />;
+const makeGrpShape  = (i) => (props) => <GlowArc {...props} index={i} prefix="grp" />;
 
 export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
   const [expanded, setExpanded] = useState(true);
 
   const { rowCosts, totalReg, totalOT, totalSpec, grandTotal } = costs;
 
-  // Group by category
   const byCategory = rowCosts.reduce((acc, row) => {
     const cat = row.category || 'Uncategorized';
     if (!acc[cat]) acc[cat] = { rows: [], total: 0 };
@@ -31,20 +93,18 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
     return acc;
   }, {});
 
-  // Pie chart: cost by category
   const pieData = Object.entries(byCategory)
     .filter(([, v]) => v.total > 0)
     .map(([name, v]) => ({ name, value: v.total }));
 
-  // Group by item_group (Manpower vs Equipment)
-  const manpowerTotal = rowCosts.filter(r => r.item_group === 'Manpower Group').reduce((s, r) => s + r.total, 0);
+  const manpowerTotal  = rowCosts.filter(r => r.item_group === 'Manpower Group').reduce((s, r) => s + r.total, 0);
   const equipmentTotal = rowCosts.filter(r => r.item_group === 'Equipment Group').reduce((s, r) => s + r.total, 0);
-  const otherTotal = grandTotal - manpowerTotal - equipmentTotal;
+  const otherTotal     = grandTotal - manpowerTotal - equipmentTotal;
 
   const groupPieData = [
-    manpowerTotal > 0 && { name: 'Manpower', value: manpowerTotal },
+    manpowerTotal  > 0 && { name: 'Manpower',  value: manpowerTotal  },
     equipmentTotal > 0 && { name: 'Equipment', value: equipmentTotal },
-    otherTotal > 0 && { name: 'Other', value: otherTotal },
+    otherTotal     > 0 && { name: 'Other',     value: otherTotal     },
   ].filter(Boolean);
 
   return (
@@ -60,8 +120,8 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
             <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>{STATUS_LABELS[project.status]}</Badge>
           </div>
           <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-            {project.client && <span>Client: <span className="text-foreground font-medium">{project.client}</span></span>}
-            {project.site && <span>Site: <span className="text-foreground font-medium">{project.site}</span></span>}
+            {project.client   && <span>Client:   <span className="text-foreground font-medium">{project.client}</span></span>}
+            {project.site     && <span>Site:     <span className="text-foreground font-medium">{project.site}</span></span>}
             {project.location && <span>Location: <span className="text-foreground font-medium">{project.location}</span></span>}
             {project.start_date && project.end_date && (
               <span>{project.start_date} → {project.end_date}</span>
@@ -119,18 +179,10 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <defs>
-                    {pieData.map((_, i) => (
-                      <filter key={i} id={`glow-cat-${i}`} x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                        <feFlood floodColor={PIE_GLOWS[i % PIE_GLOWS.length]} result="color" />
-                        <feComposite in="color" in2="coloredBlur" operator="in" result="coloredGlow" />
-                        <feMerge><feMergeNode in="coloredGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                    ))}
-                  </defs>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
-                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} filter={`url(#glow-cat-${i})`} />)}
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeCatShape(i)} />
+                    ))}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
@@ -146,18 +198,10 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Group</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <defs>
-                    {groupPieData.map((_, i) => (
-                      <filter key={i} id={`glow-grp-${i}`} x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                        <feFlood floodColor={PIE_GLOWS[i % PIE_GLOWS.length]} result="color" />
-                        <feComposite in="color" in2="coloredBlur" operator="in" result="coloredGlow" />
-                        <feMerge><feMergeNode in="coloredGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                    ))}
-                  </defs>
                   <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
-                    {groupPieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} filter={`url(#glow-grp-${i})`} />)}
+                    {groupPieData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeGrpShape(i)} />
+                    ))}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
@@ -182,7 +226,7 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
             className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => setExpanded(e => !e)}
           >
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             Detailed Row Breakdown ({rowCosts.length} rows)
           </button>
 
