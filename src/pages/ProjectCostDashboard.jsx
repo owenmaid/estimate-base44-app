@@ -369,8 +369,8 @@ export default function ProjectCostDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Project Cost Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Interactive cost breakdown across all projects</p>
+          <h1 className="text-xl font-bold tracking-tight">Project Cost Dashboard</h1>
+          <p className="text-muted-foreground text-xs mt-1">Interactive cost breakdown across all projects</p>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/projects"><FolderKanban className="h-4 w-4 mr-1.5" /> All Projects</Link>
@@ -387,7 +387,7 @@ export default function ProjectCostDashboard() {
                 <FolderKanban className="h-4 w-4 text-primary" />
               </div>
             </div>
-            <div className="text-3xl font-bold">{projects.length}</div>
+            <div className="text-2xl font-bold">{projects.length}</div>
             <div className="text-xs text-muted-foreground mt-1">
               {projects.filter(p => p.status === 'active').length} active
             </div>
@@ -401,7 +401,7 @@ export default function ProjectCostDashboard() {
                 <DollarSign className="h-4 w-4 text-green-400" />
               </div>
             </div>
-            <div className="text-2xl font-bold">{fmt(totalGrandRevenue)}</div>
+            <div className="text-xl font-bold">{fmt(totalGrandRevenue)}</div>
             <div className="text-xs text-muted-foreground mt-1">across all projects</div>
           </CardContent>
         </Card>
@@ -413,7 +413,7 @@ export default function ProjectCostDashboard() {
                 <Users className="h-4 w-4 text-blue-400" />
               </div>
             </div>
-            <div className="text-2xl font-bold">
+            <div className="text-xl font-bold">
               {fmt(allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Manpower Group').reduce((a, r) => a + r.total, 0), 0))}
             </div>
             <div className="text-xs text-muted-foreground mt-1">manpower group</div>
@@ -427,7 +427,7 @@ export default function ProjectCostDashboard() {
                 <Wrench className="h-4 w-4 text-orange-400" />
               </div>
             </div>
-            <div className="text-2xl font-bold">
+            <div className="text-xl font-bold">
               {fmt(allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Equipment Group').reduce((a, r) => a + r.total, 0), 0))}
             </div>
             <div className="text-xs text-muted-foreground mt-1">equipment group</div>
@@ -438,7 +438,7 @@ export default function ProjectCostDashboard() {
       {/* Project Selector */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
             Select a Project to View Cost Breakdown
           </CardTitle>
@@ -514,7 +514,7 @@ export default function ProjectCostDashboard() {
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <CardTitle className="text-base">
+                <CardTitle className="text-sm">
                   Total Project Cost Over Time ({chartGranularity === 'day' ? 'by Day' : 'by Month'})
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -563,25 +563,25 @@ export default function ProjectCostDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={false}
                   tickLine={false}
                   interval={chartGranularity === 'day' ? Math.max(0, Math.floor(monthlyAreaData.length / 12)) : 'preserveStartEnd'}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`}
                 />
                 <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
                   formatter={(v, name) => [
                     `$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
                     name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total'
                   ]}
                 />
-                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 11 }} />
+                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 9 }} />
                 <Area type="monotone" dataKey="reg" stackId="1" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#areaReg)" />
                 <Area type="monotone" dataKey="ot" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
                 <Area type="monotone" dataKey="spec" stackId="1" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
@@ -595,16 +595,16 @@ export default function ProjectCostDashboard() {
       {barData.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Top Projects by Total Cost</CardTitle>
+            <CardTitle className="text-sm">Top Projects by Total Cost</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 10 }}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ''}
                   formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total']}
                 />
@@ -621,11 +621,11 @@ export default function ProjectCostDashboard() {
       {/* All Projects Table */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">All Projects — Cost Summary</CardTitle>
+          <CardTitle className="text-sm">All Projects — Cost Summary</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
                 <tr className="bg-secondary/60 border-b border-border">
                   <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Project</th>
