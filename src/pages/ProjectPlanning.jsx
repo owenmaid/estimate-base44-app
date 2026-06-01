@@ -373,9 +373,6 @@ export default function ProjectPlanning() {
           <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
             <Maximize2 className="h-4 w-4 mr-1.5" /> Expand Items
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
-            <Trash2 className="h-4 w-4 mr-1.5" /> Delete
-          </Button>
           <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
             <Save className="h-4 w-4 mr-1.5" />
             {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
@@ -452,30 +449,7 @@ export default function ProjectPlanning() {
                 className="min-h-[100px]"
               />
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full" disabled={deleteMutation.isPending}>
-                  <Trash2 className="h-4 w-4 mr-1.5" /> Delete Project
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete <strong>{form.name}</strong>? This action cannot be undone and all project data will be permanently removed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => deleteMutation.mutate()}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+
           </CardContent>
         </Card>
 
