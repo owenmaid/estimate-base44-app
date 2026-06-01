@@ -122,10 +122,10 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                     {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
                     formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Cost']}
                   />
-                  <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
