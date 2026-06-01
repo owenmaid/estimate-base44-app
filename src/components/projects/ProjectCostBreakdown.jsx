@@ -15,6 +15,7 @@ const STATUS_STYLES = {
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
 const PIE_COLORS = ['hsl(25,90%,52%)', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
+const PIE_GLOWS = ['rgba(234,115,27,0.7)', 'rgba(59,130,246,0.7)', 'rgba(245,158,11,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)'];
 
 export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
   const [expanded, setExpanded] = useState(true);
@@ -118,8 +119,18 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
+                  <defs>
+                    {pieData.map((_, i) => (
+                      <filter key={i} id={`glow-cat-${i}`} x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                        <feFlood floodColor={PIE_GLOWS[i % PIE_GLOWS.length]} result="color" />
+                        <feComposite in="color" in2="coloredBlur" operator="in" result="coloredGlow" />
+                        <feMerge><feMergeNode in="coloredGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      </filter>
+                    ))}
+                  </defs>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
-                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} />)}
+                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} filter={`url(#glow-cat-${i})`} />)}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
@@ -135,8 +146,18 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Group</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
+                  <defs>
+                    {groupPieData.map((_, i) => (
+                      <filter key={i} id={`glow-grp-${i}`} x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                        <feFlood floodColor={PIE_GLOWS[i % PIE_GLOWS.length]} result="color" />
+                        <feComposite in="color" in2="coloredBlur" operator="in" result="coloredGlow" />
+                        <feMerge><feMergeNode in="coloredGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      </filter>
+                    ))}
+                  </defs>
                   <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
-                    {groupPieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} />)}
+                    {groupPieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} filter={`url(#glow-grp-${i})`} />)}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
