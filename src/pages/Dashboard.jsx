@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle } from 'lucide-react';
+import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle, Pencil } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import EstimateTable from '@/components/estimates/EstimateTable';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -42,6 +42,7 @@ export default function Dashboard() {
   const projectStats = {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
+    planning: projects.filter(p => p.status === 'planning').length,
     onHold: projects.filter(p => p.status === 'on_hold').length,
     completed: projects.filter(p => p.status === 'completed').length,
     totalRevenue: projects.reduce((s, p) => s + (p.task_list || []).reduce((a, t) => a + (t.total || 0), 0), 0),
@@ -96,9 +97,10 @@ export default function Dashboard() {
       {/* Project KPIs */}
       <div>
         <h2 className="text-base font-semibold mb-3 text-muted-foreground uppercase tracking-wider text-xs">Projects</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
           <StatCard title="Total Projects" value={projectStats.total} icon={FolderKanban} accent="bg-primary" />
           <StatCard title="Active" value={projectStats.active} icon={TrendingUp} accent="bg-green-500" />
+          <StatCard title="Planning" value={projectStats.planning} icon={Pencil} accent="bg-blue-500" />
           <StatCard title="On Hold" value={projectStats.onHold} icon={AlertCircle} accent="bg-yellow-500" />
           <StatCard title="Completed" value={projectStats.completed} icon={CheckCircle} accent="bg-emerald-500" />
           <StatCard title="Total Revenue" value={`$${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`} icon={DollarSign} accent="bg-primary" />
