@@ -152,8 +152,90 @@ export default function ProjectCostDashboard() {
 
   const fmt = (n) => `$${n.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  // Helper: build monthly area data from a list of projects with costs
-  const buildMonthlyAreaData = (projectList) => {
+  // Build monthly area data by computing exact per-date costs for a single project
+  const buildMonthlyAreaDataForProject = (project) => {
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const equipmentRows = project.equipment_rows || [];
+    const equipmentGrid = project.equipment_grid || {};
+    const typeGrid = project.type_grid || {};
+
+    // Accumulate cost per date string (YYYY-MM-DD or however the key is stored)
+    const dateTotals = {}; // { dateStr: { reg, ot, spec } }
+
+    equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
+      const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+      const regRate = inv?.reg ?? null;
+      const otRate = inv?.ot ?? null;
+      const isManpower = inv?.item_group === 'Manpower Group';
+
+      Object.entries(equipmentGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+
+        const type = typeGrid[dateStr];
+        let regUnits = 0, otUnits = 0, specUnits = 0;
+
+        if (type === 'N') {
+          regUnits = isManpower ? num * 8 : num;
+          otUnits = isManpower ? num * Math.max(shiftHrs - 8, 0) : 0;
+        } else if (type === 'Sa') {
+          regUnits = isManpower ? num * 4 : num;
+          otUnits = isManpower ? num * Math.max(shiftHrs - 4, 0) : 0;
+        } else if (type === 'Su') {
+          otUnits = isManpower ? num * shiftHrs : 0;
+          regUnits = isManpower ? 0 : num;
+        } else if (type === 'St') {
+          // Special day
+          specUnits = isManpower ? num * shiftHrs : 0;
+          regUnits = isManpower ? 0 : num;
+        } else {
+          // No type set — treat like a normal day
+          regUnits = isManpower ? num * shiftHrs : num;
+        }
+
+        const reg = regRate != null ? regUnits * regRate : 0;
+        const ot = otRate != null ? otUnits * otRate : 0;
+        const spec = otRate != null && specUnits > 0
+          ? (specUnits * 2 * (4 / (shiftHrs * 2)) * otRate) + (specUnits * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+          : 0;
+
+        if (!dateTotals[dateStr]) dateTotals[dateStr] = { reg: 0, ot: 0, spec: 0 };
+        dateTotals[dateStr].reg += reg;
+        dateTotals[dateStr].ot += ot;
+        dateTotals[dateStr].spec += spec;
+      });
+    });
+
+    // Bucket date totals by month
+    const monthBuckets = {};
+    Object.entries(dateTotals).forEach(([dateStr, costs]) => {
+      // dateStr format: YYYY-MM-DD
+      const parts = dateStr.split('-');
+      if (parts.length < 2) return;
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      if (isNaN(year) || isNaN(month)) return;
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      if (!monthBuckets[key]) {
+        monthBuckets[key] = { label: `${MONTHS[month - 1]} ${year}`, sortKey: key, total: 0, reg: 0, ot: 0, spec: 0 };
+      }
+      monthBuckets[key].reg += costs.reg;
+      monthBuckets[key].ot += costs.ot;
+      monthBuckets[key].spec += costs.spec;
+      monthBuckets[key].total += costs.reg + costs.ot + costs.spec;
+    });
+
+    return Object.values(monthBuckets)
+      .filter(b => b.total > 0)
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  };
+
+  // Build monthly area data (even-spread) for a list of projects — used for all-projects view
+  const buildMonthlyAreaDataAllProjects = (projectList) => {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
     const allYears = new Set([currentYear]);
@@ -204,14 +286,13 @@ export default function ProjectCostDashboard() {
     return Object.values(monthBuckets).filter(b => b.total > 0);
   };
 
-  // Monthly area chart data — scoped to selected project or all projects
+  // Monthly area chart data — exact per-date for selected project, even-spread for all
   const monthlyAreaData = useMemo(() => {
     if (selectedProject) {
-      const costs = computeProjectCosts(selectedProject);
-      return buildMonthlyAreaData([{ ...selectedProject, costs }]);
+      return buildMonthlyAreaDataForProject(selectedProject);
     }
-    return buildMonthlyAreaData(allProjectsSummary);
-  }, [allProjectsSummary, selectedProject]);
+    return buildMonthlyAreaDataAllProjects(allProjectsSummary);
+  }, [allProjectsSummary, selectedProject, inventoryValueMap]);
 
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
@@ -366,7 +447,7 @@ export default function ProjectCostDashboard() {
             <CardTitle className="text-base">Total Project Cost Over Time (by Month)</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
               {selectedProject
-                ? `Showing cost for: ${selectedProject.name}`
+                ? `Exact daily costs grouped by month for: ${selectedProject.name}`
                 : "Each project's cost is distributed evenly across its scheduled months and summed per month across all projects."}
             </p>
           </CardHeader>
