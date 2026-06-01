@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, Maximize2, X } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, Maximize2, X, Lock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
@@ -274,6 +274,68 @@ export default function ProjectPlanning() {
       return next;
     });
   };
+
+  // ── Equipment rows from Project Details Setup (read-only) ──────────────────
+  const { data: inventoryAll = [] } = useQuery({
+    queryKey: ['inventoryAll'],
+    queryFn: () => base44.entities.InventoryItem.list(),
+  });
+
+  const equipmentSetupRows = useMemo(() => {
+    if (!project) return [];
+    const rows = project.equipment_rows || [];
+    const eGrid = project.equipment_grid || {};
+    const tGrid = project.type_grid || {};
+
+    return rows.map(row => {
+      const label = (row.label || '').toLowerCase();
+      const isSpecial = label.includes('pre-work') || label.includes('post-work');
+      const shiftHrs = isSpecial ? 10 : 12;
+
+      const inventoryEntry = inventoryAll.find(i => String(i.id) === String(row.item_id))
+        ?? inventoryAll.find(i => (i.name || '').toLowerCase() === label)
+        ?? null;
+      const regRate = inventoryEntry?.reg_value != null ? Number(inventoryEntry.reg_value) : null;
+      const otRate = inventoryEntry?.ot_value != null ? Number(inventoryEntry.ot_value) : null;
+      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
+      const category = inventoryEntry?.category || '—';
+
+      // Col1: total count across all dates
+      let col1 = 0;
+      // Col4: N×8 + Sa×4
+      let col4 = 0;
+      // Col5: N×(shift-8)
+      let col5 = 0;
+      // Col6: Sa×max(shift-4,0)
+      let col6 = 0;
+      // Col7: Su×shift
+      let col7 = 0;
+      // Col8: St×shift
+      let col8 = 0;
+
+      Object.entries(eGrid).forEach(([key, value]) => {
+        if (!key.startsWith(`${row.id}_`)) return;
+        const dateStr = key.slice(`${row.id}_`.length);
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) return;
+        col1 += num;
+        const type = tGrid[dateStr] || '';
+        if (type === 'N') { col4 += num * 8; col5 += num * Math.max(shiftHrs - 8, 0); }
+        else if (type === 'Sa') { col4 += num * 4; col6 += num * Math.max(shiftHrs - 4, 0); }
+        else if (type === 'Su') { col7 += num * shiftHrs; }
+        else if (type === 'St') { col8 += num * shiftHrs; }
+      });
+
+      const regCost = regRate != null ? (isManpower ? col4 : col1) * regRate : null;
+      const otCost = otRate != null ? (col5 + col6 + col7) * otRate : null;
+      const specialCost = otRate != null
+        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+        : null;
+      const rowTotal = (regCost || 0) + (otCost || 0) + (specialCost || 0);
+
+      return { id: row.id, label: row.label, category, isManpower, col1, regCost, otCost, specialCost, rowTotal };
+    }).filter(r => r.col1 > 0 || r.rowTotal > 0);
+  }, [project, inventoryAll]);
 
   if (isLoading || !form) {
     return (
@@ -619,6 +681,73 @@ export default function ProjectPlanning() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Read-only: Equipment rows from Project Details Setup */}
+        {equipmentSetupRows.length > 0 && (
+          <Card className="lg:col-span-8 lg:col-start-3">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">Project Details Setup — Line Items</CardTitle>
+                <span className="text-xs text-muted-foreground ml-1">(read-only)</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs min-w-[600px]">
+                  <thead>
+                    <tr className="text-muted-foreground border-b border-border">
+                      <th className="text-left pb-2 pr-2">Row Label</th>
+                      <th className="text-left pb-2 pr-2">Category</th>
+                      <th className="text-left pb-2 pr-2">Group</th>
+                      <th className="text-right pb-2 pr-2">Count</th>
+                      <th className="text-right pb-2 pr-2">Reg Cost</th>
+                      <th className="text-right pb-2 pr-2">OT Cost</th>
+                      <th className="text-right pb-2 pr-2">Special Cost</th>
+                      <th className="text-right pb-2">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {equipmentSetupRows.map((row, idx) => (
+                      <tr key={row.id} className={`border-b border-border/30 ${idx % 2 === 0 ? '' : 'bg-muted/10'}`}>
+                        <td className="py-1.5 pr-2 font-medium text-foreground">{row.label}</td>
+                        <td className="py-1.5 pr-2 text-muted-foreground">{row.category}</td>
+                        <td className="py-1.5 pr-2">
+                          <span className={`px-1.5 py-0.5 rounded text-xs ${row.isManpower ? 'bg-blue-500/15 text-blue-400' : 'bg-muted text-muted-foreground'}`}>
+                            {row.isManpower ? 'Manpower' : 'Equipment'}
+                          </span>
+                        </td>
+                        <td className="py-1.5 pr-2 text-right text-muted-foreground">{row.col1}</td>
+                        <td className="py-1.5 pr-2 text-right">{row.regCost != null && row.regCost > 0 ? `$${row.regCost.toFixed(2)}` : '—'}</td>
+                        <td className="py-1.5 pr-2 text-right">{row.otCost != null && row.otCost > 0 ? `$${row.otCost.toFixed(2)}` : '—'}</td>
+                        <td className="py-1.5 pr-2 text-right">{row.specialCost != null && row.specialCost > 0 ? `$${row.specialCost.toFixed(2)}` : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold text-primary">{row.rowTotal > 0 ? `$${row.rowTotal.toFixed(2)}` : '—'}</td>
+                      </tr>
+                    ))}
+                    {/* Totals row */}
+                    {(() => {
+                      const totals = equipmentSetupRows.reduce((acc, r) => ({
+                        reg: acc.reg + (r.regCost || 0),
+                        ot: acc.ot + (r.otCost || 0),
+                        spec: acc.spec + (r.specialCost || 0),
+                        total: acc.total + (r.rowTotal || 0),
+                      }), { reg: 0, ot: 0, spec: 0, total: 0 });
+                      return (
+                        <tr className="border-t-2 border-border font-semibold">
+                          <td colSpan={4} className="pt-2 pr-2 text-right text-muted-foreground">Totals</td>
+                          <td className="pt-2 pr-2 text-right">${totals.reg.toFixed(2)}</td>
+                          <td className="pt-2 pr-2 text-right">${totals.ot.toFixed(2)}</td>
+                          <td className="pt-2 pr-2 text-right">${totals.spec.toFixed(2)}</td>
+                          <td className="pt-2 text-right font-bold text-primary text-sm">${totals.total.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Expanded Item List Modal */}
