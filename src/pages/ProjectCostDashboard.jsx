@@ -24,6 +24,8 @@ export default function ProjectCostDashboard() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [chartGranularity, setChartGranularity] = useState('month'); // 'month' | 'day'
+  const [equipChartType, setEquipChartType] = useState('line'); // 'line' | 'area'
+  const [totalChartType, setTotalChartType] = useState('area'); // 'line' | 'area'
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -616,48 +618,48 @@ export default function ProjectCostDashboard() {
                     : `Equipment group costs grouped by month for: ${selectedProject.name}`}
                 </p>
               </div>
-              <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
-                <button
-                  onClick={() => setChartGranularity('month')}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Month
-                </button>
-                <button
-                  onClick={() => setChartGranularity('day')}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'day' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Day
-                </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
+                  <button onClick={() => setChartGranularity('month')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Month</button>
+                  <button onClick={() => setChartGranularity('day')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'day' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Day</button>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
+                  <button onClick={() => setEquipChartType('line')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${equipChartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Line</button>
+                  <button onClick={() => setEquipChartType('area')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${equipChartType === 'area' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Area</button>
+                </div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart key={`equip-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'}
-                />
-                <YAxis
-                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`}
-                />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
-                  formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]}
-                />
-                <Legend wrapperStyle={{ fontSize: 9 }} />
-                <Line type="monotone" dataKey="VENTILATION" stroke="#f97316" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="DCSM" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="CONVENTIONAL" stroke="#a855f7" strokeWidth={2} dot={false} />
-              </LineChart>
+              {equipChartType === 'line' ? (
+                <LineChart key={`equip-line-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'} />
+                  <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} />
+                  <Line type="monotone" dataKey="VENTILATION" stroke="#f97316" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="DCSM" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="CONVENTIONAL" stroke="#a855f7" strokeWidth={2} dot={false} />
+                </LineChart>
+              ) : (
+                <AreaChart key={`equip-area-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <defs>
+                    <linearGradient id="areaEquipV" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.4} /><stop offset="95%" stopColor="#f97316" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaEquipD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaEquipC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} /><stop offset="95%" stopColor="#a855f7" stopOpacity={0.02} /></linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'} />
+                  <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} />
+                  <Area type="monotone" dataKey="VENTILATION" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaEquipV)" />
+                  <Area type="monotone" dataKey="DCSM" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaEquipD)" />
+                  <Area type="monotone" dataKey="CONVENTIONAL" stackId="1" stroke="#a855f7" strokeWidth={2} fill="url(#areaEquipC)" />
+                </AreaChart>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -681,66 +683,49 @@ export default function ProjectCostDashboard() {
                 </p>
               </div>
               {selectedProject && (
-                <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
-                  <button
-                    onClick={() => setChartGranularity('month')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    Month
-                  </button>
-                  <button
-                    onClick={() => setChartGranularity('day')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'day' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    Day
-                  </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
+                    <button onClick={() => setChartGranularity('month')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Month</button>
+                    <button onClick={() => setChartGranularity('day')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${chartGranularity === 'day' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Day</button>
+                  </div>
+                  <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-secondary/30">
+                    <button onClick={() => setTotalChartType('line')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${totalChartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Line</button>
+                    <button onClick={() => setTotalChartType('area')} className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${totalChartType === 'area' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>Area</button>
+                  </div>
                 </div>
               )}
             </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart key={`${selectedProject?.id}-${chartGranularity}`} data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                <defs>
-                  <linearGradient id="areaReg" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="areaOT" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="areaSpec" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={chartGranularity === 'day' ? Math.max(0, Math.floor(monthlyAreaData.length / 12)) : 'preserveStartEnd'}
-                />
-                <YAxis
-                  tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`}
-                />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }}
-                  formatter={(v, name) => [
-                    `$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-                    name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : name === 'spec' ? 'Special' : 'Total'
-                  ]}
-                />
-                <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 9 }} />
-                <Area type="monotone" dataKey="reg" stackId="1" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#areaReg)" />
-                <Area type="monotone" dataKey="ot" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
-                <Area type="monotone" dataKey="spec" stackId="1" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
-              </AreaChart>
+              {totalChartType === 'line' ? (
+                <LineChart key={`total-line-${selectedProject?.id}-${chartGranularity}`} data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(monthlyAreaData.length / 12)) : 'preserveStartEnd'} />
+                  <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : 'Special']} />
+                  <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 9 }} />
+                  <Line type="monotone" dataKey="reg" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="ot" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="spec" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                </LineChart>
+              ) : (
+                <AreaChart key={`total-area-${selectedProject?.id}-${chartGranularity}`} data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <defs>
+                    <linearGradient id="areaReg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} /><stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaOT" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaSpec" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} /><stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} /></linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(monthlyAreaData.length / 12)) : 'preserveStartEnd'} />
+                  <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : 'Special']} />
+                  <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 9 }} />
+                  <Area type="monotone" dataKey="reg" stackId="1" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#areaReg)" />
+                  <Area type="monotone" dataKey="ot" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
+                  <Area type="monotone" dataKey="spec" stackId="1" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
+                </AreaChart>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
