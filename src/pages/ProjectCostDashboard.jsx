@@ -371,8 +371,13 @@ export default function ProjectCostDashboard() {
       if (inv?.item_group !== 'Equipment Group') return;
       const regRate = inv?.reg ?? null;
       const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
-      const bucket = EQUIP_SUB_GROUPS.includes(sg1) ? sg1 : null;
-      if (!bucket) return; // skip rows not in one of the 3 sub groups
+      // If sub_group_01 matches a known group use it, otherwise fall back to category-based detection
+      let bucket = EQUIP_SUB_GROUPS.includes(sg1) ? sg1 : null;
+      if (!bucket) {
+        const cat = (inv?.category || '').toUpperCase();
+        if (cat.includes('VENT')) bucket = 'VENTILATION';
+        else bucket = 'CONVENTIONAL'; // default bucket for unclassified equipment
+      }
 
       Object.entries(equipmentGrid).forEach(([key, value]) => {
         if (!key.startsWith(`${row.id}_`)) return;
