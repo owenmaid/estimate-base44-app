@@ -225,6 +225,8 @@ export default function Inventory() {
           item={modalItem || null}
           onClose={() => setModalItem(null)}
           onSave={handleSave}
+          allItems={filtered}
+          onNavigate={(item) => setModalItem(item)}
         />
       )}
 

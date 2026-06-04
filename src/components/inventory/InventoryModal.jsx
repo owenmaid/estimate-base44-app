@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +13,19 @@ const EMPTY_FORM = {
   unit_cost: '', reg_value: '', ot_value: '', supplier: '', location: '', min_stock: 0, notes: '', status: 'in_stock',
 };
 
-export default function InventoryModal({ item, onClose, onSave }) {
+export default function InventoryModal({ item, onClose, onSave, allItems = [], onNavigate }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const isEdit = !!item;
+
+  const currentIndex = item && allItems.length > 0 ? allItems.findIndex(i => i.id === item.id) : -1;
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < allItems.length - 1;
+
+  const handleNavigate = (direction) => {
+    if (!onNavigate) return;
+    const nextItem = direction === 'prev' ? allItems[currentIndex - 1] : allItems[currentIndex + 1];
+    if (nextItem) onNavigate(nextItem);
+  };
 
   useEffect(() => {
     if (item) setForm({ ...EMPTY_FORM, ...item });
@@ -33,7 +43,34 @@ export default function InventoryModal({ item, onClose, onSave }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="text-lg font-semibold">{isEdit ? 'Edit Item' : 'New Inventory Item'}</h2>
+          <div className="flex items-center gap-2">
+            {isEdit && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('prev')}
+                  disabled={!hasPrev}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Previous item"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('next')}
+                  disabled={!hasNext}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Next item"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            <h2 className="text-lg font-semibold">{isEdit ? 'Edit Item' : 'New Inventory Item'}</h2>
+            {isEdit && allItems.length > 0 && currentIndex >= 0 && (
+              <span className="text-xs text-muted-foreground ml-1">{currentIndex + 1} / {allItems.length}</span>
+            )}
+          </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
