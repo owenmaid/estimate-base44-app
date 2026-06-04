@@ -79,7 +79,7 @@ export default function Inventory() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.InventoryItem.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventoryItems'] }); setModalItem(null); toast.success('Item updated!'); },
+    onSuccess: (updated) => { queryClient.invalidateQueries({ queryKey: ['inventoryItems'] }); setModalItem(updated); toast.success('Item updated!'); },
   });
 
   const deleteMutation = useMutation({
