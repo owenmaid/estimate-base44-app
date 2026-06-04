@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area, LineChart, Line } from 'recharts';
 import ProjectCostBreakdown from '@/components/projects/ProjectCostBreakdown';
 
 const STATUS_STYLES = {
@@ -634,21 +634,7 @@ export default function ProjectCostDashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart key={`equip-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                <defs>
-                  <linearGradient id="areaVentilation" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f97316" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="areaDCSM" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="areaConventional" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
+              <LineChart key={`equip-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="label"
@@ -668,10 +654,10 @@ export default function ProjectCostDashboard() {
                   formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]}
                 />
                 <Legend wrapperStyle={{ fontSize: 9 }} />
-                <Area type="monotone" dataKey="VENTILATION" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaVentilation)" />
-                <Area type="monotone" dataKey="DCSM" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaDCSM)" />
-                <Area type="monotone" dataKey="CONVENTIONAL" stackId="1" stroke="#a855f7" strokeWidth={2} fill="url(#areaConventional)" />
-              </AreaChart>
+                <Line type="monotone" dataKey="VENTILATION" stroke="#f97316" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="DCSM" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="CONVENTIONAL" stroke="#a855f7" strokeWidth={2} dot={false} />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
