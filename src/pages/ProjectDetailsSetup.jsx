@@ -38,6 +38,8 @@ export default function ProjectDetailsSetup() {
   const [statHolidays, setStatHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [expandedSchedule, setExpandedSchedule] = useState(false);
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const searchRef = useRef(null);
   const [convertingEstimate, setConvertingEstimate] = useState(false);
   const tableScrollRef = useRef(null);
   const bottomScrollRef = useRef(null);
@@ -643,22 +645,26 @@ const addEquipmentRow = () => {
               <SlidersHorizontal className="h-4 w-4 mr-1.5" /> Control Page
             </Button>
           </Link>
-          <div className="relative">
+          <div className="relative" ref={searchRef}>
             <input
               type="text"
               placeholder="Search or select project..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setShowProjectDropdown(true); }}
+              onFocus={() => setShowProjectDropdown(true)}
+              onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
               className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm w-64"
             />
-            {search && sampleProjects.length > 0 && (
-              <div className="absolute top-full mt-1 w-64 bg-card border border-border rounded-md shadow-lg z-10">
+            {showProjectDropdown && sampleProjects.length > 0 && (
+              <div className="absolute top-full mt-1 w-64 bg-card border border-border rounded-md shadow-lg z-10 max-h-72 overflow-y-auto">
                 {sampleProjects.map(p => (
                   <button
                     key={p.id}
+                    onMouseDown={e => e.preventDefault()}
                     onClick={() => {
                       handleLoadProject(p.id);
                       setSearch('');
+                      setShowProjectDropdown(false);
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 text-sm"
                   >
