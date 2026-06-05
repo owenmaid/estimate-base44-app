@@ -152,7 +152,7 @@ export default function ProjectCostDashboard() {
       .sort((a, b) => b.costs.grandTotal - a.costs.grandTotal)
       .slice(0, 8)
       .map(p => ({
-        name: p.project_number ? `${p.project_number}` : (p.name?.slice(0, 12) || 'N/A'),
+        name: p.project_number || p.name?.slice(0, 12) || 'N/A',
         fullName: p.name,
         total: p.costs.grandTotal,
         reg: p.costs.totalReg,
@@ -748,7 +748,16 @@ export default function ProjectCostDashboard() {
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={(props) => {
+                  const { x, y, payload, index } = props;
+                  const item = barData[index];
+                  return (
+                    <g transform={`translate(${x},${y})`}>
+                      <text x={0} y={0} dy={10} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={9} fontWeight={600}>{payload.value}</text>
+                      {item?.fullName && <text x={0} y={0} dy={20} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={8}>{item.fullName.slice(0, 14)}</text>}
+                    </g>
+                  );
+                }} height={40} />
                 <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 10 }}
