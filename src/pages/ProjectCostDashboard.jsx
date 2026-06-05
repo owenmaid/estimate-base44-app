@@ -97,11 +97,16 @@ export default function ProjectCostDashboard() {
         ? (effCol8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (effCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
         : 0;
 
+      const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
+      const isConventional = sg1 === 'CONVENTIONAL';
+
       return {
         rowId: row.id,
         label: row.label,
         item_group: inv?.item_group || 'Unknown',
         category: inv?.category || 'Uncategorized',
+        sub_group_01: sg1,
+        isConventional,
         regCost,
         otCost,
         specialCost,
@@ -109,9 +114,11 @@ export default function ProjectCostDashboard() {
       };
     });
 
-    const totalReg = rowCosts.reduce((s, r) => s + r.regCost, 0);
-    const totalOT = rowCosts.reduce((s, r) => s + r.otCost, 0);
-    const totalSpec = rowCosts.reduce((s, r) => s + r.specialCost, 0);
+    // Exclude CONVENTIONAL sub_group_01 rows from the summary totals
+    const includedRows = rowCosts.filter(r => !r.isConventional);
+    const totalReg = includedRows.reduce((s, r) => s + r.regCost, 0);
+    const totalOT = includedRows.reduce((s, r) => s + r.otCost, 0);
+    const totalSpec = includedRows.reduce((s, r) => s + r.specialCost, 0);
     const grandTotal = totalReg + totalOT + totalSpec;
 
     return { rowCosts, totalReg, totalOT, totalSpec, grandTotal };
