@@ -925,10 +925,11 @@ const addEquipmentRow = () => {
         }, 0);
         const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2 });
 
-        const dcsmManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && e?.item_group === 'Manpower Group'; });
-        const ventManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && e?.item_group === 'Manpower Group'; });
-        const dcsmEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && e?.item_group !== 'Manpower Group'; });
-        const ventEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && e?.item_group !== 'Manpower Group'; });
+        const isEquipOrLogistics = (sg2) => sg2 === 'EQUIPMENT' || sg2 === 'LOGISTICS';
+        const dcsmManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && e?.sub_group_02 === 'MANPOWER'; });
+        const ventManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && e?.sub_group_02 === 'MANPOWER'; });
+        const dcsmEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && isEquipOrLogistics(e?.sub_group_02); });
+        const ventEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && isEquipOrLogistics(e?.sub_group_02); });
         const conventional = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'CONVENTIONAL'; });
 
         const b1 = sumCosts(dcsmManpower);
