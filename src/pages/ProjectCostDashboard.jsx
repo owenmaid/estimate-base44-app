@@ -151,7 +151,21 @@ export default function ProjectCostDashboard() {
         });
       });
 
-      const kpiConsumables = sumBracket(CONSUMABLES_BRACKET);
+      // Consumables = sum of ALL leaf items whose description matches an inventory item with sub_group_02 === 'CONSUMABLES'
+      let kpiConsumables = 0;
+      sections.forEach(s => {
+        s.items.forEach(item => {
+          if (isHeader(item.description) || isSpacer(item.description)) return;
+          const desc = (item.description || '').toLowerCase();
+          const invMatch = inventory.find(i => 
+            ((i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc) &&
+            (i.sub_group_02 || '').toUpperCase() === 'CONSUMABLES'
+          );
+          if (invMatch) {
+            kpiConsumables += item.total || 0;
+          }
+        });
+      });
 
       map[pn] = { subtotal, kpiManpower, kpiEquipment, kpiLogistics, kpiConsumables };
     });
