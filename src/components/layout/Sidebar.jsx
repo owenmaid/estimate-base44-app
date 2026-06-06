@@ -25,7 +25,7 @@ const bottomSections = [
     { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
   ],
   [
-    { label: 'Manpower Estimation', path: '/calculation-routing', icon: GitBranch },
+    { label: 'Manpower and Equipment Estimation', path: '/calculation-routing', icon: GitBranch },
     { label: 'Resources', path: '/resources', icon: Users },
   ],
   [
