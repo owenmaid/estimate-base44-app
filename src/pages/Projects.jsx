@@ -39,6 +39,10 @@ function computeSetupTotal(project, inventoryMap) {
       else if (type === 'St') { col8 += num * shiftHrs; }
     });
 
+    // Exclude Conventional rows from total
+    const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
+    if (sg1 === 'CONVENTIONAL') return;
+
     const regCost = regRate != null ? (isManpower ? col4 : col1) * regRate : 0;
     const otCost = otRate != null ? (col5 + col6 + col7) * otRate : 0;
     const specialCost = otRate != null
@@ -180,7 +184,7 @@ export default function Projects() {
                   <th className="text-left px-4 py-3 font-medium">End Date</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-left px-4 py-3 font-medium">Client</th>
-                  <th className="text-right px-4 py-3 font-medium" colSpan={3}>Total (from Setup)</th>
+                  <th className="text-right px-4 py-3 font-medium" colSpan={3}>Total (from Setup) <span className="text-muted-foreground font-normal italic">— excl. Conventional Costs</span></th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
