@@ -42,17 +42,87 @@ export default function ProjectCostDashboard() {
     queryFn: () => base44.entities.Estimate.list(),
   });
 
-  // Build a lookup: project_number (lowercase) → estimate subtotal (excl. tax)
-  const estimateTotalMap = useMemo(() => {
+  // Build a lookup: project_number (lowercase) → estimate subtotal + parsed KPI buckets
+  const estimateMap = useMemo(() => {
     const map = {};
+
+    const isHeader = (desc) => /[\[\]]/.test(desc || '');
+    const isSpacer = (desc) => (desc || '') === '__SPACER__';
+    const norm = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+
+    // Section title groupings matching CreateEstimatePanel logic
+    const MANPOWER_SECTIONS = ['indirects total', 'directs total', 'support and logistics'];
+    const EQUIPMENT_SECTIONS = ['total equipment | consumables cost'];
+    // Logistics bracket and consumables bracket names
+    const LOGISTICS_BRACKET = ['logistics / shipping', 'logistics/shipping', 'logistic / shipping', 'logistic/shipping'];
+    const CONSUMABLES_BRACKET = ['ventilation consumables'];
+
     estimates.forEach(e => {
       const pn = (e.project_number || '').trim().toLowerCase();
-      // Only use subtotal (pre-tax). Never fall back to total which includes tax.
-      const value = e.subtotal != null ? Number(e.subtotal) : null;
-      if (pn && value != null) map[pn] = value;
+      if (!pn) return;
+      const subtotal = e.subtotal != null ? Number(e.subtotal) : null;
+
+      // Parse line_items into sections
+      const lineItems = e.line_items || [];
+      const sections = [];
+      let current = null;
+      lineItems.forEach(item => {
+        if ((item.description || '').startsWith('__SECTION__:')) {
+          const title = item.description.slice('__SECTION__:'.length);
+          current = { title: norm(title), items: [] };
+          sections.push(current);
+        } else if (current) {
+          current.items.push(item);
+        }
+      });
+
+      // Sum leaf items for a list of section titles
+      const sumSections = (titleList) =>
+        sections.reduce((sum, s) => {
+          if (!titleList.includes(s.title)) return sum;
+          return sum + s.items.reduce((a, item) => {
+            if (isHeader(item.description) || isSpacer(item.description)) return a;
+            return a + (item.total || 0);
+          }, 0);
+        }, 0);
+
+      // Sum leaves under a specific bracket header across all sections
+      const sumBracket = (bracketNames) => {
+        let total = 0;
+        sections.forEach(s => {
+          s.items.forEach((item, idx) => {
+            if (!isHeader(item.description)) return;
+            if (!bracketNames.includes(norm(item.description))) return;
+            for (let j = idx + 1; j < s.items.length; j++) {
+              if (isHeader(s.items[j].description)) break;
+              if (isSpacer(s.items[j].description)) continue;
+              total += s.items[j].total || 0;
+            }
+          });
+        });
+        return total;
+      };
+
+      const kpiManpower = sumSections(MANPOWER_SECTIONS);
+      const kpiLogistics = sumBracket(LOGISTICS_BRACKET);
+      const kpiConsumables = sumBracket(CONSUMABLES_BRACKET);
+      const kpiEquipRaw = sumSections(EQUIPMENT_SECTIONS);
+      // Equipment = equipment section total minus logistics and consumables (which live inside it)
+      const kpiEquipment = kpiEquipRaw - kpiLogistics - kpiConsumables;
+
+      map[pn] = { subtotal, kpiManpower, kpiEquipment, kpiLogistics, kpiConsumables };
     });
     return map;
   }, [estimates]);
+
+  // Keep a simple subtotal-only map for backwards compat
+  const estimateTotalMap = useMemo(() => {
+    const map = {};
+    Object.entries(estimateMap).forEach(([pn, v]) => {
+      if (v.subtotal != null) map[pn] = v.subtotal;
+    });
+    return map;
+  }, [estimateMap]);
 
   // Build inventory lookup map
   const inventoryValueMap = useMemo(() => {
@@ -519,20 +589,30 @@ export default function ProjectCostDashboard() {
       {/* Overview KPI Cards */}
       {(() => {
         const isFiltered = !!selectedProject && !!selectedCosts;
+        const getEstEntry = (p) => estimateMap[(p.project_number || '').trim().toLowerCase()] ?? null;
+
         const kpiCostValue = isFiltered
           ? (selectedProject.estimateTotal ?? selectedCosts.grandTotal)
           : allProjectsSummary.reduce((s, p) => s + (p.estimateTotal ?? p.costs.grandTotal), 0);
-        const kpiManpower = isFiltered
-          ? selectedCosts.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((s, r) => s + r.total, 0)
-          : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((a, r) => a + r.total, 0), 0);
-        const kpiLogistics = isFiltered
-          ? selectedCosts.rowCosts.filter(r => !r.isConventional && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() === 'LOGISTICS').reduce((s, r) => s + r.total, 0)
-          : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => !r.isConventional && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() === 'LOGISTICS').reduce((a, r) => a + r.total, 0), 0);
+
+        // Use estimate-parsed KPI buckets when available, else fall back to grid calculation
+        const gridManpower = (costs) => costs.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((s, r) => s + r.total, 0);
         const getRowSg2 = (r) => (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase();
+        const gridLogistics = (costs) => costs.rowCosts.filter(r => !r.isConventional && getRowSg2(r) === 'LOGISTICS').reduce((s, r) => s + r.total, 0);
+        const gridConsumables = (costs) => costs.rowCosts.filter(r => !r.isConventional && r.item_group !== 'Manpower Group' && getRowSg2(r) !== 'LOGISTICS' && getRowSg2(r) !== 'EQUIPMENT').reduce((s, r) => s + r.total, 0);
+
+        const kpiManpower = isFiltered
+          ? (getEstEntry(selectedProject)?.kpiManpower ?? gridManpower(selectedCosts))
+          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiManpower ?? gridManpower(p.costs)); }, 0);
+        const kpiLogistics = isFiltered
+          ? (getEstEntry(selectedProject)?.kpiLogistics ?? gridLogistics(selectedCosts))
+          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiLogistics ?? gridLogistics(p.costs)); }, 0);
         const kpiConsumables = isFiltered
-          ? selectedCosts.rowCosts.filter(r => !r.isConventional && r.item_group !== 'Manpower Group' && getRowSg2(r) !== 'LOGISTICS' && getRowSg2(r) !== 'EQUIPMENT').reduce((s, r) => s + r.total, 0)
-          : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => !r.isConventional && r.item_group !== 'Manpower Group' && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() !== 'LOGISTICS' && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() !== 'EQUIPMENT').reduce((a, r) => a + r.total, 0), 0);
-        const kpiEquipment = kpiCostValue - kpiManpower - kpiLogistics - kpiConsumables;
+          ? (getEstEntry(selectedProject)?.kpiConsumables ?? gridConsumables(selectedCosts))
+          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiConsumables ?? gridConsumables(p.costs)); }, 0);
+        const kpiEquipment = isFiltered
+          ? (getEstEntry(selectedProject)?.kpiEquipment ?? (kpiCostValue - kpiManpower - kpiLogistics - kpiConsumables))
+          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiEquipment ?? 0); }, 0);
 
         return (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -564,7 +644,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiManpower)}</div>
-                <div className="text-xs text-muted-foreground mt-1">manpower group</div>
+                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-orange-500/30' : ''}>
@@ -576,7 +656,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiEquipment)}</div>
-                <div className="text-xs text-muted-foreground mt-1">equipment group</div>
+                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-purple-500/30' : ''}>
@@ -588,7 +668,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiLogistics)}</div>
-                <div className="text-xs text-muted-foreground mt-1">logistics sub-group</div>
+                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-teal-500/30' : ''}>
@@ -600,7 +680,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiConsumables)}</div>
-                <div className="text-xs text-muted-foreground mt-1">other costs</div>
+                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
               </CardContent>
             </Card>
           </div>
