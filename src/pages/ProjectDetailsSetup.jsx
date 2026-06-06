@@ -186,7 +186,20 @@ export default function ProjectDetailsSetup() {
     const grid = { ...existingTypeGrid };
     allDates.forEach(d => {
       const dateStr = format(d, 'yyyy-MM-dd');
-      if (grid[dateStr] === undefined) grid[dateStr] = '';
+      if (grid[dateStr] === undefined) {
+        const dayOfWeek = d.getDay();
+        if (dayOfWeek === 6) {
+          grid[dateStr] = 'Sa';
+        } else if (dayOfWeek === 0) {
+          grid[dateStr] = 'Su';
+        } else {
+          const isHoliday = holidays.some(h => {
+            try { return format(parseISO(h.date), 'yyyy-MM-dd') === dateStr; }
+            catch { return false; }
+          });
+          grid[dateStr] = isHoliday ? 'St' : 'N';
+        }
+      }
     });
     return grid;
   };
