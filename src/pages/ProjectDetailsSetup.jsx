@@ -950,7 +950,7 @@ const addEquipmentRow = () => {
         const b3 = sumCosts(dcsmEquip);
         const b4 = sumCosts(ventEquip);
         const b5 = sumCosts(conventional);
-        const grandTotal = b1 + b2 + b3 + b4 + b5;
+        const grandTotal = b1 + b2 + b3 + b4; // Conventional Costs excluded
 
         const blocks = [
           { label: 'DCSM Manpower', value: b1, icon: <Users className="h-5 w-5 text-blue-400 shrink-0" />, rows: dcsmManpower.length },
@@ -989,6 +989,16 @@ const addEquipmentRow = () => {
                   </div>
                 </div>
               </div>
+              {b5 > 0 && (
+                <p className="text-xs text-muted-foreground italic mt-1">
+                  * Conventional Costs ({fmt(b5)}) not included in Total Project Cost.
+                </p>
+              )}
+              {b5 === 0 && conventional.length > 0 && (
+                <p className="text-xs text-muted-foreground italic mt-1">
+                  * Conventional Costs not included in Total Project Cost.
+                </p>
+              )}
             </CardContent>
           </Card>
         );
