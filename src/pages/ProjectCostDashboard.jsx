@@ -51,7 +51,6 @@ export default function ProjectCostDashboard() {
     const norm = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
     // Section title groupings matching CreateEstimatePanel logic
-    const MANPOWER_SECTIONS = ['indirects total', 'directs total'];
     const EQUIPMENT_SECTIONS = ['total equipment | consumables cost'];
     // Logistics includes Support and Logistics section plus the Logistics bracket
     const LOGISTICS_SECTIONS = ['support and logistics'];
@@ -104,8 +103,23 @@ export default function ProjectCostDashboard() {
         return total;
       };
 
-      const kpiManpower = sumSections(MANPOWER_SECTIONS);
-      const kpiLogistics = sumSections(LOGISTICS_SECTIONS) + sumBracket(LOGISTICS_BRACKET);
+      // Manpower = sum of ALL leaf items whose description matches an inventory item with sub_group_02 === 'MANPOWER'
+      let kpiManpower = 0;
+      sections.forEach(s => {
+        s.items.forEach(item => {
+          if (isHeader(item.description) || isSpacer(item.description)) return;
+          const desc = (item.description || '').toLowerCase();
+          const invMatch = inventory.find(i => 
+            ((i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc) &&
+            (i.sub_group_02 || '').toUpperCase() === 'MANPOWER'
+          );
+          if (invMatch) {
+            kpiManpower += item.total || 0;
+          }
+        });
+      });
+
+      const kpiLogistics = sumBracket(LOGISTICS_BRACKET);
       const kpiConsumables = sumBracket(CONSUMABLES_BRACKET);
       const kpiEquipRaw = sumSections(EQUIPMENT_SECTIONS);
       // Equipment = equipment section total minus logistics and consumables (which live inside it)
@@ -114,7 +128,7 @@ export default function ProjectCostDashboard() {
       map[pn] = { subtotal, kpiManpower, kpiEquipment, kpiLogistics, kpiConsumables };
     });
     return map;
-  }, [estimates]);
+  }, [estimates, inventory]);
 
   // Keep a simple subtotal-only map for backwards compat
   const estimateTotalMap = useMemo(() => {
