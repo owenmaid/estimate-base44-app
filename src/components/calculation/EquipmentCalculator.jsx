@@ -23,6 +23,7 @@ function evalFormula(expression, variables) {
 
 export default function EquipmentCalculator() {
   const [lineItems, setLineItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [projectDays, setProjectDays] = useState(1);
   const [taxRate, setTaxRate] = useState(0);
@@ -40,6 +41,8 @@ export default function EquipmentCalculator() {
   const activeFormulas = formulas.filter(f => f.is_active && f.formula_expression);
 
   const availableItems = inventory.filter(i => i.status !== 'discontinued');
+  const categories = useMemo(() => [...new Set(availableItems.map(i => i.category).filter(Boolean))].sort(), [availableItems]);
+  const itemsInCategory = useMemo(() => selectedCategory ? availableItems.filter(i => i.category === selectedCategory) : [], [availableItems, selectedCategory]);
 
   const addLineItem = () => {
     if (!selectedItemId) return;
@@ -163,16 +166,27 @@ export default function EquipmentCalculator() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={selectedCategory}
+              onChange={e => { setSelectedCategory(e.target.value); setSelectedItemId(''); }}
+              className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm min-w-[180px]"
+            >
+              <option value="">Select category...</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
             <select
               value={selectedItemId}
               onChange={e => setSelectedItemId(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm"
+              disabled={!selectedCategory}
+              className="flex-1 px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm disabled:opacity-50"
             >
-              <option value="">Select equipment from inventory...</option>
-              {availableItems.map(item => (
+              <option value="">{selectedCategory ? 'Select item...' : 'Select a category first...'}</option>
+              {itemsInCategory.map(item => (
                 <option key={item.id} value={item.id}>
-                  {item.name}{item.sku ? ` (${item.sku})` : ''} — {item.status?.replace('_', ' ')}
+                  {item.name}{item.sku ? ` (${item.sku})` : ''}
                 </option>
               ))}
             </select>
