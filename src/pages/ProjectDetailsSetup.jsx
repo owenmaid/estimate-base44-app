@@ -327,7 +327,24 @@ const addEquipmentRow = () => {
     setStatHolidays(holidays);
     setLoadingHolidays(false);
     if (dates.length > 0) {
-      setTypeGrid(buildTypeGridFromDates(dates, {}, holidays));
+      // Automatically apply Auto-fill with the fetched holidays so the user doesn't have to do it manually
+      const newTypeGrid = { ...typeGrid };
+      dates.forEach(d => {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        const dayOfWeek = d.getDay();
+        if (dayOfWeek === 6) {
+          newTypeGrid[dateStr] = 'Sa';
+        } else if (dayOfWeek === 0) {
+          newTypeGrid[dateStr] = 'Su';
+        } else {
+          const isHoliday = holidays.some(h => {
+            try { return format(parseISO(h.date), 'yyyy-MM-dd') === dateStr; }
+            catch { return false; }
+          });
+          newTypeGrid[dateStr] = isHoliday ? 'St' : 'N';
+        }
+      });
+      setTypeGrid(newTypeGrid);
     }
   };
 
