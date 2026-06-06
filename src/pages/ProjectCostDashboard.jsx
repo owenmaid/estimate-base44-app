@@ -523,9 +523,7 @@ export default function ProjectCostDashboard() {
         const kpiManpower = isFiltered
           ? selectedCosts.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((s, r) => s + r.total, 0)
           : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((a, r) => a + r.total, 0), 0);
-        const kpiEquipment = isFiltered
-          ? selectedCosts.rowCosts.filter(r => r.item_group === 'Equipment Group' && !r.isConventional).reduce((s, r) => s + r.total, 0)
-          : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Equipment Group' && !r.isConventional).reduce((a, r) => a + r.total, 0), 0);
+        const kpiEquipment = kpiCostValue - kpiManpower;
 
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
