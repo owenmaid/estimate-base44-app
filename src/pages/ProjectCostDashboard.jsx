@@ -37,6 +37,21 @@ export default function ProjectCostDashboard() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
+  const { data: estimates = [] } = useQuery({
+    queryKey: ['estimates-all'],
+    queryFn: () => base44.entities.Estimate.list(),
+  });
+
+  // Build a lookup: project_number (lowercase) → estimate total (incl. tax)
+  const estimateTotalMap = useMemo(() => {
+    const map = {};
+    estimates.forEach(e => {
+      const pn = (e.project_number || '').trim().toLowerCase();
+      if (pn && e.total != null) map[pn] = Number(e.total);
+    });
+    return map;
+  }, [estimates]);
+
   // Build inventory lookup map
   const inventoryValueMap = useMemo(() => {
     const byId = {};
@@ -139,11 +154,14 @@ export default function ProjectCostDashboard() {
   const allProjectsSummary = useMemo(() => {
     return projects.map(p => {
       const costs = computeProjectCosts(p);
-      return { ...p, costs };
+      const pn = (p.project_number || '').trim().toLowerCase();
+      const estimateTotal = estimateTotalMap[pn] ?? null;
+      return { ...p, costs, estimateTotal };
     });
-  }, [projects, inventoryValueMap]);
+  }, [projects, inventoryValueMap, estimateTotalMap]);
 
-  const totalGrandRevenue = allProjectsSummary.reduce((s, p) => s + p.costs.grandTotal, 0);
+  // Total across all projects — use estimate total where available, else grid total
+  const totalGrandRevenue = allProjectsSummary.reduce((s, p) => s + (p.estimateTotal ?? p.costs.grandTotal), 0);
 
   // Filtered projects for search dropdown
   const filteredProjects = useMemo(() => {
@@ -499,7 +517,9 @@ export default function ProjectCostDashboard() {
       {/* Overview KPI Cards */}
       {(() => {
         const isFiltered = !!selectedProject && !!selectedCosts;
-        const kpiCostValue = isFiltered ? selectedCosts.grandTotal : totalGrandRevenue;
+        const kpiCostValue = isFiltered
+          ? (selectedProject.estimateTotal ?? selectedCosts.grandTotal)
+          : totalGrandRevenue;
         const kpiManpower = isFiltered
           ? selectedCosts.rowCosts.filter(r => r.item_group === 'Manpower Group').reduce((s, r) => s + r.total, 0)
           : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Manpower Group').reduce((a, r) => a + r.total, 0), 0);
@@ -608,13 +628,14 @@ export default function ProjectCostDashboard() {
             {showDropdown && (search || true) && filteredProjects.length > 0 && (
               <div className="absolute top-full mt-1 w-full bg-card border border-border rounded-lg shadow-xl z-20 max-h-72 overflow-y-auto">
                 {filteredProjects.map(p => {
-                  const costs = computeProjectCosts(p);
+                  const pEntry = allProjectsSummary.find(s => s.id === p.id) || p;
+                  const displayTotal = pEntry.estimateTotal ?? pEntry.costs?.grandTotal ?? 0;
                   return (
                     <button
                       key={p.id}
                       className="w-full text-left px-4 py-3 hover:bg-secondary/50 transition-colors border-b border-border last:border-b-0 flex items-center justify-between gap-3"
                       onClick={() => {
-                        setSelectedProject(p);
+                        setSelectedProject(pEntry);
                         setSearch(p.name || '');
                         setShowDropdown(false);
                       }}
@@ -628,8 +649,8 @@ export default function ProjectCostDashboard() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
-                        {costs.grandTotal > 0 && (
-                          <span className="text-xs font-semibold text-primary">{fmt(costs.grandTotal)}</span>
+                        {displayTotal > 0 && (
+                          <span className="text-xs font-semibold text-primary">{fmt(displayTotal)}</span>
                         )}
                       </div>
                     </button>
@@ -857,7 +878,11 @@ export default function ProjectCostDashboard() {
                       <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalOT > 0 ? fmt(p.costs.totalOT) : '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalSpec > 0 ? fmt(p.costs.totalSpec) : '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs text-orange-400">{p.costs.totalEquipment > 0 ? fmt(p.costs.totalEquipment) : '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-primary">{p.costs.grandTotal > 0 ? fmt(p.costs.grandTotal) : '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-primary">
+                        {p.estimateTotal != null
+                          ? <>{fmt(p.estimateTotal)}<span className="ml-1 text-[9px] text-muted-foreground">(est.)</span></>
+                          : p.costs.grandTotal > 0 ? fmt(p.costs.grandTotal) : '—'}
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild onClick={e => e.stopPropagation()}>
                           <Link to={`/project-planning/${p.id}`}><ExternalLink className="h-3.5 w-3.5" /></Link>
@@ -875,7 +900,7 @@ export default function ProjectCostDashboard() {
                     <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalOT, 0))}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalSpec, 0))}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs text-orange-400">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalEquipment, 0))}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-primary">{fmt(totalGrandRevenue)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs text-primary">{fmt(totalGrandRevenue)}<span className="ml-1 text-[9px] text-muted-foreground">(est.)</span></td>
                     <td />
                   </tr>
                 </tfoot>
