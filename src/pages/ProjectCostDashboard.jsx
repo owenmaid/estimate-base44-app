@@ -50,6 +50,7 @@ export default function ProjectCostDashboard() {
         item_group: item.item_group,
         category: item.category,
         sub_group_01: item.sub_group_01 || '',
+        sub_group_02: item.sub_group_02 || '',
         name: item.name,
       };
       if (item.id) byId[item.id] = entry;
@@ -363,49 +364,81 @@ export default function ProjectCostDashboard() {
     return Object.values(monthBuckets).filter(b => b.total > 0);
   };
 
-  // Sub groups to track in the equipment chart
-  const EQUIP_SUB_GROUPS = ['VENTILATION', 'DCSM', 'CONVENTIONAL'];
+  // The 5 cost buckets matching ProjectDetailsSetup logic
+  const EQUIP_SERIES = ['DCSM_MANPOWER', 'VENT_MANPOWER', 'DCSM_EQUIP', 'VENT_EQUIP', 'CONVENTIONAL'];
+  const isEquipOrLogistics = (sg2) => sg2 === 'EQUIPMENT' || sg2 === 'LOGISTICS';
 
-  // Build equipment-only monthly/daily area data split by sub_group_01 (VENTILATION, DCSM, CONVENTIONAL)
+  // Build equipment cost chart data split by sub_group_01 + sub_group_02 (matches ProjectDetailsSetup Cost Summary)
   const buildEquipmentAreaDataForProject = (project, granularity) => {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const equipmentRows = project.equipment_rows || [];
     const equipmentGrid = project.equipment_grid || {};
+    const typeGrid = project.type_grid || {};
 
-    // dateTotals: { dateStr: { VENTILATION: 0, DCSM: 0, CONVENTIONAL: 0 } }
-    const dateTotals = {};
+    const emptyBuckets = () => ({ DCSM_MANPOWER: 0, VENT_MANPOWER: 0, DCSM_EQUIP: 0, VENT_EQUIP: 0, CONVENTIONAL: 0 });
+    const dateTotals = {}; // { dateStr: emptyBuckets() }
 
     equipmentRows.forEach(row => {
+      const label = (row.label || '').toLowerCase();
+      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
       const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
-      if (inv?.item_group !== 'Equipment Group') return;
-      const regRate = inv?.reg ?? null;
-      const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
-      // If sub_group_01 matches a known group use it, otherwise fall back to category-based detection
-      let bucket = EQUIP_SUB_GROUPS.includes(sg1) ? sg1 : null;
-      if (!bucket) {
-        const cat = (inv?.category || '').toUpperCase();
-        if (cat.includes('VENT')) bucket = 'VENTILATION';
-        else bucket = 'CONVENTIONAL'; // default bucket for unclassified equipment
-      }
+      if (!inv) return;
+      const sg1 = (inv.sub_group_01 || '').trim().toUpperCase();
+      const sg2 = (inv.sub_group_02 || '').trim().toUpperCase();
+      const isManpower = inv.item_group === 'Manpower Group';
+      const regRate = inv.reg ?? null;
+      const otRate = inv.ot ?? null;
+
+      // Determine which series bucket this row belongs to
+      let bucket = null;
+      if (sg1 === 'DCSM' && sg2 === 'MANPOWER') bucket = 'DCSM_MANPOWER';
+      else if (sg1 === 'VENTILATION' && sg2 === 'MANPOWER') bucket = 'VENT_MANPOWER';
+      else if (sg1 === 'DCSM' && isEquipOrLogistics(sg2)) bucket = 'DCSM_EQUIP';
+      else if (sg1 === 'VENTILATION' && isEquipOrLogistics(sg2)) bucket = 'VENT_EQUIP';
+      else if (sg1 === 'CONVENTIONAL') bucket = 'CONVENTIONAL';
+      if (!bucket) return; // skip unclassified rows
 
       Object.entries(equipmentGrid).forEach(([key, value]) => {
         if (!key.startsWith(`${row.id}_`)) return;
         const dateStr = key.slice(`${row.id}_`.length);
         const num = parseInt(value, 10);
         if (isNaN(num) || num <= 0) return;
-        const cost = regRate != null ? num * regRate : 0;
-        if (!dateTotals[dateStr]) dateTotals[dateStr] = { VENTILATION: 0, DCSM: 0, CONVENTIONAL: 0 };
-        dateTotals[dateStr][bucket] += cost;
+
+        const type = typeGrid[dateStr];
+        let regUnits = 0, otUnits = 0, specUnits = 0;
+        if (type === 'N') {
+          regUnits = isManpower ? num * 8 : num;
+          otUnits = isManpower ? num * Math.max(shiftHrs - 8, 0) : 0;
+        } else if (type === 'Sa') {
+          regUnits = isManpower ? num * 4 : num;
+          otUnits = isManpower ? num * Math.max(shiftHrs - 4, 0) : 0;
+        } else if (type === 'Su') {
+          otUnits = isManpower ? num * shiftHrs : 0;
+          regUnits = isManpower ? 0 : num;
+        } else if (type === 'St') {
+          specUnits = isManpower ? num * shiftHrs : 0;
+          regUnits = isManpower ? 0 : num;
+        } else {
+          regUnits = isManpower ? num * shiftHrs : num;
+        }
+        const reg = regRate != null ? regUnits * regRate : 0;
+        const ot = otRate != null ? otUnits * otRate : 0;
+        const spec = otRate != null && specUnits > 0
+          ? (specUnits * 2 * (4 / (shiftHrs * 2)) * otRate) + (specUnits * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
+          : 0;
+
+        if (!dateTotals[dateStr]) dateTotals[dateStr] = emptyBuckets();
+        dateTotals[dateStr][bucket] += reg + ot + spec;
       });
     });
 
-    const hasData = (c) => EQUIP_SUB_GROUPS.some(g => c[g] > 0);
+    const hasData = (c) => EQUIP_SERIES.some(g => c[g] > 0);
 
     if (granularity === 'day') {
       return Object.entries(dateTotals)
         .filter(([, c]) => hasData(c))
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([dateStr, c]) => ({ label: dateStr, VENTILATION: c.VENTILATION, DCSM: c.DCSM, CONVENTIONAL: c.CONVENTIONAL }));
+        .map(([dateStr, c]) => ({ label: dateStr, ...c }));
     }
 
     const monthBuckets = {};
@@ -416,8 +449,8 @@ export default function ProjectCostDashboard() {
       const month = parseInt(parts[1], 10);
       if (isNaN(year) || isNaN(month)) return;
       const key = `${year}-${String(month).padStart(2, '0')}`;
-      if (!monthBuckets[key]) monthBuckets[key] = { label: `${MONTHS[month - 1]} ${year}`, sortKey: key, VENTILATION: 0, DCSM: 0, CONVENTIONAL: 0 };
-      EQUIP_SUB_GROUPS.forEach(g => { monthBuckets[key][g] += costs[g]; });
+      if (!monthBuckets[key]) monthBuckets[key] = { label: `${MONTHS[month - 1]} ${year}`, sortKey: key, ...emptyBuckets() };
+      EQUIP_SERIES.forEach(g => { monthBuckets[key][g] += costs[g]; });
     });
 
     return Object.values(monthBuckets)
@@ -645,26 +678,32 @@ export default function ProjectCostDashboard() {
                   <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'} />
                   <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
                   <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]} />
-                  <Legend wrapperStyle={{ fontSize: 9 }} />
-                  <Line type="monotone" dataKey="VENTILATION" stroke="#f97316" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="DCSM" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="CONVENTIONAL" stroke="#a855f7" strokeWidth={2} dot={false} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_MANPOWER: 'DCSM Manpower', VENT_MANPOWER: 'Vent Manpower', DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip', CONVENTIONAL: 'Conventional' }[v] || v)} />
+                  <Line type="monotone" dataKey="DCSM_MANPOWER" name="DCSM_MANPOWER" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="VENT_MANPOWER" name="VENT_MANPOWER" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="DCSM_EQUIP" name="DCSM_EQUIP" stroke="#f97316" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="VENT_EQUIP" name="VENT_EQUIP" stroke="#eab308" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="CONVENTIONAL" name="CONVENTIONAL" stroke="#a855f7" strokeWidth={2} dot={false} />
                 </LineChart>
               ) : (
                 <AreaChart key={`equip-area-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                   <defs>
-                    <linearGradient id="areaEquipV" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.4} /><stop offset="95%" stopColor="#f97316" stopOpacity={0.02} /></linearGradient>
-                    <linearGradient id="areaEquipD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaEquipDM" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaEquipVM" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaEquipDE" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.4} /><stop offset="95%" stopColor="#f97316" stopOpacity={0.02} /></linearGradient>
+                    <linearGradient id="areaEquipVE" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#eab308" stopOpacity={0.4} /><stop offset="95%" stopColor="#eab308" stopOpacity={0.02} /></linearGradient>
                     <linearGradient id="areaEquipC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} /><stop offset="95%" stopColor="#a855f7" stopOpacity={0.02} /></linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'} />
                   <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]} />
-                  <Legend wrapperStyle={{ fontSize: 9 }} />
-                  <Area type="monotone" dataKey="VENTILATION" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaEquipV)" />
-                  <Area type="monotone" dataKey="DCSM" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaEquipD)" />
-                  <Area type="monotone" dataKey="CONVENTIONAL" stackId="1" stroke="#a855f7" strokeWidth={2} fill="url(#areaEquipC)" />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, { DCSM_MANPOWER: 'DCSM Manpower', VENT_MANPOWER: 'Vent Manpower', DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip', CONVENTIONAL: 'Conventional' }[name] || name]} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_MANPOWER: 'DCSM Manpower', VENT_MANPOWER: 'Vent Manpower', DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip', CONVENTIONAL: 'Conventional' }[v] || v)} />
+                  <Area type="monotone" dataKey="DCSM_MANPOWER" name="DCSM_MANPOWER" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaEquipDM)" />
+                  <Area type="monotone" dataKey="VENT_MANPOWER" name="VENT_MANPOWER" stackId="1" stroke="#06b6d4" strokeWidth={2} fill="url(#areaEquipVM)" />
+                  <Area type="monotone" dataKey="DCSM_EQUIP" name="DCSM_EQUIP" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaEquipDE)" />
+                  <Area type="monotone" dataKey="VENT_EQUIP" name="VENT_EQUIP" stackId="1" stroke="#eab308" strokeWidth={2} fill="url(#areaEquipVE)" />
+                  <Area type="monotone" dataKey="CONVENTIONAL" name="CONVENTIONAL" stackId="1" stroke="#a855f7" strokeWidth={2} fill="url(#areaEquipC)" />
                 </AreaChart>
               )}
             </ResponsiveContainer>
