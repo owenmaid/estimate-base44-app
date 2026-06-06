@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal, Search, Loader2, FileText } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, X, SlidersHorizontal, Search, Loader2, FileText, Users, Wrench, DollarSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
@@ -916,7 +916,65 @@ const addEquipmentRow = () => {
         </Card>
       )}
 
-{/* Equipment Spreadsheet + Calculations */}
+{/* Manpower vs Equipment Cost Summary */}
+      {selectedProjectId && equipmentRows.length > 0 && (() => {
+        const manpowerRows = equipmentRows.filter(row => {
+          const entry = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()];
+          return entry?.item_group === 'Manpower Group';
+        });
+        const equipRows = equipmentRows.filter(row => {
+          const entry = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()];
+          return entry?.item_group !== 'Manpower Group';
+        });
+        const sumCosts = (rows) => rows.reduce((sum, row) => {
+          const c = calculateRowCosts[row.id] || {};
+          return sum + (c.regCost || 0) + (c.otCost || 0) + (c.specialCost || 0);
+        }, 0);
+        const manpowerTotal = sumCosts(manpowerRows);
+        const equipTotal = sumCosts(equipRows);
+        const grandTotal = manpowerTotal + equipTotal;
+        const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2 });
+        return (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                Cost Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
+                  <Users className="h-5 w-5 text-blue-400 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Manpower Cost</p>
+                    <p className="text-sm font-bold text-foreground">{fmt(manpowerTotal)}</p>
+                    <p className="text-xs text-muted-foreground">{manpowerRows.length} row{manpowerRows.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
+                  <Wrench className="h-5 w-5 text-orange-400 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Equipment Cost</p>
+                    <p className="text-sm font-bold text-foreground">{fmt(equipTotal)}</p>
+                    <p className="text-xs text-muted-foreground">{equipRows.length} row{equipRows.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/30">
+                  <DollarSign className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Grand Total</p>
+                    <p className="text-sm font-bold text-primary">{fmt(grandTotal)}</p>
+                    <p className="text-xs text-muted-foreground">{equipmentRows.length} row{equipmentRows.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Equipment Spreadsheet + Calculations */}
       {dates.length > 0 && (
         <div className={expandedSchedule ? "fixed inset-0 z-50 bg-background p-4 overflow-auto flex gap-4 items-start" : "flex gap-4 items-start"}>
         <Card className="flex-1 min-w-0">
