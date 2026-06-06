@@ -51,9 +51,10 @@ export default function ProjectCostDashboard() {
     const norm = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
 
     // Section title groupings matching CreateEstimatePanel logic
-    const MANPOWER_SECTIONS = ['indirects total', 'directs total', 'support and logistics'];
+    const MANPOWER_SECTIONS = ['indirects total', 'directs total'];
     const EQUIPMENT_SECTIONS = ['total equipment | consumables cost'];
-    // Logistics bracket and consumables bracket names
+    // Logistics includes Support and Logistics section plus the Logistics bracket
+    const LOGISTICS_SECTIONS = ['support and logistics'];
     const LOGISTICS_BRACKET = ['logistics / shipping', 'logistics/shipping', 'logistic / shipping', 'logistic/shipping'];
     const CONSUMABLES_BRACKET = ['ventilation consumables'];
 
@@ -104,7 +105,7 @@ export default function ProjectCostDashboard() {
       };
 
       const kpiManpower = sumSections(MANPOWER_SECTIONS);
-      const kpiLogistics = sumBracket(LOGISTICS_BRACKET);
+      const kpiLogistics = sumSections(LOGISTICS_SECTIONS) + sumBracket(LOGISTICS_BRACKET);
       const kpiConsumables = sumBracket(CONSUMABLES_BRACKET);
       const kpiEquipRaw = sumSections(EQUIPMENT_SECTIONS);
       // Equipment = equipment section total minus logistics and consumables (which live inside it)
