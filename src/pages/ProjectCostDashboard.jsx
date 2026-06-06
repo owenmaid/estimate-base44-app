@@ -591,28 +591,22 @@ export default function ProjectCostDashboard() {
         const isFiltered = !!selectedProject && !!selectedCosts;
         const getEstEntry = (p) => estimateMap[(p.project_number || '').trim().toLowerCase()] ?? null;
 
+        // All KPIs are driven purely by the estimate — no grid fallback
         const kpiCostValue = isFiltered
-          ? (selectedProject.estimateTotal ?? selectedCosts.grandTotal)
-          : allProjectsSummary.reduce((s, p) => s + (p.estimateTotal ?? p.costs.grandTotal), 0);
-
-        // Use estimate-parsed KPI buckets when available, else fall back to grid calculation
-        const gridManpower = (costs) => costs.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((s, r) => s + r.total, 0);
-        const getRowSg2 = (r) => (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase();
-        const gridLogistics = (costs) => costs.rowCosts.filter(r => !r.isConventional && getRowSg2(r) === 'LOGISTICS').reduce((s, r) => s + r.total, 0);
-        const gridConsumables = (costs) => costs.rowCosts.filter(r => !r.isConventional && r.item_group !== 'Manpower Group' && getRowSg2(r) !== 'LOGISTICS' && getRowSg2(r) !== 'EQUIPMENT').reduce((s, r) => s + r.total, 0);
-
+          ? (getEstEntry(selectedProject)?.subtotal ?? 0)
+          : allProjectsSummary.reduce((s, p) => s + (getEstEntry(p)?.subtotal ?? 0), 0);
         const kpiManpower = isFiltered
-          ? (getEstEntry(selectedProject)?.kpiManpower ?? gridManpower(selectedCosts))
-          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiManpower ?? gridManpower(p.costs)); }, 0);
+          ? (getEstEntry(selectedProject)?.kpiManpower ?? 0)
+          : allProjectsSummary.reduce((s, p) => s + (getEstEntry(p)?.kpiManpower ?? 0), 0);
         const kpiLogistics = isFiltered
-          ? (getEstEntry(selectedProject)?.kpiLogistics ?? gridLogistics(selectedCosts))
-          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiLogistics ?? gridLogistics(p.costs)); }, 0);
+          ? (getEstEntry(selectedProject)?.kpiLogistics ?? 0)
+          : allProjectsSummary.reduce((s, p) => s + (getEstEntry(p)?.kpiLogistics ?? 0), 0);
         const kpiConsumables = isFiltered
-          ? (getEstEntry(selectedProject)?.kpiConsumables ?? gridConsumables(selectedCosts))
-          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiConsumables ?? gridConsumables(p.costs)); }, 0);
+          ? (getEstEntry(selectedProject)?.kpiConsumables ?? 0)
+          : allProjectsSummary.reduce((s, p) => s + (getEstEntry(p)?.kpiConsumables ?? 0), 0);
         const kpiEquipment = isFiltered
-          ? (getEstEntry(selectedProject)?.kpiEquipment ?? (kpiCostValue - kpiManpower - kpiLogistics - kpiConsumables))
-          : allProjectsSummary.reduce((s, p) => { const e = getEstEntry(p); return s + (e?.kpiEquipment ?? 0); }, 0);
+          ? (getEstEntry(selectedProject)?.kpiEquipment ?? 0)
+          : allProjectsSummary.reduce((s, p) => s + (getEstEntry(p)?.kpiEquipment ?? 0), 0);
 
         return (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -632,7 +626,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiCostValue)}</div>
-                <div className="text-xs text-muted-foreground mt-1">{isFiltered ? 'this project' : 'across all projects'}</div>
+                <div className="text-xs text-muted-foreground mt-1">{isFiltered ? 'from estimate' : 'all estimates'}</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-blue-500/30' : ''}>
@@ -644,7 +638,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiManpower)}</div>
-                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
+                <div className="text-xs text-muted-foreground mt-1">from estimate</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-orange-500/30' : ''}>
@@ -656,7 +650,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiEquipment)}</div>
-                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
+                <div className="text-xs text-muted-foreground mt-1">from estimate</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-purple-500/30' : ''}>
@@ -668,7 +662,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiLogistics)}</div>
-                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
+                <div className="text-xs text-muted-foreground mt-1">from estimate</div>
               </CardContent>
             </Card>
             <Card className={isFiltered ? 'border-teal-500/30' : ''}>
@@ -680,7 +674,7 @@ export default function ProjectCostDashboard() {
                   </div>
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiConsumables)}</div>
-                <div className="text-xs text-muted-foreground mt-1">{isFiltered && getEstEntry(selectedProject) ? 'from estimate' : 'from grid'}</div>
+                <div className="text-xs text-muted-foreground mt-1">from estimate</div>
               </CardContent>
             </Card>
           </div>
