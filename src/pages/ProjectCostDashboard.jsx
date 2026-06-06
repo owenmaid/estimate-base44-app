@@ -119,11 +119,24 @@ export default function ProjectCostDashboard() {
         });
       });
 
+      // Equipment = sum of ALL leaf items whose description matches an inventory item with sub_group_02 === 'EQUIPMENT'
+      let kpiEquipment = 0;
+      sections.forEach(s => {
+        s.items.forEach(item => {
+          if (isHeader(item.description) || isSpacer(item.description)) return;
+          const desc = (item.description || '').toLowerCase();
+          const invMatch = inventory.find(i => 
+            ((i.name || '').toLowerCase() === desc || (i.sku || '').toLowerCase() === desc) &&
+            (i.sub_group_02 || '').toUpperCase() === 'EQUIPMENT'
+          );
+          if (invMatch) {
+            kpiEquipment += item.total || 0;
+          }
+        });
+      });
+
       const kpiLogistics = sumBracket(LOGISTICS_BRACKET);
       const kpiConsumables = sumBracket(CONSUMABLES_BRACKET);
-      const kpiEquipRaw = sumSections(EQUIPMENT_SECTIONS);
-      // Equipment = equipment section total minus logistics and consumables (which live inside it)
-      const kpiEquipment = kpiEquipRaw - kpiLogistics - kpiConsumables;
 
       map[pn] = { subtotal, kpiManpower, kpiEquipment, kpiLogistics, kpiConsumables };
     });
