@@ -47,7 +47,8 @@ export default function ProjectCostDashboard() {
     const map = {};
     estimates.forEach(e => {
       const pn = (e.project_number || '').trim().toLowerCase();
-      const value = e.subtotal != null ? Number(e.subtotal) : (e.total != null ? Number(e.total) : null);
+      // Only use subtotal (pre-tax). Never fall back to total which includes tax.
+      const value = e.subtotal != null ? Number(e.subtotal) : null;
       if (pn && value != null) map[pn] = value;
     });
     return map;
@@ -520,7 +521,7 @@ export default function ProjectCostDashboard() {
         const isFiltered = !!selectedProject && !!selectedCosts;
         const kpiCostValue = isFiltered
           ? (selectedProject.estimateTotal ?? selectedCosts.grandTotal)
-          : totalGrandRevenue;
+          : allProjectsSummary.reduce((s, p) => s + (p.estimateTotal ?? p.costs.grandTotal), 0);
         const kpiManpower = isFiltered
           ? selectedCosts.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((s, r) => s + r.total, 0)
           : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => r.item_group === 'Manpower Group' && !r.isConventional).reduce((a, r) => a + r.total, 0), 0);
