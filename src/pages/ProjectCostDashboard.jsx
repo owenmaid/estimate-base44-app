@@ -122,7 +122,17 @@ export default function ProjectCostDashboard() {
     const totalSpec = includedRows.reduce((s, r) => s + r.specialCost, 0);
     const grandTotal = totalReg + totalOT + totalSpec;
 
-    return { rowCosts, totalReg, totalOT, totalSpec, grandTotal };
+    // Equipment total = DCSM Equipment + Ventilation Equipment
+    const totalEquipment = rowCosts
+      .filter(r => {
+        const sg1 = r.sub_group_01;
+        const inv = inventoryValueMap.byId[r.rowId] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
+        const sg2 = (inv?.sub_group_02 || '').trim().toUpperCase();
+        return (sg1 === 'DCSM' || sg1 === 'VENTILATION') && (sg2 === 'EQUIPMENT' || sg2 === 'LOGISTICS');
+      })
+      .reduce((s, r) => s + r.total, 0);
+
+    return { rowCosts, totalReg, totalOT, totalSpec, grandTotal, totalEquipment };
   };
 
   // All-projects summary for the overview cards
@@ -820,15 +830,16 @@ export default function ProjectCostDashboard() {
                   <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Reg Cost</th>
                   <th className="px-4 py-3 text-right font-semibold text-muted-foreground">OT Cost</th>
                   <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Special</th>
+                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Equipment</th>
                   <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Total</th>
                   <th className="px-4 py-3 text-center font-semibold text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody>
                 {loadingProjects ? (
-                  <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground text-sm">Loading projects...</td></tr>
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground text-sm">Loading projects...</td></tr>
                 ) : allProjectsSummary.length === 0 ? (
-                  <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground text-sm">No projects found</td></tr>
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground text-sm">No projects found</td></tr>
                 ) : (
                   allProjectsSummary.map(p => (
                     <tr
@@ -845,6 +856,7 @@ export default function ProjectCostDashboard() {
                       <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalReg > 0 ? fmt(p.costs.totalReg) : '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalOT > 0 ? fmt(p.costs.totalOT) : '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalSpec > 0 ? fmt(p.costs.totalSpec) : '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs text-orange-400">{p.costs.totalEquipment > 0 ? fmt(p.costs.totalEquipment) : '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-primary">{p.costs.grandTotal > 0 ? fmt(p.costs.grandTotal) : '—'}</td>
                       <td className="px-4 py-3 text-center">
                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild onClick={e => e.stopPropagation()}>
@@ -862,6 +874,7 @@ export default function ProjectCostDashboard() {
                     <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalReg, 0))}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalOT, 0))}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalSpec, 0))}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs text-orange-400">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalEquipment, 0))}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs text-primary">{fmt(totalGrandRevenue)}</td>
                     <td />
                   </tr>
