@@ -267,7 +267,7 @@ export default function EquipmentCalculator() {
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <div className="text-xs text-muted-foreground mb-1">Total Equipment Items</div>
+                <div className="text-xs text-muted-foreground mb-1">Total Hours / Units</div>
                 <div className="text-2xl font-bold text-foreground">{results.totalUnits}</div>
               </div>
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
