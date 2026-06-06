@@ -918,22 +918,34 @@ const addEquipmentRow = () => {
 
 {/* Manpower vs Equipment Cost Summary */}
       {selectedProjectId && equipmentRows.length > 0 && (() => {
-        const manpowerRows = equipmentRows.filter(row => {
-          const entry = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()];
-          return entry?.item_group === 'Manpower Group';
-        });
-        const equipRows = equipmentRows.filter(row => {
-          const entry = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()];
-          return entry?.item_group !== 'Manpower Group';
-        });
+        const getEntry = (row) => equipmentInventory.find(i => i.id === row.item_id) ?? equipmentInventory.find(i => i.name === row.label || i.sku === row.label);
         const sumCosts = (rows) => rows.reduce((sum, row) => {
           const c = calculateRowCosts[row.id] || {};
           return sum + (c.regCost || 0) + (c.otCost || 0) + (c.specialCost || 0);
         }, 0);
-        const manpowerTotal = sumCosts(manpowerRows);
-        const equipTotal = sumCosts(equipRows);
-        const grandTotal = manpowerTotal + equipTotal;
         const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2 });
+
+        const dcsmManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && e?.item_group === 'Manpower Group'; });
+        const ventManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && e?.item_group === 'Manpower Group'; });
+        const dcsmEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && e?.item_group !== 'Manpower Group'; });
+        const ventEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && e?.item_group !== 'Manpower Group'; });
+        const conventional = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'CONVENTIONAL'; });
+
+        const b1 = sumCosts(dcsmManpower);
+        const b2 = sumCosts(ventManpower);
+        const b3 = sumCosts(dcsmEquip);
+        const b4 = sumCosts(ventEquip);
+        const b5 = sumCosts(conventional);
+        const grandTotal = b1 + b2 + b3 + b4 + b5;
+
+        const blocks = [
+          { label: 'DCSM Manpower', value: b1, icon: <Users className="h-5 w-5 text-blue-400 shrink-0" />, rows: dcsmManpower.length },
+          { label: 'Ventilation Manpower', value: b2, icon: <Users className="h-5 w-5 text-cyan-400 shrink-0" />, rows: ventManpower.length },
+          { label: 'DCSM Equipment', value: b3, icon: <Wrench className="h-5 w-5 text-orange-400 shrink-0" />, rows: dcsmEquip.length },
+          { label: 'Ventilation Equipment', value: b4, icon: <Wrench className="h-5 w-5 text-yellow-400 shrink-0" />, rows: ventEquip.length },
+          { label: 'Conventional Costs', value: b5, icon: <DollarSign className="h-5 w-5 text-rose-400 shrink-0" />, rows: conventional.length },
+        ];
+
         return (
           <Card>
             <CardHeader className="pb-2">
@@ -943,27 +955,21 @@ const addEquipmentRow = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
-                  <Users className="h-5 w-5 text-blue-400 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Manpower Cost</p>
-                    <p className="text-sm font-bold text-foreground">{fmt(manpowerTotal)}</p>
-                    <p className="text-xs text-muted-foreground">{manpowerRows.length} row{manpowerRows.length !== 1 ? 's' : ''}</p>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {blocks.map((b, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
+                    {b.icon}
+                    <div>
+                      <p className="text-xs text-muted-foreground">{b.label}</p>
+                      <p className="text-sm font-bold text-foreground">{fmt(b.value)}</p>
+                      <p className="text-xs text-muted-foreground">{b.rows} row{b.rows !== 1 ? 's' : ''}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
-                  <Wrench className="h-5 w-5 text-orange-400 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Equipment Cost</p>
-                    <p className="text-sm font-bold text-foreground">{fmt(equipTotal)}</p>
-                    <p className="text-xs text-muted-foreground">{equipRows.length} row{equipRows.length !== 1 ? 's' : ''}</p>
-                  </div>
-                </div>
+                ))}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/30">
                   <DollarSign className="h-5 w-5 text-primary shrink-0" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Grand Total</p>
+                    <p className="text-xs text-muted-foreground">Total Project Cost</p>
                     <p className="text-sm font-bold text-primary">{fmt(grandTotal)}</p>
                     <p className="text-xs text-muted-foreground">{equipmentRows.length} row{equipmentRows.length !== 1 ? 's' : ''}</p>
                   </div>
