@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Cost Dashboard', path: '/project-cost-dashboard', icon: PieChart },
   { label: 'New Estimate', path: '/estimates/new', icon: FilePlus },
   { label: 'Create Estimate Panel', path: '/create-estimate-panel', icon: PanelLeftOpen },
   { label: 'All Estimates', path: '/estimates', icon: FileText },
@@ -20,7 +21,6 @@ const bottomSections = [
   ],
   [
     { label: 'Projects', path: '/projects', icon: FolderKanban },
-    { label: 'Cost Dashboard', path: '/project-cost-dashboard', icon: PieChart },
     { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
     { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
   ],
