@@ -171,7 +171,7 @@ export default function Inventory() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                {['Name', 'SKU', 'Category', 'Group', 'Qty', 'Unit Cost', 'Reg Value', 'OT Value', 'Supplier', 'Location', 'Status', ''].map(h => (
+                {['Name', 'SKU', 'Category', 'Group', 'Sub Grp 1', 'Sub Grp 2', 'Qty', 'Unit Cost', 'Reg Value', 'OT Value', 'Supplier', 'Location', 'Status', ''].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -193,6 +193,8 @@ export default function Inventory() {
                         <Badge className="text-xs border border-border bg-secondary text-secondary-foreground">{item.item_group}</Badge>
                       ) : '—'}
                     </td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.sub_group_01 || '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.sub_group_02 || '—'}</td>
                     <td className="px-4 py-3 font-medium">{item.quantity} <span className="text-muted-foreground text-xs">{item.unit}</span></td>
                     <td className="px-4 py-3">{item.unit_cost != null && item.unit_cost !== '' ? `$${Number(item.unit_cost).toFixed(2)}` : '—'}</td>
                     <td className="px-4 py-3">{item.reg_value != null && item.reg_value !== '' ? `$${Number(item.reg_value).toFixed(2)}` : '—'}</td>
