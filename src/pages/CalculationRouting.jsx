@@ -7,7 +7,7 @@ export default function CalculationRouting() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Manpower and Equipment Estimation</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Configure project parameters and auto-compute total costs from inventory equipment data.
+          Configure project parameters and auto-compute total costs from inventory data.
         </p>
       </div>
       <EquipmentCalculator />
