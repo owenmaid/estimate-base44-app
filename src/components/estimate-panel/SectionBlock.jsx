@@ -127,7 +127,7 @@ function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isPro
       </div>
       <div className="text-right">
         {!spacer && (isHeader ? (
-          <span className="text-xs text-muted-foreground">1</span>
+          <span className="text-xs text-muted-foreground">—</span>
         ) : (
           <EditableCell value={item.quantity} onChange={v => onUpdateItem(sectionId, item.id, 'quantity', v)} type="number" className="w-14 text-right" />
         ))}
