@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, Truck, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, Truck, Package, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area, LineChart, Line } from 'recharts';
 import ProjectCostBreakdown from '@/components/projects/ProjectCostBreakdown';
@@ -528,12 +528,16 @@ export default function ProjectCostDashboard() {
         const kpiLogistics = isFiltered
           ? selectedCosts.rowCosts.filter(r => !r.isConventional && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() === 'LOGISTICS').reduce((s, r) => s + r.total, 0)
           : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => !r.isConventional && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() === 'LOGISTICS').reduce((a, r) => a + r.total, 0), 0);
-        const kpiEquipment = kpiCostValue - kpiManpower - kpiLogistics;
+        const getRowSg2 = (r) => (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase();
+        const kpiConsumables = isFiltered
+          ? selectedCosts.rowCosts.filter(r => !r.isConventional && r.item_group !== 'Manpower Group' && getRowSg2(r) !== 'LOGISTICS' && getRowSg2(r) !== 'EQUIPMENT').reduce((s, r) => s + r.total, 0)
+          : allProjectsSummary.reduce((s, p) => s + p.costs.rowCosts.filter(r => !r.isConventional && r.item_group !== 'Manpower Group' && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() !== 'LOGISTICS' && (inventoryValueMap.byId[r.rowId]?.sub_group_02 || inventoryValueMap.byName[r.label?.toLowerCase()]?.sub_group_02 || '').trim().toUpperCase() !== 'EQUIPMENT').reduce((a, r) => a + r.total, 0), 0);
+        const kpiEquipment = kpiCostValue - kpiManpower - kpiLogistics - kpiConsumables;
 
         return (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             {isFiltered && (
-              <div className="col-span-2 lg:col-span-5 flex items-center gap-2 text-xs text-primary bg-primary/8 border border-primary/20 rounded-lg px-3 py-2">
+              <div className="col-span-2 lg:col-span-6 flex items-center gap-2 text-xs text-primary bg-primary/8 border border-primary/20 rounded-lg px-3 py-2">
                 <FolderKanban className="h-3.5 w-3.5 flex-shrink-0" />
                 Showing values for: <span className="font-semibold">{selectedProject.name}</span>
                 {selectedProject.project_number && <span className="text-muted-foreground">#{selectedProject.project_number}</span>}
@@ -608,6 +612,18 @@ export default function ProjectCostDashboard() {
                 </div>
                 <div className="text-xl font-bold">{fmt(kpiLogistics)}</div>
                 <div className="text-xs text-muted-foreground mt-1">logistics sub-group</div>
+              </CardContent>
+            </Card>
+            <Card className={isFiltered ? 'border-teal-500/30' : ''}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Consumables</span>
+                  <div className="h-8 w-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                    <Package className="h-4 w-4 text-teal-400" />
+                  </div>
+                </div>
+                <div className="text-xl font-bold">{fmt(kpiConsumables)}</div>
+                <div className="text-xs text-muted-foreground mt-1">other costs</div>
               </CardContent>
             </Card>
           </div>
