@@ -955,7 +955,7 @@ const addEquipmentRow = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-3 mb-3">
+              <div className="grid grid-cols-6 gap-3 mb-3">
                 {blocks.map((b, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
                     {b.icon}
