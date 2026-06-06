@@ -42,12 +42,13 @@ export default function ProjectCostDashboard() {
     queryFn: () => base44.entities.Estimate.list(),
   });
 
-  // Build a lookup: project_number (lowercase) → estimate total (incl. tax)
+  // Build a lookup: project_number (lowercase) → estimate subtotal (excl. tax)
   const estimateTotalMap = useMemo(() => {
     const map = {};
     estimates.forEach(e => {
       const pn = (e.project_number || '').trim().toLowerCase();
-      if (pn && e.total != null) map[pn] = Number(e.total);
+      const value = e.subtotal != null ? Number(e.subtotal) : (e.total != null ? Number(e.total) : null);
+      if (pn && value != null) map[pn] = value;
     });
     return map;
   }, [estimates]);
