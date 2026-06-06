@@ -365,7 +365,7 @@ export default function ProjectCostDashboard() {
   };
 
   // The 5 cost buckets matching ProjectDetailsSetup logic
-  const EQUIP_SERIES = ['DCSM_EQUIP', 'VENT_EQUIP', 'CONVENTIONAL'];
+  const EQUIP_SERIES = ['DCSM_EQUIP', 'VENT_EQUIP'];
   const isEquipOrLogistics = (sg2) => sg2 === 'EQUIPMENT' || sg2 === 'LOGISTICS';
 
   // Build equipment cost chart data split by sub_group_01 + sub_group_02 (matches ProjectDetailsSetup Cost Summary)
@@ -395,7 +395,6 @@ export default function ProjectCostDashboard() {
       else if (sg1 === 'VENTILATION' && sg2 === 'MANPOWER') return; // excluded
       else if (sg1 === 'DCSM' && isEquipOrLogistics(sg2)) bucket = 'DCSM_EQUIP';
       else if (sg1 === 'VENTILATION' && isEquipOrLogistics(sg2)) bucket = 'VENT_EQUIP';
-      else if (sg1 === 'CONVENTIONAL') bucket = 'CONVENTIONAL';
       if (!bucket) return; // skip unclassified rows
 
       Object.entries(equipmentGrid).forEach(([key, value]) => {
@@ -678,26 +677,23 @@ export default function ProjectCostDashboard() {
                   <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'} />
                   <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
                   <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`]} />
-                  <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip', CONVENTIONAL: 'Conventional' }[v] || v)} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip' }[v] || v)} />
                   <Line type="monotone" dataKey="DCSM_EQUIP" name="DCSM_EQUIP" stroke="#f97316" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="VENT_EQUIP" name="VENT_EQUIP" stroke="#eab308" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="CONVENTIONAL" name="CONVENTIONAL" stroke="#a855f7" strokeWidth={2} dot={false} />
                 </LineChart>
               ) : (
                 <AreaChart key={`equip-area-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                   <defs>
                     <linearGradient id="areaEquipDE" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.4} /><stop offset="95%" stopColor="#f97316" stopOpacity={0.02} /></linearGradient>
                     <linearGradient id="areaEquipVE" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#eab308" stopOpacity={0.4} /><stop offset="95%" stopColor="#eab308" stopOpacity={0.02} /></linearGradient>
-                    <linearGradient id="areaEquipC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} /><stop offset="95%" stopColor="#a855f7" stopOpacity={0.02} /></linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartGranularity === 'day' ? Math.max(0, Math.floor(equipmentAreaData.length / 12)) : 'preserveStartEnd'} />
                   <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, { DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip', CONVENTIONAL: 'Conventional' }[name] || name]} />
-                  <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip', CONVENTIONAL: 'Conventional' }[v] || v)} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, { DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip' }[name] || name]} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip' }[v] || v)} />
                   <Area type="monotone" dataKey="DCSM_EQUIP" name="DCSM_EQUIP" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaEquipDE)" />
                   <Area type="monotone" dataKey="VENT_EQUIP" name="VENT_EQUIP" stackId="1" stroke="#eab308" strokeWidth={2} fill="url(#areaEquipVE)" />
-                  <Area type="monotone" dataKey="CONVENTIONAL" name="CONVENTIONAL" stackId="1" stroke="#a855f7" strokeWidth={2} fill="url(#areaEquipC)" />
                 </AreaChart>
               )}
             </ResponsiveContainer>
