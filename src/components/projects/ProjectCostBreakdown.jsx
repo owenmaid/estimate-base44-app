@@ -224,7 +224,7 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                     <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
                       <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
                       <span className="text-[9px] text-muted-foreground flex-1">{entry.name}</span>
-                      <span className="text-[9px] font-semibold text-foreground text-right" style={{ minWidth: '60px' }}>${entry.value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                      <span className="text-[9px] font-semibold text-foreground text-left" style={{ minWidth: '60px' }}>${entry.value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                     </div>
                   ))}
                 </div>
