@@ -26,6 +26,7 @@ import CalculationEngine from '@/pages/CalculationEngine';
 import ControlPage from '@/pages/ControlPage';
 import CreateEstimatePanel from '@/pages/CreateEstimatePanel';
 import ProjectCostDashboard from '@/pages/ProjectCostDashboard';
+import LineItemComparison from '@/pages/LineItemComparison';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const AuthenticatedApp = () => {
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
         <Route path="/control-page" element={<ControlPage />} />
         <Route path="/create-estimate-panel" element={<CreateEstimatePanel />} />
         <Route path="/project-cost-dashboard" element={<ProjectCostDashboard />} />
+        <Route path="/line-item-comparison" element={<LineItemComparison />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
