@@ -219,12 +219,12 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
               <div className="flex items-center gap-3">
                 {/* Left-side legend */}
-                <div className="flex flex-col gap-1.5 flex-shrink-0" style={{ minWidth: 0, width: 'max-content', maxWidth: '50%' }}>
+                <div className="flex flex-col gap-1.5 flex-shrink-0" style={{ minWidth: 0, maxWidth: '50%' }}>
                   {pieData.map((entry, i) => (
                     <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
                       <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      <span className="text-[9px] text-muted-foreground">{entry.name}</span>
-                      <span className="text-[9px] font-semibold text-foreground ml-1">${entry.value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                      <span className="text-[9px] text-muted-foreground flex-1">{entry.name}</span>
+                      <span className="text-[9px] font-semibold text-foreground text-right" style={{ minWidth: '60px' }}>${entry.value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                     </div>
                   ))}
                 </div>
