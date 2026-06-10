@@ -20,6 +20,22 @@ export default function LineItemComparison() {
     queryFn: () => base44.entities.Estimate.list(),
   });
 
+  const { data: inventory = [] } = useQuery({
+    queryKey: ['inventory-equipment'],
+    queryFn: () => base44.entities.InventoryItem.list(),
+  });
+
+  // Build a lookup: lowercased name/sku → sub_group_01
+  const invSubGroupMap = useMemo(() => {
+    const m = {};
+    inventory.forEach(i => {
+      const sg1 = (i.sub_group_01 || '').trim() || 'Not Grouped';
+      if (i.name) m[i.name.toLowerCase()] = sg1;
+      if (i.sku) m[i.sku.toLowerCase()] = sg1;
+    });
+    return m;
+  }, [inventory]);
+
   // For each project number, build the set of row labels from Project Details Setup
   // and the set of leaf item descriptions from the matching estimate
   const comparisonData = useMemo(() => {
@@ -28,6 +44,7 @@ export default function LineItemComparison() {
     const isHeader = (desc) => /[\[\]]/.test(desc || '');
     const isSpacer = (desc) => (desc || '') === '__SPACER__';
     const isSectionMarker = (desc) => (desc || '').startsWith('__SECTION__:');
+    const getSG1 = (label) => invSubGroupMap[(label || '').toLowerCase()] || 'Not Grouped';
 
     projects.forEach(project => {
       const pn = (project.project_number || '').trim();
@@ -59,15 +76,15 @@ export default function LineItemComparison() {
       const scheduleSet = new Set(scheduleLabels.map(l => l.toLowerCase()));
       const estimateSet = new Set(estimateLeafs.map(l => l.toLowerCase()));
 
-      // Items in schedule but NOT in estimate
-      const onlyInSchedule = scheduleLabels.filter(
-        l => !estimateSet.has(l.toLowerCase())
-      );
+      // Items in schedule but NOT in estimate — include sub_group_01
+      const onlyInSchedule = scheduleLabels
+        .filter(l => !estimateSet.has(l.toLowerCase()))
+        .map(l => ({ label: l, subGroup: getSG1(l) }));
 
-      // Items in estimate but NOT in schedule
-      const onlyInEstimate = estimateLeafs.filter(
-        l => !scheduleSet.has(l.toLowerCase())
-      );
+      // Items in estimate but NOT in schedule — include sub_group_01
+      const onlyInEstimate = estimateLeafs
+        .filter(l => !scheduleSet.has(l.toLowerCase()))
+        .map(l => ({ label: l, subGroup: getSG1(l) }));
 
       // Only include projects that have at least one row or estimate item
       if (scheduleLabels.length === 0 && estimateLeafs.length === 0) return;
@@ -89,7 +106,7 @@ export default function LineItemComparison() {
     });
 
     return results;
-  }, [projects, estimates]);
+  }, [projects, estimates, invSubGroupMap]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return comparisonData;
@@ -221,12 +238,15 @@ export default function LineItemComparison() {
                           In Schedule — missing from Estimate ({row.onlyInSchedule.length})
                         </p>
                         <div className="space-y-1">
-                          {row.onlyInSchedule.map((label, i) => (
+                          {row.onlyInSchedule.map((item, i) => (
                             <div
                               key={i}
-                              className="text-xs px-2.5 py-1.5 rounded bg-orange-500/8 border border-orange-500/20 text-foreground font-mono"
+                              className="text-xs px-2.5 py-1.5 rounded bg-orange-500/8 border border-orange-500/20 text-foreground flex items-center justify-between gap-2"
                             >
-                              {label}
+                              <span className="font-mono truncate">{item.label}</span>
+                              <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${item.subGroup === 'Not Grouped' ? 'bg-muted text-muted-foreground border-border' : 'bg-primary/10 text-primary border-primary/20'}`}>
+                                {item.subGroup}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -241,12 +261,15 @@ export default function LineItemComparison() {
                           In Estimate — missing from Schedule ({row.onlyInEstimate.length})
                         </p>
                         <div className="space-y-1">
-                          {row.onlyInEstimate.map((label, i) => (
+                          {row.onlyInEstimate.map((item, i) => (
                             <div
                               key={i}
-                              className="text-xs px-2.5 py-1.5 rounded bg-blue-500/8 border border-blue-500/20 text-foreground font-mono"
+                              className="text-xs px-2.5 py-1.5 rounded bg-blue-500/8 border border-blue-500/20 text-foreground flex items-center justify-between gap-2"
                             >
-                              {label}
+                              <span className="font-mono truncate">{item.label}</span>
+                              <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${item.subGroup === 'Not Grouped' ? 'bg-muted text-muted-foreground border-border' : 'bg-primary/10 text-primary border-primary/20'}`}>
+                                {item.subGroup}
+                              </span>
                             </div>
                           ))}
                         </div>
