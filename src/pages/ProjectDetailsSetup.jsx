@@ -931,7 +931,7 @@ const addEquipmentRow = () => {
 
 {/* Manpower vs Equipment Cost Summary */}
       {selectedProjectId && equipmentRows.length > 0 && (() => {
-        const getEntry = (row) => equipmentInventory.find(i => i.id === row.item_id) ?? equipmentInventory.find(i => i.name === row.label || i.sku === row.label);
+        const getEntry = (row) => equipmentInventory.find(i => i.id === row.item_id) ?? equipmentInventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase() || (i.sku || '').toLowerCase() === (row.label || '').toLowerCase());
         const sumCosts = (rows) => rows.reduce((sum, row) => {
           const c = calculateRowCosts[row.id] || {};
           return sum + (c.regCost || 0) + (c.otCost || 0) + (c.specialCost || 0);
