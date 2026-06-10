@@ -65,13 +65,15 @@ export function buildCol14Map(project, inventoryItems) {
     const val = computeCol14(row, eGrid, tGrid, inventoryItems);
     if (val == null || val <= 0) return;
 
-    // Key by inventory item id
+    // Key by inventory item id — accumulate in case multiple rows share the same item_id
     if (row.item_id) {
-      map[`id:${String(row.item_id)}`] = val;
+      const k = `id:${String(row.item_id)}`;
+      map[k] = (map[k] || 0) + val;
     }
-    // Key by row label (lowercased) for name-based matching
+    // Key by row label (lowercased) — accumulate so duplicate labels are summed, not overwritten
     if (row.label) {
-      map[`name:${row.label.toLowerCase()}`] = val;
+      const k = `name:${row.label.toLowerCase()}`;
+      map[k] = (map[k] || 0) + val;
     }
   });
   return map;
