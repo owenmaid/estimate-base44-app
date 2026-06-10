@@ -1097,8 +1097,8 @@ const addEquipmentRow = () => {
                     <th className="sticky left-0 z-10 bg-card px-4 py-2 text-left font-semibold text-primary border-r border-border text-xs min-w-[90px] w-[90px]" style={expandedSchedule ? { backgroundColor: 'hsl(var(--card))' } : {}}>
 
                     </th>
-                    <th className="px-4 py-2 text-left font-semibold text-primary min-w-[160px] border-r border-border text-xs" style={expandedSchedule ? { backgroundColor: 'hsl(var(--secondary) / 0.6)' } : {}}>
-                      Type
+                    <th className="px-4 py-2 text-left font-semibold text-primary min-w-[260px] border-r border-border text-xs" style={expandedSchedule ? { backgroundColor: 'hsl(var(--secondary) / 0.6)' } : {}}>
+                     Type
                     </th>
                     {visibleDates.map((d) => {
                       const dateStr = format(d, 'yyyy-MM-dd');
@@ -1128,7 +1128,7 @@ const addEquipmentRow = () => {
                      <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground border-r border-border min-w-[90px] w-[90px]">
                       Item_ID
                     </th>
-                    <th className="bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[160px] border-r border-border">
+                    <th className="bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[260px] border-r border-border">
                      Equipment
                     </th>
                     {visibleDates.map(d => {
@@ -1168,7 +1168,7 @@ const addEquipmentRow = () => {
                           <span {...dragProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
                             <GripVertical className="h-3.5 w-3.5" />
                           </span>
-                          <span className="font-medium text-foreground truncate max-w-[130px]" title={row.label}>{row.label}</span>
+                          <span className="font-medium text-foreground truncate max-w-[220px]" title={row.label}>{row.label}</span>
                           {equipmentRows.length > 0 && (
                             <button
                               onClick={() => removeEquipmentRow(row.id)}
@@ -1213,7 +1213,7 @@ const addEquipmentRow = () => {
                   <tbody>
                   <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
                     <td className="sticky left-0 z-10 bg-secondary/40 px-2 py-2 border-r border-border min-w-[90px] w-[90px]"></td>
-                    <td className="bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground">
+                    <td className="bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground min-w-[260px]">
                       Daily Total
                     </td>
                     {visibleDates.map(d => {
