@@ -1094,8 +1094,9 @@ const addEquipmentRow = () => {
                 <thead>
                   {/* Type row — references Sa_Su_St list from Control Page */}
                   <tr className="bg-secondary/40 border-b border-border" style={{ height: '36px', ...(expandedSchedule ? { position: 'sticky', top: 0, zIndex: 20 } : {}) }}>
-                    <th className="sticky left-0 z-10 bg-card px-4 py-2 text-left font-semibold text-primary border-r border-border text-xs min-w-[90px] w-[90px]" style={expandedSchedule ? { backgroundColor: 'hsl(var(--card))' } : {}}>
-
+                    <th className="sticky left-0 z-10 bg-card px-2 py-2 text-left font-semibold text-primary border-r border-border text-xs min-w-[50px] w-[50px]" style={expandedSchedule ? { backgroundColor: 'hsl(var(--card))' } : {}}>
+                    </th>
+                    <th className="sticky bg-card px-2 py-2 text-left font-semibold text-primary border-r border-border text-xs min-w-[90px] w-[90px]" style={{ left: '50px', ...(expandedSchedule ? { backgroundColor: 'hsl(var(--card))' } : {}) }}>
                     </th>
                     <th className="px-4 py-2 text-left font-semibold text-primary min-w-[260px] border-r border-border text-xs" style={expandedSchedule ? { backgroundColor: 'hsl(var(--secondary) / 0.6)' } : {}}>
                      Type
@@ -1125,12 +1126,15 @@ const addEquipmentRow = () => {
                     })}
                   </tr>
                   <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px', ...(expandedSchedule ? { position: 'sticky', top: '36px', zIndex: 20 } : {}) }}>
-                     <th className="sticky left-0 z-10 bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground border-r border-border min-w-[90px] w-[90px]">
-                      Item_ID
-                    </th>
-                    <th className="bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[260px] border-r border-border">
-                     Equipment
-                    </th>
+                    <th className="sticky left-0 z-10 bg-secondary/100 px-2 py-2.5 text-left font-semibold text-muted-foreground border-r border-border min-w-[50px] w-[50px]">
+                     Line_ID
+                   </th>
+                    <th className="sticky bg-secondary/100 px-2 py-2.5 text-left font-semibold text-muted-foreground border-r border-border min-w-[90px] w-[90px]" style={{ left: '50px' }}>
+                     Item_ID
+                   </th>
+                   <th className="bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[260px] border-r border-border">
+                    Equipment
+                   </th>
                     {visibleDates.map(d => {
                       const weekend = isWeekend(d);
                       return (
@@ -1158,10 +1162,13 @@ const addEquipmentRow = () => {
                        className={`border-b border-border hover:bg-secondary/20 transition-colors ${dragSnapshot.isDragging ? 'bg-secondary/40' : ''}`}
                        style={{ ...dragProvided.draggableProps.style, height: '40px' }}
                       >
-                      <td className="sticky left-0 z-10 bg-card px-2 py-2 border-r border-border min-w-[90px] w-[90px]">
-                        <span className="font-mono text-xs text-primary truncate block max-w-[80px]" title={row.item_id || '—'}>
-                          {row.item_id ? row.item_id.slice(-8) : <span className="opacity-30">—</span>}
-                        </span>
+                      <td className="sticky left-0 z-10 bg-card px-2 py-2 border-r border-border min-w-[50px] w-[50px] text-center">
+                       <span className="font-mono text-xs text-muted-foreground">{rIdx + 1}</span>
+                      </td>
+                      <td className="sticky bg-card px-2 py-2 border-r border-border min-w-[90px] w-[90px]" style={{ left: '50px' }}>
+                       <span className="font-mono text-xs text-primary truncate block max-w-[80px]" title={row.item_id || '—'}>
+                         {row.item_id ? row.item_id.slice(-8) : <span className="opacity-30">—</span>}
+                       </span>
                       </td>
                       <td className="bg-card px-4 py-2 border-r border-border">
                         <div className="flex items-center gap-1">
@@ -1212,7 +1219,8 @@ const addEquipmentRow = () => {
                   </DragDropContext>
                   <tbody>
                   <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                    <td className="sticky left-0 z-10 bg-secondary/40 px-2 py-2 border-r border-border min-w-[90px] w-[90px]"></td>
+                    <td className="sticky left-0 z-10 bg-secondary/40 px-2 py-2 border-r border-border min-w-[50px] w-[50px]"></td>
+                    <td className="sticky bg-secondary/40 px-2 py-2 border-r border-border min-w-[90px] w-[90px]" style={{ left: '50px' }}></td>
                     <td className="bg-secondary/40 px-4 py-2 border-r border-border text-muted-foreground min-w-[260px]">
                       Daily Total
                     </td>
