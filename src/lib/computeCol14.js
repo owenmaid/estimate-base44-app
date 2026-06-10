@@ -14,8 +14,10 @@ export function computeCol14(row, equipmentGrid, typeGrid, inventoryItems) {
   const isSpecial = label.includes('pre-work') || label.includes('post-work');
   const shiftHrs = isSpecial ? 10 : 12;
 
-  const regRate = inventoryEntry.reg_value ?? null;
-  const otRate = inventoryEntry.ot_value ?? null;
+  const rawReg = inventoryEntry.reg_value;
+  const rawOt = inventoryEntry.ot_value;
+  const regRate = (rawReg === '' || rawReg === undefined || rawReg === null) ? null : Number(rawReg);
+  const otRate = (rawOt === '' || rawOt === undefined || rawOt === null) ? null : Number(rawOt);
 
   let col1 = 0;
   let nDays = 0, saDays = 0, suDays = 0, stDays = 0;
