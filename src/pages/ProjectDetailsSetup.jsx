@@ -1200,7 +1200,7 @@ const addEquipmentRow = () => {
                               <input
                                  type="number"
                                  min="0"
-                                 max="100"
+                                 max="999"
                                  value={equipmentGrid[key] || ''}
                                  onChange={e => handleEquipmentCellChange(row.id, dateStr, e.target.value)}
                                  className="w-full bg-secondary border border-transparent hover:border-border focus:border-primary rounded px-1 py-1 text-xs text-foreground outline-none cursor-pointer transition-all"
