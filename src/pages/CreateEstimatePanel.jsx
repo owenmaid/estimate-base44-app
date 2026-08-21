@@ -811,10 +811,14 @@ export default function CreateEstimatePanel() {
   });
 
   const PROJECT_COST_SOURCES = ['total cost for dcsm', 'total cost for ventilation', 'total costs for dcsm', 'total costs for ventilation'];
-  const projectCostValue = sectionsPass5.reduce((sum, s) => {
-    if (!PROJECT_COST_SOURCES.includes(normalizeDesc(s.title))) return sum;
-    return sum + getSectionTotal(s.items);
-  }, 0);
+  const projectCostSections = sectionsPass5.filter(s => PROJECT_COST_SOURCES.includes(normalizeDesc(s.title)));
+  const projectCostValue = projectCostSections.length > 0
+    ? projectCostSections.reduce((sum, s) => sum + getSectionTotal(s.items), 0)
+    // Fallback: no DCSM/Ventilation summary sections — use the sum of all
+    // non-summary section totals so the bottom total reflects line item costs.
+    : sectionsPass5
+        .filter(s => !s._isSummary && normalizeDesc(s.title) !== 'summary')
+        .reduce((sum, s) => sum + getSectionTotal(s.items), 0);
 
   const sectionsWithAggregate = sectionsPass5.map(s => ({
     ...s,
