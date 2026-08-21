@@ -124,6 +124,18 @@ export default function CreateEstimatePanel() {
   // Set when loading an existing estimate so the auto-reprice refreshes stale
   // Col14-derived values from the current project state (instead of keeping saved values).
   const forceRepriceRef = useRef(false);
+  // Tracks the schedule-data signature of the linked project so in-place updates
+  // (e.g. Equipment Schedule edits on Project Details Setup) trigger a Col14 refresh.
+  const prevProjectSignatureRef = useRef(null);
+
+  // Realtime: refresh the projects list whenever a project record changes so the
+  // linked project (and its Col14 values) stays current across pages and tabs.
+  useEffect(() => {
+    const unsubscribe = base44.entities.Project.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   // ── Auto-reprice: fires whenever linkedProject changes ──────────────────────
   // • First project link (null → project): reprice only zero-cost items
@@ -132,12 +144,19 @@ export default function CreateEstimatePanel() {
   useEffect(() => {
     const prevId = prevLinkedProjectIdRef.current;
     const currId = linkedProject?.id ?? null;
-
-    // Update ref for next render
-    prevLinkedProjectIdRef.current = currId;
+    // Signature of schedule-relevant fields to detect in-place data updates
+    // (same project, equipment_grid/rows/type_grid changed) and refresh Col14 prices.
+    const currSig = linkedProject
+      ? JSON.stringify({ eg: linkedProject.equipment_grid, er: linkedProject.equipment_rows, tg: linkedProject.type_grid })
+      : null;
 
     const isSwitch = prevId !== null && currId !== prevId; // switched from one project to another (or to none)
-    const forceReprice = forceRepriceRef.current;
+    const scheduleChanged = prevId !== null && currId === prevId && prevProjectSignatureRef.current !== currSig;
+    const forceReprice = forceRepriceRef.current || scheduleChanged;
+
+    // Update refs for next render
+    prevLinkedProjectIdRef.current = currId;
+    prevProjectSignatureRef.current = currSig;
     forceRepriceRef.current = false; // consume the flag so it only applies to this run
 
     if (!linkedProject) {
