@@ -121,6 +121,9 @@ export default function CreateEstimatePanel() {
 
   // Track the previous linked project id so we can detect a project switch
   const prevLinkedProjectIdRef = useRef(null);
+  // Set when loading an existing estimate so the auto-reprice refreshes stale
+  // Col14-derived values from the current project state (instead of keeping saved values).
+  const forceRepriceRef = useRef(false);
 
   // ── Auto-reprice: fires whenever linkedProject changes ──────────────────────
   // • First project link (null → project): reprice only zero-cost items
@@ -134,6 +137,8 @@ export default function CreateEstimatePanel() {
     prevLinkedProjectIdRef.current = currId;
 
     const isSwitch = prevId !== null && currId !== prevId; // switched from one project to another (or to none)
+    const forceReprice = forceRepriceRef.current;
+    forceRepriceRef.current = false; // consume the flag so it only applies to this run
 
     if (!linkedProject) {
       // Project deselected — zero everything out and clear customer name
@@ -179,7 +184,8 @@ export default function CreateEstimatePanel() {
 
         // On a project switch, always re-price every regular item from scratch
         // On first link, only fill in items that are still zeroed
-        if (!isSwitch && (item.unit_price || 0) !== 0) return item;
+        // On force-reprice (loading an existing estimate), refresh items that have a Col14 match
+        if (!isSwitch && !forceReprice && (item.unit_price || 0) !== 0) return item;
 
         const col14 = lookupCol14(item.description, col14Map, inventory);
         const markup = item.markup || 0;
@@ -189,6 +195,10 @@ export default function CreateEstimatePanel() {
           const markedUp = col14 * (1 + markup / 100);
           return { ...item, unit_price: col14, total: markedUp * qty };
         }
+
+        // On force-reprice, preserve the existing value when there's no Col14 match
+        // (don't zero or overwrite custom/manual prices)
+        if (forceReprice && !isSwitch) return item;
 
         // No Col14 match — try inventory unit_cost as fallback (e.g. Conventional Costs)
         const invItem = inventory.find(i =>
@@ -278,6 +288,7 @@ export default function CreateEstimatePanel() {
 
   // ── Load an existing estimate into the canvas ──────────────────────────────
   const loadEstimate = (estimate) => {
+    forceRepriceRef.current = true;
     setActiveEstimate(estimate);
     setClientInfo({
       client_name: estimate.client_name || '',
