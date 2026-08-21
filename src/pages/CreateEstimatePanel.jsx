@@ -138,7 +138,7 @@ export default function CreateEstimatePanel() {
   }, [queryClient]);
 
   // ── Auto-reprice: fires whenever linkedProject changes ──────────────────────
-  // • First project link (null → project): reprice only zero-cost items
+  // • First project link (null → project): reprice ALL items with a Col14 match (preserve non-matches)
   // • Project switch (projectA → projectB): zero ALL regular items first, then reprice from new Col14
   // • Deselect (project → null): zero ALL regular items
   useEffect(() => {
@@ -151,8 +151,9 @@ export default function CreateEstimatePanel() {
       : null;
 
     const isSwitch = prevId !== null && currId !== prevId; // switched from one project to another (or to none)
+    const isInitialLink = prevId === null && currId !== null; // first time a project is linked (or remount with one)
     const scheduleChanged = prevId !== null && currId === prevId && prevProjectSignatureRef.current !== currSig;
-    const forceReprice = forceRepriceRef.current || scheduleChanged;
+    const forceReprice = forceRepriceRef.current || scheduleChanged || isInitialLink;
 
     // Update refs for next render
     prevLinkedProjectIdRef.current = currId;
