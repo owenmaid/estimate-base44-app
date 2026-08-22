@@ -327,8 +327,8 @@ export default function ProjectPlanning() {
       });
 
       const regCost = regRate != null ? (isManpower ? col4 : col1) * regRate : null;
-      const otCost = otRate != null ? (col5 + col6 + col7) * otRate : null;
-      const specialCost = otRate != null
+      const otCost = (isManpower && otRate != null) ? (col5 + col6 + col7) * otRate : null;
+      const specialCost = (isManpower && otRate != null)
         ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
         : null;
       const rowTotal = (regCost || 0) + (otCost || 0) + (specialCost || 0);
