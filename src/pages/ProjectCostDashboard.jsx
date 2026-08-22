@@ -927,9 +927,9 @@ export default function ProjectCostDashboard() {
                   <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
                   <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, name === 'reg' ? 'Regular' : name === 'ot' ? 'Overtime' : 'Special']} />
                   <Legend formatter={v => v === 'reg' ? 'Regular' : v === 'ot' ? 'Overtime' : 'Special'} wrapperStyle={{ fontSize: 9 }} />
-                  <Area type="monotone" dataKey="reg" stackId="1" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#areaReg)" />
-                  <Area type="monotone" dataKey="ot" stackId="1" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
-                  <Area type="monotone" dataKey="spec" stackId="1" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
+                  <Area type="monotone" dataKey="reg" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#areaReg)" />
+                  <Area type="monotone" dataKey="ot" stroke="#3b82f6" strokeWidth={2} fill="url(#areaOT)" />
+                  <Area type="monotone" dataKey="spec" stroke="#f59e0b" strokeWidth={2} fill="url(#areaSpec)" />
                 </AreaChart>
               )}
             </ResponsiveContainer>
