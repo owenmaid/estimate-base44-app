@@ -59,6 +59,7 @@ export default function EquipmentCalculator() {
       ot_value: item.ot_value || 0,
       quantity: 1,
       ot_hours: 0,
+      item_group: item.item_group || '',
     }]);
     setSelectedItemId('');
   };
@@ -99,7 +100,28 @@ export default function EquipmentCalculator() {
     const taxAmount = adjustedSubtotal * (taxRate / 100);
     const total = (adjustedSubtotal + taxAmount) * projectDays;
     const totalUnits = rows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
-    return { rows, subtotal: adjustedSubtotal, taxAmount, total, totalUnits };
+
+    // Split by Manpower Group vs non-Manpower
+    const isManpower = (r) => (r.item_group || '').toLowerCase() === 'manpower group';
+    const manpowerRows = rows.filter(isManpower);
+    const nonManpowerRows = rows.filter(r => !isManpower(r));
+
+    const manpowerSubtotal = manpowerRows.reduce((s, r) => s + r.subtotal, 0) * totalMult;
+    const nonManpowerSubtotal = nonManpowerRows.reduce((s, r) => s + r.subtotal, 0) * totalMult;
+    const manpowerTax = adjustedSubtotal > 0 ? taxAmount * (manpowerSubtotal / adjustedSubtotal) : 0;
+    const nonManpowerTax = adjustedSubtotal > 0 ? taxAmount * (nonManpowerSubtotal / adjustedSubtotal) : 0;
+    const manpowerTotal = (manpowerSubtotal + manpowerTax) * projectDays;
+    const nonManpowerTotal = (nonManpowerSubtotal + nonManpowerTax) * projectDays;
+    const manpowerUnits = manpowerRows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
+    const nonManpowerUnits = nonManpowerRows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
+
+    return {
+      rows, subtotal: adjustedSubtotal, taxAmount, total, totalUnits,
+      manpowerSubtotal, manpowerTax, manpowerTotal, manpowerUnits,
+      nonManpowerSubtotal, nonManpowerTax, nonManpowerTotal, nonManpowerUnits,
+      hasManpower: manpowerRows.length > 0,
+      hasNonManpower: nonManpowerRows.length > 0,
+    };
   }, [lineItems, projectDays, taxRate, formulas]);
 
   const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -265,10 +287,11 @@ export default function EquipmentCalculator() {
             <CardTitle className="text-base">Cost Summary</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Manpower Group</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
                 <div className="text-xs text-muted-foreground mb-1">Total Hours / Units</div>
-                <div className="text-2xl font-bold text-foreground">{results.totalUnits}</div>
+                <div className="text-2xl font-bold text-foreground">{results.manpowerUnits}</div>
               </div>
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
                 <div className="text-xs text-muted-foreground mb-1">Project Duration</div>
@@ -276,11 +299,31 @@ export default function EquipmentCalculator() {
               </div>
               <div className="bg-secondary/50 rounded-lg p-4 text-center">
                 <div className="text-xs text-muted-foreground mb-1">Subtotal</div>
-                <div className="text-xl font-bold text-foreground">{fmt(results.subtotal)}</div>
+                <div className="text-xl font-bold text-foreground">{fmt(results.manpowerSubtotal)}</div>
               </div>
               <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-center">
                 <div className="text-xs text-muted-foreground mb-1">Grand Total (incl. tax)</div>
-                <div className="text-xl font-bold text-primary">{fmt(results.total)}</div>
+                <div className="text-xl font-bold text-primary">{fmt(results.manpowerTotal)}</div>
+              </div>
+            </div>
+
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-6">Non-Manpower Items</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Total Hours / Units</div>
+                <div className="text-2xl font-bold text-foreground">{results.nonManpowerUnits}</div>
+              </div>
+              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Project Duration</div>
+                <div className="text-2xl font-bold text-foreground">{projectDays}d</div>
+              </div>
+              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Subtotal</div>
+                <div className="text-xl font-bold text-foreground">{fmt(results.nonManpowerSubtotal)}</div>
+              </div>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Grand Total (incl. tax)</div>
+                <div className="text-xl font-bold text-primary">{fmt(results.nonManpowerTotal)}</div>
               </div>
             </div>
             {(taxRate > 0 || activeFormulas.length > 0) && (
