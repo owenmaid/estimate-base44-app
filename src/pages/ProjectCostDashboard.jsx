@@ -944,7 +944,7 @@ export default function ProjectCostDashboard() {
             <CardTitle className="text-sm">Top Projects by Total Cost</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={504}>
               <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={(props) => {
