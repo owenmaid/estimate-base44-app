@@ -734,14 +734,14 @@ const addEquipmentRow = () => {
                   <Button onClick={handleCloseProject} size="sm" variant="ghost">
                     <X className="h-4 w-4" /> Close
                   </Button>
-                  <Button onClick={handleSaveSchedule} variant="outline" size="sm">
+                  <Button onClick={handleSaveSchedule} size="sm" className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500">
                     Save Schedule
                   </Button>
                   <Button
                     onClick={handleConvertToEstimate}
                     size="sm"
                     disabled={convertingEstimate}
-                    className="gap-1.5"
+                    className="gap-1.5 bg-red-600 hover:bg-red-700 text-white border-red-600"
                   >
                     {convertingEstimate ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                     Convert to Estimate
