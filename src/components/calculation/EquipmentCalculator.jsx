@@ -98,7 +98,7 @@ export default function EquipmentCalculator() {
     const adjustedSubtotal = subtotal * totalMult;
     const taxAmount = adjustedSubtotal * (taxRate / 100);
     const total = (adjustedSubtotal + taxAmount) * projectDays;
-    const totalUnits = rows.reduce((s, r) => s + r.quantity, 0);
+    const totalUnits = rows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
     return { rows, subtotal: adjustedSubtotal, taxAmount, total, totalUnits };
   }, [lineItems, projectDays, taxRate, formulas]);
 
