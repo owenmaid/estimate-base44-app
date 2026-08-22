@@ -10,6 +10,18 @@ import StatCard from '@/components/dashboard/StatCard';
 import EstimateTable from '@/components/estimates/EstimateTable';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
+import { computeCol14 } from '@/lib/computeCol14';
+
+// Sum Equipment Schedule costs (Col14) for a single project.
+const projectEquipmentCost = (project, inventoryItems) => {
+  const rows = project.equipment_rows || [];
+  const eGrid = project.equipment_grid || {};
+  const tGrid = project.type_grid || {};
+  return rows.reduce((sum, row) => {
+    const val = computeCol14(row, eGrid, tGrid, inventoryItems);
+    return sum + (val || 0);
+  }, 0);
+};
 
 const STATUS_STYLES = {
   active:    'bg-green-500/15 text-green-400 border-green-500/30',
@@ -30,6 +42,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Project.list('-created_date'),
   });
 
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ['inventoryItems'],
+    queryFn: () => base44.entities.InventoryItem.list(),
+  });
+
   // Estimate stats
   const estimateStats = {
     total: estimates.length,
@@ -45,7 +62,7 @@ export default function Dashboard() {
     planning: projects.filter(p => p.status === 'planning').length,
     onHold: projects.filter(p => p.status === 'on_hold').length,
     completed: projects.filter(p => p.status === 'completed').length,
-    totalRevenue: projects.reduce((s, p) => s + (p.task_list || []).reduce((a, t) => a + (t.total || 0), 0), 0),
+    totalRevenue: projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0),
   };
 
   // Revenue per month from project task totals — grouped by project created_date month
@@ -54,7 +71,7 @@ export default function Dashboard() {
     projects.forEach(p => {
       if (!p.created_date) return;
       const month = format(new Date(p.created_date), 'MMM yyyy');
-      const rev = (p.task_list || []).reduce((s, t) => s + (t.total || 0), 0);
+      const rev = projectEquipmentCost(p, inventoryItems);
       map[month] = (map[month] || 0) + rev;
     });
     // Sort chronologically
@@ -63,7 +80,7 @@ export default function Dashboard() {
       .sort((a, b) => new Date(a.month) - new Date(b.month))
       .slice(-12); // last 12 months
     return sorted;
-  }, [projects]);
+  }, [projects, inventoryItems]);
 
   // Upcoming deadlines: projects with a due date in the next 60 days, not completed
   const today = new Date();
