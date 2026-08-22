@@ -1,0 +1,113 @@
+{
+  "name": "CalcEstimate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name/label for this saved manpower & equipment estimate"
+    },
+    "project_days": {
+      "type": "number",
+      "default": 1,
+      "description": "Project duration in days"
+    },
+    "tax_rate": {
+      "type": "number",
+      "default": 0,
+      "description": "Tax rate as a percentage"
+    },
+    "line_items": {
+      "type": "array",
+      "description": "Saved line items (manpower & equipment)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "unit_cost": {
+            "type": "number"
+          },
+          "reg_value": {
+            "type": "number"
+          },
+          "ot_value": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "ot_hours": {
+            "type": "number"
+          },
+          "item_group": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Computed subtotal at time of save"
+    },
+    "tax_amount": {
+      "type": "number",
+      "description": "Computed tax amount at time of save"
+    },
+    "total": {
+      "type": "number",
+      "description": "Computed grand total at time of save"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
