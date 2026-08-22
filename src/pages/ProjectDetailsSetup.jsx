@@ -1304,13 +1304,10 @@ const addEquipmentRow = () => {
                </thead>
                <tbody>
                  <tr style={{ height: '36px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
-                   <td className="px-4 py-2 text-center font-bold text-foreground leading-tight">
+                   <td colSpan={4} className="px-4 py-2 text-center font-bold text-foreground leading-tight">
                      <div>Calculation</div>
                      <div>Engine</div>
                    </td>
-                   <td className="px-4 py-2"></td>
-                   <td className="px-4 py-2"></td>
-                   <td className="px-4 py-2"></td>
                  </tr>
                  {equipmentRows.map((row, idx) => {
                    const rowTotal = Object.entries(equipmentGrid).reduce((sum, [key, value]) => {
