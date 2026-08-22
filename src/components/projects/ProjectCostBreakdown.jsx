@@ -305,7 +305,15 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                     <span className="font-semibold text-sm">{category}</span>
                     <span className="text-sm font-semibold text-primary">{fmt(group.total)}</span>
                   </div>
-                  <table className="w-full text-xs">
+                  <table className="w-full text-xs table-fixed">
+                    <colgroup>
+                      <col className="w-[40%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[11%]" />
+                    </colgroup>
                     <thead>
                       <tr className="bg-secondary/30 border-b border-border">
                         <th className="px-4 py-2 text-left text-muted-foreground">Row / Item</th>
@@ -319,8 +327,8 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                     <tbody>
                       {group.rows.map((row, i) => (
                         <tr key={i} className="border-b border-border last:border-b-0 hover:bg-secondary/10">
-                          <td className="px-4 py-2.5 font-medium">{row.label}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground">{row.item_group}</td>
+                          <td className="px-4 py-2.5 font-medium truncate" title={row.label}>{row.label}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground truncate" title={row.item_group}>{row.item_group}</td>
                           <td className="px-4 py-2.5 text-right font-mono">{row.regCost > 0 ? fmt(row.regCost) : '—'}</td>
                           <td className="px-4 py-2.5 text-right font-mono text-blue-400">{row.otCost > 0 ? fmt(row.otCost) : '—'}</td>
                           <td className="px-4 py-2.5 text-right font-mono text-amber-400">{row.specialCost > 0 ? fmt(row.specialCost) : '—'}</td>
