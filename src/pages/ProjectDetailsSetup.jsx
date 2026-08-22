@@ -1303,7 +1303,7 @@ const addEquipmentRow = () => {
                  </tr>
                </thead>
                <tbody>
-                 <tr style={{ height: '89px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
+                 <tr style={{ height: '36px', backgroundColor: 'rgba(249, 115, 22, 0.2)' }}>
                    <td className="px-4 py-2"></td>
                    <td className="px-4 py-2"></td>
                    <td className="px-4 py-2"></td>
