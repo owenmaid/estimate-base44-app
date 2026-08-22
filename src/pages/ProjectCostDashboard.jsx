@@ -862,8 +862,8 @@ export default function ProjectCostDashboard() {
                   <YAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v.toFixed(0)}`} />
                   <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 9 }} formatter={(v, name) => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, { DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip' }[name] || name]} />
                   <Legend wrapperStyle={{ fontSize: 9 }} formatter={v => ({ DCSM_EQUIP: 'DCSM Equip', VENT_EQUIP: 'Vent Equip' }[v] || v)} />
-                  <Area type="monotone" dataKey="DCSM_EQUIP" name="DCSM_EQUIP" stackId="1" stroke="#f97316" strokeWidth={2} fill="url(#areaEquipDE)" />
-                  <Area type="monotone" dataKey="VENT_EQUIP" name="VENT_EQUIP" stackId="1" stroke="#eab308" strokeWidth={2} fill="url(#areaEquipVE)" />
+                  <Area type="monotone" dataKey="DCSM_EQUIP" name="DCSM_EQUIP" stroke="#f97316" strokeWidth={2} fill="url(#areaEquipDE)" />
+                  <Area type="monotone" dataKey="VENT_EQUIP" name="VENT_EQUIP" stroke="#eab308" strokeWidth={2} fill="url(#areaEquipVE)" />
                 </AreaChart>
               )}
             </ResponsiveContainer>
