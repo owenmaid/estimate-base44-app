@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle, Pencil } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
-import EstimateTable from '@/components/estimates/EstimateTable';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { computeCol14 } from '@/lib/computeCol14';
@@ -306,14 +305,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Estimates */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Recent Estimates</h2>
-          <Link to="/estimates" className="text-sm text-primary hover:underline font-medium">View all</Link>
-        </div>
-        <EstimateTable estimates={estimates.slice(0, 5)} isLoading={loadingEstimates} />
-      </div>
     </div>
   );
 }
