@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle, Pencil } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { computeCol14 } from '@/lib/computeCol14';
 
@@ -234,10 +234,9 @@ export default function Dashboard() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart
+              <LineChart
                 data={projects.map(p => ({ name: p.name, value: projectEquipmentCost(p, inventoryItems) }))}
                 margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
-                barCategoryGap="5%"
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={60} interval={0} />
@@ -247,8 +246,8 @@ export default function Dashboard() {
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                   formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']}
                 />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </CardContent>
