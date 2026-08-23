@@ -373,6 +373,31 @@ export default function ProjectPlanning() {
           <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
             <Maximize2 className="h-4 w-4 mr-1.5" /> Expand Items
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete "{form.name}" and all its line items, schedules, and equipment data. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete Project
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
             <Save className="h-4 w-4 mr-1.5" />
             {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
