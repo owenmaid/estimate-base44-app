@@ -1134,7 +1134,7 @@ const addEquipmentRow = () => {
                      Item_ID
                    </th>
                    <th className="bg-secondary/100 px-4 py-2.5 text-left font-semibold text-muted-foreground min-w-[260px] border-r border-border">
-                    Equipment
+                    Services
                    </th>
                     {visibleDates.map(d => {
                       const weekend = isWeekend(d);
