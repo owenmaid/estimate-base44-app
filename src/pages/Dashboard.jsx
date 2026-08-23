@@ -11,12 +11,21 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { computeCol14 } from '@/lib/computeCol14';
 
+// Resolve the inventory entry for a row (mirrors computeCol14's lookup).
+const rowInventoryEntry = (row, inventoryItems) =>
+  inventoryItems.find(i => String(i.id) === String(row.item_id))
+  || inventoryItems.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+  || null;
+
 // Sum Equipment Schedule costs (Col14) for a single project.
+// Excludes inventory items in the "CONVENTIONAL" sub_group_01, mirroring the Estimate subtotal.
 const projectEquipmentCost = (project, inventoryItems) => {
   const rows = project.equipment_rows || [];
   const eGrid = project.equipment_grid || {};
   const tGrid = project.type_grid || {};
   return rows.reduce((sum, row) => {
+    const entry = rowInventoryEntry(row, inventoryItems);
+    if (entry && (entry.sub_group_01 || '').toUpperCase() === 'CONVENTIONAL') return sum;
     const val = computeCol14(row, eGrid, tGrid, inventoryItems);
     return sum + (val || 0);
   }, 0);
