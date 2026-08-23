@@ -142,19 +142,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Project KPIs */}
-      <div>
-        <h2 className="text-base font-semibold mb-3 text-muted-foreground uppercase tracking-wider text-xs">Projects</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-          <StatCard title="Total Projects" value={projectStats.total} icon={FolderKanban} accent="bg-primary" />
-          <StatCard title="Active" value={projectStats.active} icon={TrendingUp} accent="bg-green-500" />
-          <StatCard title="Planning" value={projectStats.planning} icon={Pencil} accent="bg-blue-500" />
-          <StatCard title="On Hold" value={projectStats.onHold} icon={AlertCircle} accent="bg-yellow-500" />
-          <StatCard title="Completed" value={projectStats.completed} icon={CheckCircle} accent="bg-emerald-500" />
-          <StatCard title="Total Revenue" value={`$${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`} icon={DollarSign} accent="bg-primary" />
-        </div>
-      </div>
-
       {/* Chart + Deadlines */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Revenue Chart */}
@@ -227,11 +214,19 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Projects Overview Table */}
+      {/* Projects Overview */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Projects Overview</h2>
           <Link to="/projects" className="text-sm text-primary hover:underline font-medium">View all</Link>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+          <StatCard title="Total Projects" value={projectStats.total} icon={FolderKanban} accent="bg-primary" />
+          <StatCard title="Active" value={projectStats.active} icon={TrendingUp} accent="bg-green-500" />
+          <StatCard title="Planning" value={projectStats.planning} icon={Pencil} accent="bg-blue-500" />
+          <StatCard title="On Hold" value={projectStats.onHold} icon={AlertCircle} accent="bg-yellow-500" />
+          <StatCard title="Completed" value={projectStats.completed} icon={CheckCircle} accent="bg-emerald-500" />
+          <StatCard title="Total Revenue" value={`$${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`} icon={DollarSign} accent="bg-primary" />
         </div>
         <Card>
           <CardContent className="p-0">
