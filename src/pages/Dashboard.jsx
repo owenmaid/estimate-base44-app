@@ -216,6 +216,75 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Projects Overview Table */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Projects Overview</h2>
+          <Link to="/projects" className="text-sm text-primary hover:underline font-medium">View all</Link>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            {loadingProjects ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
+              </div>
+            ) : projects.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-10 text-center">No projects yet</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-muted-foreground border-b border-border text-xs uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 font-medium">Project</th>
+                      <th className="text-left px-4 py-3 font-medium">Number</th>
+                      <th className="text-left px-4 py-3 font-medium">Client</th>
+                      <th className="text-left px-4 py-3 font-medium">Status</th>
+                      <th className="text-left px-4 py-3 font-medium">End Date</th>
+                      <th className="text-right px-4 py-3 font-medium">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.slice(0, 10).map(p => {
+                      const value = projectEquipmentCost(p, inventoryItems);
+                      return (
+                        <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-2.5">
+                            <Link to={`/project-planning/${p.id}`} className="font-medium text-foreground hover:text-primary">
+                              {p.name}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-2.5 text-muted-foreground">{p.project_number || '—'}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground">{p.client || '—'}</td>
+                          <td className="px-4 py-2.5">
+                            <Badge className={`text-xs border ${STATUS_STYLES[p.status] || 'bg-muted text-muted-foreground border-border'}`}>
+                              {STATUS_LABELS[p.status] || p.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2.5 text-muted-foreground">{p.end_date || '—'}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-primary">
+                            {value > 0 ? `$${value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {projects.length > 0 && (
+                    <tfoot>
+                      <tr className="border-t-2 border-border font-semibold">
+                        <td colSpan={5} className="px-4 py-3 text-right text-muted-foreground">Total Value</td>
+                        <td className="px-4 py-3 text-right text-primary">
+                          ${projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Estimate KPIs */}
       <div>
         <h2 className="text-base font-semibold mb-3 text-muted-foreground uppercase tracking-wider text-xs">Estimates</h2>
