@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,26 @@ export default function Dashboard() {
     queryKey: ['inventoryItems'],
     queryFn: () => base44.entities.InventoryItem.list(),
   });
+
+  const queryClient = useQueryClient();
+
+  // Real-time: invalidate cached queries when projects or estimates change
+  useEffect(() => {
+    const unsubProjects = base44.entities.Project.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    });
+    const unsubEstimates = base44.entities.Estimate.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+    });
+    const unsubInventory = base44.entities.InventoryItem.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['inventoryItems'] });
+    });
+    return () => {
+      if (typeof unsubProjects === 'function') unsubProjects();
+      if (typeof unsubEstimates === 'function') unsubEstimates();
+      if (typeof unsubInventory === 'function') unsubInventory();
+    };
+  }, [queryClient]);
 
   // Estimate stats
   const estimateStats = {
