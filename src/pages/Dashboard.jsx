@@ -101,13 +101,13 @@ export default function Dashboard() {
     return sorted;
   }, [projects, inventoryItems]);
 
-  // Map project -> estimate number (match by project_number, fallback to project_name)
+  // Map project -> estimate (match by project_number, fallback to project_name)
   const estimateByProject = useMemo(() => {
     const byNumber = {};
     const byName = {};
     estimates.forEach(e => {
-      if (e.project_number) byNumber[e.project_number] = e.estimate_number;
-      if (e.project_name) byName[e.project_name] = e.estimate_number;
+      if (e.project_number) byNumber[e.project_number] = e;
+      if (e.project_name) byName[e.project_name] = e;
     });
     return { byNumber, byName };
   }, [estimates]);
@@ -246,12 +246,14 @@ export default function Dashboard() {
                       <th className="text-left px-4 py-3 font-medium">Status</th>
                       <th className="text-left px-4 py-3 font-medium">End Date</th>
                       <th className="text-left px-4 py-3 font-medium">Estimate</th>
+                      <th className="text-right px-4 py-3 font-medium">Estimate Value</th>
                       <th className="text-right px-4 py-3 font-medium">Value</th>
                     </tr>
                   </thead>
                   <tbody>
                     {projects.slice(0, 10).map(p => {
                       const value = projectEquipmentCost(p, inventoryItems);
+                      const est = estimateByProject.byNumber[p.project_number] || estimateByProject.byName[p.name];
                       return (
                         <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                           <td className="px-4 py-2.5">
@@ -268,7 +270,10 @@ export default function Dashboard() {
                           </td>
                           <td className="px-4 py-2.5 text-muted-foreground">{p.end_date || '—'}</td>
                           <td className="px-4 py-2.5 text-muted-foreground">
-                            {estimateByProject.byNumber[p.project_number] || estimateByProject.byName[p.name] || '—'}
+                            {est?.estimate_number || '—'}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-muted-foreground">
+                            {est && est.subtotal != null ? `$${est.subtotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
                           </td>
                           <td className="px-4 py-2.5 text-right font-semibold text-primary">
                             {value > 0 ? `$${value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
@@ -280,7 +285,7 @@ export default function Dashboard() {
                   {projects.length > 0 && (
                     <tfoot>
                       <tr className="border-t-2 border-border font-semibold">
-                        <td colSpan={6} className="px-4 py-3 text-right text-muted-foreground">Total Value</td>
+                        <td colSpan={7} className="px-4 py-3 text-right text-muted-foreground">Total Value</td>
                         <td className="px-4 py-3 text-right text-primary">
                           ${projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}
                         </td>
