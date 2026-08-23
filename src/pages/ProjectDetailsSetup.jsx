@@ -1295,7 +1295,7 @@ const addEquipmentRow = () => {
            <CardContent className="p-0">
              <table className="w-full text-xs border-collapse">
                <thead>
-                 <tr className="bg-secondary/60 border-b border-border" style={{ height: '40px' }}>
+                 <tr className="bg-secondary/60 border-b border-border" style={{ height: '36px' }}>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Reg Cost</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">OT Cost</th>
                    <th className="px-4 py-2.5 font-semibold text-muted-foreground border-r border-border">Spec Cost</th>
@@ -1326,7 +1326,7 @@ const addEquipmentRow = () => {
                          </tr>
                          );
                          })}
-                 <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
+                 <tr className="bg-secondary/40 border-t-2 border-border font-semibold" style={{ height: '36px' }}>
                    <td className="px-4 py-2 text-foreground border-r border-border text-right">
                      {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0).toFixed(2)}
                    </td>
