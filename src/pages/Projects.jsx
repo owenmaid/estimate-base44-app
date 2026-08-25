@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,50 +8,27 @@ import { Link } from 'react-router-dom';
 import ProjectModal from '@/components/projects/ProjectModal';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { computeCol14 } from '@/lib/computeCol14';
 
-// Compute total cost from Project Details Setup equipment rows
-function computeSetupTotal(project, inventoryMap) {
+// Resolve the inventory entry for a row (mirrors computeCol14's lookup).
+const rowInventoryEntry = (row, inventoryItems) =>
+  inventoryItems.find(i => String(i.id) === String(row.item_id))
+  || inventoryItems.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase())
+  || null;
+
+// Sum Equipment Schedule costs (Col14) for a single project.
+// Uses the canonical computeCol14 (same as the Estimate) and excludes
+// CONVENTIONAL sub_group_01 rows so the total matches the estimate subtotal.
+function computeSetupTotal(project, inventoryItems) {
   const rows = project.equipment_rows || [];
   const eGrid = project.equipment_grid || {};
   const tGrid = project.type_grid || {};
-  let grandTotal = 0;
-
-  rows.forEach(row => {
-    const label = (row.label || '').toLowerCase();
-    const isSpecial = label.includes('pre-work') || label.includes('post-work');
-    const shiftHrs = isSpecial ? 10 : 12;
-    const inv = inventoryMap[String(row.item_id)] ?? inventoryMap[label] ?? null;
-    const regRate = inv?.reg_value != null ? Number(inv.reg_value) : null;
-    const otRate = inv?.ot_value != null ? Number(inv.ot_value) : null;
-    const isManpower = inv?.item_group === 'Manpower Group';
-
-    let col1 = 0, col4 = 0, col5 = 0, col6 = 0, col7 = 0, col8 = 0;
-    Object.entries(eGrid).forEach(([key, value]) => {
-      if (!key.startsWith(`${row.id}_`)) return;
-      const dateStr = key.slice(`${row.id}_`.length);
-      const num = parseInt(value, 10);
-      if (isNaN(num) || num <= 0) return;
-      col1 += num;
-      const type = tGrid[dateStr] || '';
-      if (type === 'N') { col4 += num * 8; col5 += num * Math.max(shiftHrs - 8, 0); }
-      else if (type === 'Sa') { col4 += num * 4; col6 += num * Math.max(shiftHrs - 4, 0); }
-      else if (type === 'Su') { col7 += num * shiftHrs; }
-      else if (type === 'St') { col8 += num * shiftHrs; }
-    });
-
-    // Exclude Conventional rows from total
-    const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
-    if (sg1 === 'CONVENTIONAL') return;
-
-    const regCost = regRate != null ? (isManpower ? col4 : col1) * regRate : 0;
-    const otCost = otRate != null ? (col5 + col6 + col7) * otRate : 0;
-    const specialCost = otRate != null
-      ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
-      : 0;
-    grandTotal += regCost + otCost + specialCost;
-  });
-
-  return grandTotal;
+  return rows.reduce((sum, row) => {
+    const entry = rowInventoryEntry(row, inventoryItems);
+    if (entry && (entry.sub_group_01 || '').trim().toUpperCase() === 'CONVENTIONAL') return sum;
+    const val = computeCol14(row, eGrid, tGrid, inventoryItems);
+    return sum + (val || 0);
+  }, 0);
 }
 
 const STATUS_STYLES = {
@@ -82,16 +59,6 @@ export default function Projects() {
     queryKey: ['inventoryAll'],
     queryFn: () => base44.entities.InventoryItem.list(),
   });
-
-  // Build a lookup map by id and by lowercase name for fast access
-  const inventoryMap = useMemo(() => {
-    const map = {};
-    inventoryItems.forEach(i => {
-      if (i.id) map[String(i.id)] = i;
-      if (i.name) map[(i.name || '').toLowerCase()] = i;
-    });
-    return map;
-  }, [inventoryItems]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Project.create({ ...data, progress: 0, tasks: 0, done: 0 }),
@@ -199,7 +166,7 @@ export default function Projects() {
                     STATUS_LABELS[p.status]?.toLowerCase().includes(q)
                   );
                 }).map(project => {
-                  const total = computeSetupTotal(project, inventoryMap);
+                  const total = computeSetupTotal(project, inventoryItems);
                   const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' });
                   return (
                     <tr key={project.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
