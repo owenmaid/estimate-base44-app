@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { useLocation } from 'react-router-dom';
 import PalettePanel from '@/components/estimate-panel/PalettePanel';
 import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
@@ -11,6 +12,7 @@ import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
+  const location = useLocation();
 
   // The estimate being edited (null = new)
   const [activeEstimate, setActiveEstimate] = useState(null);
@@ -372,17 +374,13 @@ export default function CreateEstimatePanel() {
   };
 
   // Auto-load an estimate queued from Project Details Setup (Convert to Estimate)
+  const loadedFromNavRef = useRef(false);
   useEffect(() => {
-    const raw = sessionStorage.getItem('estimateToLoad');
-    if (!raw) return;
-    sessionStorage.removeItem('estimateToLoad');
-    try {
-      const estimate = JSON.parse(raw);
-      loadEstimate(estimate);
-    } catch (e) {
-      // ignore parse errors
-    }
-  }, []);
+    const estimate = location.state?.estimateToLoad;
+    if (!estimate || loadedFromNavRef.current) return;
+    loadedFromNavRef.current = true;
+    loadEstimate(estimate);
+  }, [location.state]);
 
   // ── Reset to blank ─────────────────────────────────────────────────────────
   const handleNew = () => {

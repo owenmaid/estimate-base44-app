@@ -655,8 +655,7 @@ const addEquipmentRow = () => {
       });
 
       toast.success('Estimate created successfully!');
-      sessionStorage.setItem('estimateToLoad', JSON.stringify(newEstimate));
-      navigate('/create-estimate-panel');
+      navigate('/create-estimate-panel', { state: { estimateToLoad: newEstimate } });
     } catch (err) {
       toast.error('Failed to create estimate');
     }
