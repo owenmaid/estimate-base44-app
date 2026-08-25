@@ -374,11 +374,11 @@ export default function CreateEstimatePanel() {
   // Auto-load an estimate queued from Project Details Setup (Convert to Estimate)
   const loadedFromNavRef = useRef(false);
   useEffect(() => {
-    const estimate = window.__estimateToLoad;
-    if (!estimate || loadedFromNavRef.current) return;
+    const raw = sessionStorage.getItem('estimateToLoad');
+    if (!raw || loadedFromNavRef.current) return;
     loadedFromNavRef.current = true;
-    window.__estimateToLoad = null;
-    try { loadEstimate(estimate); } catch (e) { /* ignore load errors */ }
+    sessionStorage.removeItem('estimateToLoad');
+    try { loadEstimate(JSON.parse(raw)); } catch (e) { /* ignore load errors */ }
   }, []);
 
   // ── Reset to blank ─────────────────────────────────────────────────────────

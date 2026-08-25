@@ -655,8 +655,8 @@ const addEquipmentRow = () => {
       });
 
       toast.success('Estimate created successfully!');
-      window.__estimateToLoad = newEstimate;
-      navigate('/create-estimate-panel');
+      sessionStorage.setItem('estimateToLoad', JSON.stringify(newEstimate));
+      window.location.href = '/create-estimate-panel';
     } catch (err) {
       toast.error('Failed to create estimate');
     }
