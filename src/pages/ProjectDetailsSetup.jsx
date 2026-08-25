@@ -611,8 +611,8 @@ const addEquipmentRow = () => {
       const lineItems = [];
       // Emit a category header line then line items for each group
       Object.entries(categoryMap).forEach(([category, rows]) => {
-        // Category header (zero-value separator line)
-        lineItems.push({ description: `── ${category} ──`, quantity: 0, unit_price: 0, total: 0 });
+        // Section marker — creates a new section in the Estimate Panel per inventory category
+        lineItems.push({ description: `__SECTION__:${category}`, quantity: 0, unit_price: 0, total: 0 });
         rows.forEach(row => {
           const costs = calculateRowCosts[row.id] || {};
           const { regCost, otCost, specialCost } = costs;
@@ -642,6 +642,7 @@ const addEquipmentRow = () => {
         estimate_number: estimateNumber,
         client_name: currentProject?.client || 'TBD',
         project_name: estimateName,
+        project_number: currentProject?.project_number || '',
         status: 'draft',
         line_items: lineItems,
         subtotal,
@@ -654,7 +655,8 @@ const addEquipmentRow = () => {
       });
 
       toast.success('Estimate created successfully!');
-      navigate(`/estimates/${newEstimate.id}`);
+      sessionStorage.setItem('estimateToLoad', JSON.stringify(newEstimate));
+      navigate('/create-estimate-panel');
     } catch (err) {
       toast.error('Failed to create estimate');
     }

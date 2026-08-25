@@ -371,6 +371,19 @@ export default function CreateEstimatePanel() {
     toast.success(`Loaded: ${estimate.project_name || estimate.client_name}`);
   };
 
+  // Auto-load an estimate queued from Project Details Setup (Convert to Estimate)
+  useEffect(() => {
+    const raw = sessionStorage.getItem('estimateToLoad');
+    if (!raw) return;
+    sessionStorage.removeItem('estimateToLoad');
+    try {
+      const estimate = JSON.parse(raw);
+      loadEstimate(estimate);
+    } catch (e) {
+      // ignore parse errors
+    }
+  }, []);
+
   // ── Reset to blank ─────────────────────────────────────────────────────────
   const handleNew = () => {
     setActiveEstimate(null);
