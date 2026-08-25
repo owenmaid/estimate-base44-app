@@ -77,7 +77,7 @@ function getSectionTotal(section) {
   return bracketItems.reduce((s, i) => s + (subtotalMap[i.id] || 0), 0);
 }
 
-export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {}, manwayAvgDCSM = 0, conventionalCostsTotal = 0 }) {
+export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {}, manwayAvgDCSM = 0, conventionalCostsTotal = 0, hideZeroItems = false }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -302,7 +302,7 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     y += 22;
 
     // Column headers
-    if (section.items.length > 0 && !isProjTotals) {
+    if (visibleItems.length > 0 && !isProjTotals) {
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
       setColor(muted);
@@ -318,12 +318,18 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
       y += 10;
     }
 
-    // Items
+    // Items — hide zero-value leaf items when hideZeroItems is set (project linked)
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     let regularRowIdx = 0;
 
-    section.items.forEach((item) => {
+    const visibleItems = section.items.filter(item => {
+      if (!hideZeroItems) return true;
+      if (isSubtotalHeader(item.description) || isSpacer(item.description)) return true;
+      return (item.total || 0) !== 0 || (item.unit_price || 0) !== 0;
+    });
+
+    visibleItems.forEach((item) => {
       const isHeader = isSubtotalHeader(item.description);
       const spacer   = isSpacer(item.description);
       checkPage(18);
