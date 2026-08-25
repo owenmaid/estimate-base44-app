@@ -323,12 +323,6 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     doc.setFontSize(8.5);
     let regularRowIdx = 0;
 
-    const visibleItems = section.items.filter(item => {
-      if (!hideZeroItems) return true;
-      if (isSubtotalHeader(item.description) || isSpacer(item.description)) return true;
-      return (item.total || 0) !== 0 || (item.unit_price || 0) !== 0;
-    });
-
     visibleItems.forEach((item) => {
       const isHeader = isSubtotalHeader(item.description);
       const spacer   = isSpacer(item.description);
