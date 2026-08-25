@@ -301,6 +301,13 @@ export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxA
     }
     y += 22;
 
+    // Items — hide zero-value leaf items when hideZeroItems is set (project linked)
+    const visibleItems = section.items.filter(item => {
+      if (!hideZeroItems) return true;
+      if (isSubtotalHeader(item.description) || isSpacer(item.description)) return true;
+      return (item.total || 0) !== 0 || (item.unit_price || 0) !== 0;
+    });
+
     // Column headers
     if (visibleItems.length > 0 && !isProjTotals) {
       doc.setFontSize(7.5);
