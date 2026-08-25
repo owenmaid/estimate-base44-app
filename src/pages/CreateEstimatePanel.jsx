@@ -1087,6 +1087,7 @@ export default function CreateEstimatePanel() {
         <EstimateCanvas
           clientInfo={clientInfo}
           onClientInfoChange={setClientInfo}
+          hideZeroItems={!!linkedProject}
           sections={sectionsWithAggregate}
           onRenameSection={renameSection}
           onRemoveSection={removeSection}

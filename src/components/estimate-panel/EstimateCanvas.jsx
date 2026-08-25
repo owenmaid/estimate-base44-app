@@ -16,6 +16,7 @@ export default function EstimateCanvas({
   sections, onRenameSection, onRemoveSection, onSplitSection,
   onUpdateItem, onRemoveItem, onReorderItems, onReorderSections,
   subtotal, taxAmount, total, inventory = [], logoUrls = {}, manwayAvgDCSM = 0, conventionalCostsTotal = 0,
+  hideZeroItems = false,
 }) {
   const [showClient, setShowClient] = useState(true);
 
@@ -182,6 +183,7 @@ export default function EstimateCanvas({
                         onRemoveItem={onRemoveItem}
                         onReorderItems={onReorderItems}
                         inventory={inventory}
+                        hideZeroItems={hideZeroItems}
                         dragHandleProps={drag.dragHandleProps}
                       />
                     </div>

@@ -174,13 +174,23 @@ function ItemRow({ item, sectionId, onUpdateItem, onRemoveItem, inventory, isPro
   );
 }
 
-export default function SectionBlock({ section, onRename, onRemove, onSplit, onUpdateItem, onRemoveItem, onReorderItems, inventory, dragHandleProps }) {
+export default function SectionBlock({ section, onRename, onRemove, onSplit, onUpdateItem, onRemoveItem, onReorderItems, inventory, dragHandleProps, hideZeroItems = false }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
   const isProjectTotalsSection = normalizeDesc(section.title) === 'project totals';
   const itemsToRender = section.items;
+
+  // Hide leaf items with no value when a project is linked (no Col14 match from project).
+  // Headers and spacers are always visible. Hidden items stay in the data — they reappear
+  // automatically when auto-reprice gives them a value.
+  const shouldHideItem = (item) => {
+    if (!hideZeroItems) return false;
+    if (isSubtotalHeader(item.description) || isSpacer(item.description)) return false;
+    return (item.total || 0) === 0 && (item.unit_price || 0) === 0;
+  };
+  const visibleItems = itemsToRender.filter(item => !shouldHideItem(item));
 
   const subtotalMap = buildSubtotals(itemsToRender);
 
@@ -199,10 +209,16 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-    const items = Array.from(itemsToRender);
-    const [moved] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, moved);
-    onReorderItems(section.id, items);
+    // Reorder within visible items, then merge back into the full items array
+    // so hidden items keep their relative positions.
+    const reorderedVisible = Array.from(visibleItems);
+    const [moved] = reorderedVisible.splice(result.source.index, 1);
+    reorderedVisible.splice(result.destination.index, 0, moved);
+    let visIdx = 0;
+    const newItems = itemsToRender.map(item =>
+      shouldHideItem(item) ? item : reorderedVisible[visIdx++]
+    );
+    onReorderItems(section.id, newItems);
   };
 
   return (
@@ -261,7 +277,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
 
       {!collapsed && (
         <>
-          {itemsToRender.length > 0 && !isProjectTotalsSection && (
+          {visibleItems.length > 0 && !isProjectTotalsSection && (
             <div className="grid gap-1 px-3 py-1.5 bg-secondary/30 border-b border-border text-xs text-muted-foreground font-medium" style={{gridTemplateColumns:'28px 1fr 56px 88px 60px 88px 88px 28px'}}>
               <div></div>
               <div>Description</div>
@@ -277,7 +293,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
             <Droppable droppableId={`section-${section.id}`}>
               {(provided) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}>
-                  {itemsToRender.map((item, idx) => (
+                  {visibleItems.map((item, idx) => (
                     <Draggable key={String(item.id)} draggableId={String(item.id)} index={idx}>
                       {(drag, snapshot) => (
                         <div
@@ -301,7 +317,7 @@ export default function SectionBlock({ section, onRename, onRemove, onSplit, onU
                     </Draggable>
                   ))}
                   {provided.placeholder}
-                  {itemsToRender.length === 0 && (
+                  {visibleItems.length === 0 && (
                     <div className="text-xs text-muted-foreground text-center py-4">
                       Drop items here from the palette →
                     </div>
