@@ -595,72 +595,36 @@ const addEquipmentRow = () => {
     setConvertingEstimate(true);
     try {
       const currentProject = projects.find(p => p.id === selectedProjectId);
-      const estimateName = `(EST)-${currentProject?.name || 'Project'}`;
 
-      // Build line items grouped by inventory category
-      // First, collect rows per category
-      const categoryMap = {};
-      equipmentRows.forEach(row => {
-        const inventoryItem = equipmentInventory.find(i => i.id === row.item_id)
-          ?? equipmentInventory.find(i => i.name === row.label || i.sku === row.label);
-        const category = inventoryItem?.category || 'Uncategorized';
-        if (!categoryMap[category]) categoryMap[category] = [];
-        categoryMap[category].push(row);
-      });
-
-      const lineItems = [];
-      // Emit a category header line then line items for each group
-      Object.entries(categoryMap).forEach(([category, rows]) => {
-        // Section marker — creates a new section in the Estimate Panel per inventory category
-        lineItems.push({ description: `__SECTION__:${category}`, quantity: 0, unit_price: 0, total: 0 });
-        rows.forEach(row => {
-          const costs = calculateRowCosts[row.id] || {};
-          const { regCost, otCost, specialCost } = costs;
-          if (regCost != null && regCost > 0) {
-            lineItems.push({ description: `${row.label} — Reg Cost`, quantity: 1, unit_price: regCost, total: regCost });
-          }
-          if (otCost != null && otCost > 0) {
-            lineItems.push({ description: `${row.label} — OT Cost`, quantity: 1, unit_price: otCost, total: otCost });
-          }
-          if (specialCost != null && specialCost > 0) {
-            lineItems.push({ description: `${row.label} — Special Cost`, quantity: 1, unit_price: specialCost, total: specialCost });
-          }
-        });
-      });
-
-      const hasAnyCosts = lineItems.some(item => item.total > 0);
-      if (!hasAnyCosts) {
-        toast.error('No cost data to convert. Make sure rows have costs calculated.');
+      // Fetch the "NEW ESTIMATE TEMPLATE 100" template
+      const templates = await base44.entities.EstimateTemplate.filter({ name: 'NEW ESTIMATE TEMPLATE 100' });
+      const template = templates && templates.length > 0 ? templates[0] : null;
+      if (!template) {
+        toast.error('Template "NEW ESTIMATE TEMPLATE 100" not found. Please create it first.');
         setConvertingEstimate(false);
         return;
       }
 
-      const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
-      const estimateNumber = `EST-${Date.now().toString().slice(-6)}`;
-
-      const newEstimate = await base44.entities.Estimate.create({
-        estimate_number: estimateNumber,
-        client_name: currentProject?.client || 'TBD',
-        project_name: estimateName,
+      const siteParts = [currentProject?.site, currentProject?.location, currentProject?.plant].filter(Boolean);
+      const preload = {
+        _isTemplatePreload: true,
         project_number: currentProject?.project_number || '',
-        status: 'draft',
-        line_items: lineItems,
-        subtotal,
-        tax_rate: 0,
-        tax_amount: 0,
-        discount: 0,
-        total: subtotal,
-        description: `Converted from Project Details Setup — ${currentProject?.name}`,
-        notes: `Start: ${startDate || '—'}  |  End: ${endDate || '—'}`,
-      });
+        project_name: currentProject?.name || '',
+        client_name: currentProject?.client || '',
+        client_address: siteParts.join(' / '),
+        client_phone: currentProject?.phone || '',
+        notes: currentProject?.notes || '',
+        start_date: currentProject?.start_date || '',
+        end_date: currentProject?.end_date || '',
+        line_items: template.line_items || [],
+      };
 
-      toast.success('Estimate created successfully!');
-      sessionStorage.setItem('estimateToLoad', JSON.stringify(newEstimate));
+      sessionStorage.setItem('estimateToLoad', JSON.stringify(preload));
       window.location.href = '/create-estimate-panel';
     } catch (err) {
-      toast.error('Failed to create estimate');
+      toast.error('Failed to load template');
+      setConvertingEstimate(false);
     }
-    setConvertingEstimate(false);
   };
 
   return (

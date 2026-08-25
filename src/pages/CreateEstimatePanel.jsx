@@ -306,6 +306,42 @@ export default function CreateEstimatePanel() {
     }, 0);
   }, [linkedProject, inventory]);
 
+  // ── Reconstruct sections from line_items (shared by loadEstimate & template preload) ──
+  const rebuildSectionsFromLineItems = (lineItems) => {
+    const rebuilt = [];
+    let current = null;
+    lineItems.forEach((item) => {
+      if (item.description && item.description.startsWith('__SECTION__:')) {
+        const title = item.description.slice('__SECTION__:'.length);
+        if (item._isSummary || title.toLowerCase() === 'summary') {
+          current = { id: 'summary', title, _isSummary: true, items: [] };
+          rebuilt.push(current);
+        } else {
+          current = { id: Date.now() + Math.random(), title, items: [] };
+          rebuilt.push(current);
+        }
+      } else {
+        if (!current) {
+          current = { id: Date.now() + Math.random(), title: 'Section 1', items: [] };
+          rebuilt.push(current);
+        }
+        current.items.push({
+          id: Date.now() + Math.random(),
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          markup: item.markup || 0,
+          total: item.total,
+        });
+      }
+    });
+    const hasSummary = rebuilt.some(s => s._isSummary);
+    if (!hasSummary) {
+      rebuilt.push({ id: 'summary', title: 'Summary', _isSummary: true, items: [] });
+    }
+    return rebuilt;
+  };
+
   // ── Load an existing estimate into the canvas ──────────────────────────────
   const loadEstimate = (estimate) => {
     forceRepriceRef.current = true;
@@ -330,44 +366,7 @@ export default function CreateEstimatePanel() {
       dynaVentLogo: savedLogos.dynaVentLogo || '',
     });
 
-    // Reconstruct sections from line_items
-    const lineItems = estimate.line_items || [];
-    const rebuilt = [];
-    let current = null;
-
-    lineItems.forEach((item) => {
-      if (item.description && item.description.startsWith('__SECTION__:')) {
-        const title = item.description.slice('__SECTION__:'.length);
-        // Check if this is a summary section marker
-        if (item._isSummary || title.toLowerCase() === 'summary') {
-          current = { id: 'summary', title, _isSummary: true, items: [] };
-          rebuilt.push(current);
-        } else {
-          current = { id: Date.now() + Math.random(), title, items: [] };
-          rebuilt.push(current);
-        }
-      } else {
-        if (!current) {
-          current = { id: Date.now() + Math.random(), title: 'Section 1', items: [] };
-          rebuilt.push(current);
-        }
-        current.items.push({
-          id: Date.now() + Math.random(),
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          markup: item.markup || 0,
-          total: item.total,
-        });
-      }
-    });
-
-    // Ensure summary section exists
-    const hasSummary = rebuilt.some(s => s._isSummary);
-    if (!hasSummary) {
-      rebuilt.push({ id: 'summary', title: 'Summary', _isSummary: true, items: [] });
-    }
-    setSections(rebuilt);
+    setSections(rebuildSectionsFromLineItems(estimate.line_items || []));
     toast.success(`Loaded: ${estimate.project_name || estimate.client_name}`);
   };
 
@@ -378,7 +377,31 @@ export default function CreateEstimatePanel() {
     if (!raw || loadedFromNavRef.current) return;
     loadedFromNavRef.current = true;
     sessionStorage.removeItem('estimateToLoad');
-    try { loadEstimate(JSON.parse(raw)); } catch (e) { /* ignore load errors */ }
+    try {
+      const data = JSON.parse(raw);
+      if (data._isTemplatePreload) {
+        // Template preload from Convert to Estimate: load template sections + project header details, no active estimate
+        forceRepriceRef.current = true;
+        setActiveEstimate(null);
+        setClientInfo({
+          client_name: data.client_name || '',
+          project_number: data.project_number || '',
+          project_name: data.project_name || '',
+          client_email: data.client_email || '',
+          client_phone: data.client_phone || '',
+          client_address: data.client_address || '',
+          notes: data.notes || '',
+          tax_rate: 0,
+          discount: 0,
+          start_date: data.start_date || '',
+          end_date: data.end_date || '',
+        });
+        setSections(rebuildSectionsFromLineItems(data.line_items || []));
+        toast.success('Template loaded — linked to project.');
+      } else {
+        loadEstimate(data);
+      }
+    } catch (e) { /* ignore load errors */ }
   }, []);
 
   // ── Reset to blank ─────────────────────────────────────────────────────────
