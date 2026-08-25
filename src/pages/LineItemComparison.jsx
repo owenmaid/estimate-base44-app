@@ -51,10 +51,20 @@ export default function LineItemComparison() {
       if (!pn) return;
       const pnLower = pn.toLowerCase();
 
-      // Schedule rows from Project Details Setup
+      // Schedule rows from Project Details Setup — only rows with a non-zero
+      // total assignment across the equipment grid (i.e. actually used)
       const scheduleLabels = (project.equipment_rows || [])
-        .map(r => (r.label || '').trim())
-        .filter(Boolean);
+        .filter(r => {
+          const label = (r.label || '').trim();
+          if (!label) return false;
+          const sum = Object.entries(project.equipment_grid || {}).reduce((s, [key, val]) => {
+            if (!key.startsWith(`${r.id}_`)) return s;
+            const num = parseInt(val, 10);
+            return isNaN(num) || num <= 0 ? s : s + num;
+          }, 0);
+          return sum > 0;
+        })
+        .map(r => (r.label || '').trim());
 
       // Find matching estimate by project_number
       const estimate = estimates.find(
@@ -62,13 +72,15 @@ export default function LineItemComparison() {
       );
 
       // Leaf items from the estimate (non-section-marker, non-header, non-spacer)
+      // — only items with a total value greater than zero
       const estimateLeafs = estimate
         ? (estimate.line_items || [])
             .filter(item =>
               !isSectionMarker(item.description) &&
               !isHeader(item.description) &&
               !isSpacer(item.description) &&
-              (item.description || '').trim()
+              (item.description || '').trim() &&
+              (Number(item.total) || 0) > 0
             )
             .map(item => (item.description || '').trim())
         : [];
