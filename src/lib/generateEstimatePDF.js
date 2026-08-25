@@ -79,6 +79,9 @@ function getSectionTotal(section) {
 
 export async function generateEstimatePDF({ clientInfo, sections, subtotal, taxAmount, total, estimateNumber, logoUrls = {}, manwayAvgDCSM = 0, conventionalCostsTotal = 0, hideZeroItems = false }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  // Scale all font sizes down by 25%
+  const _origSetFontSize = doc.setFontSize.bind(doc);
+  doc.setFontSize = (size) => _origSetFontSize(size * 0.75);
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 40;
