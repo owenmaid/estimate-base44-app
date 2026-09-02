@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, Truck, Package, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Search, X, TrendingUp, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area, LineChart, Line } from 'recharts';
 import ProjectCostBreakdown from '@/components/projects/ProjectCostBreakdown';
