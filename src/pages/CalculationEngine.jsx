@@ -7,6 +7,7 @@ import { Plus, FlaskConical, Zap, Calendar } from 'lucide-react';
 import FormulaEditor from '@/components/calculation/FormulaEditor';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
+import { calculateCostComponents } from '@/lib/calculations';
 
 const blankFormula = () => ({
   name: '',
@@ -49,14 +50,22 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
   const effectiveCol7 = isManpower ? col7Value : 0;
   const effectiveCol8 = isManpower ? col8Value : 0;
 
-  // Col11: Manpower = Col4 × Col9, non-Manpower = Col1 × Col9
-  const col11Value = col9Value != null ? ((isManpower ? col4Value : col1Value) * col9Value) : null;
-  // Col12/13 still use effective (zeroed for non-Manpower) since OT cost only applies to Manpower
-  const col12Value = col10Value != null ? ((effectiveCol5 + effectiveCol6 + effectiveCol7) * col10Value) : null;
-  const col13Value = col10Value != null
-    ? ((effectiveCol8 * 2 * (4 / (shiftHrs * 2))) * col10Value) +
-      ((effectiveCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
-    : null;
+  const {
+    regularCost: col11Value,
+    overtimeCost: col12Value,
+    specialCost: col13Value,
+  } = calculateCostComponents({
+    isManpower,
+    shiftHours: shiftHrs,
+    col1: col1Value,
+    col4: col4Value,
+    col5: effectiveCol5,
+    col6: effectiveCol6,
+    col7: effectiveCol7,
+    col8: effectiveCol8,
+    regRate: col9Value,
+    otRate: col10Value,
+  });
 
   const activeStyle = 'w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]';
   const inactiveStyle = 'w-full bg-secondary/30 border border-border/30 rounded px-1 py-1 text-xs text-muted-foreground/40 text-center min-h-[24px]';
@@ -449,18 +458,23 @@ export default function CalculationEngine() {
         const effectiveCol7 = isManpower ? col7Value : 0;
         const effectiveCol8 = isManpower ? col8Value : 0;
 
-        const col13Value = col10Value != null
-          ? ((effectiveCol8 * 2 * (4 / (shiftHrs * 2))) * col10Value) +
-            ((effectiveCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2))) * col10Value)
-          : 0;
-
-        calculationGrid[`${row.id}_col13`] = col13Value;
-
         const col9Value = inventoryEntry?.reg ?? null;
         const col4Value = rowCol4[row.id] || 0;
-        const col11Value = col9Value != null ? ((isManpower ? col4Value : (rowSums[row.id] || 0)) * col9Value) : 0;
-        const col12Value = col10Value != null ? ((effectiveCol5 + effectiveCol6 + effectiveCol7) * col10Value) : 0;
-        calculationGrid[`${row.id}_col14`] = col11Value + col12Value + col13Value;
+        const costs = calculateCostComponents({
+          isManpower,
+          shiftHours: shiftHrs,
+          col1: rowSums[row.id] || 0,
+          col4: col4Value,
+          col5: effectiveCol5,
+          col6: effectiveCol6,
+          col7: effectiveCol7,
+          col8: effectiveCol8,
+          regRate: col9Value,
+          otRate: col10Value,
+        });
+
+        calculationGrid[`${row.id}_col13`] = costs.specialCost;
+        calculationGrid[`${row.id}_col14`] = costs.totalCost;
       });
 
       await base44.entities.Project.update(activeProject.id, { calculation_grid: calculationGrid });
