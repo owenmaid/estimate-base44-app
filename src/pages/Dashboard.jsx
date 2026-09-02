@@ -219,7 +219,7 @@ export default function Dashboard() {
       </div>
 
       {/* Grand total of all estimates + quantity + linked */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.85fr_1.95fr] gap-3 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.85fr_1.95fr] gap-3 items-stretch">
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
@@ -265,7 +265,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Card>
+        <Card className="h-full flex flex-col">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2" style={SERIF}>
               <CalendarClock className="h-8 w-8 text-primary" /> Upcoming Deadlines
@@ -276,7 +276,7 @@ export default function Dashboard() {
               </Badge>
             )}
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 flex-1 overflow-auto">
             {upcomingDeadlines.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">No upcoming deadlines in the next 60 days</p>
             ) : upcomingDeadlines.map(p => {
