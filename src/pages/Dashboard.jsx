@@ -161,6 +161,16 @@ export default function Dashboard() {
     return { byNumber, byName };
   }, [estimates]);
 
+  // Count estimates that have been converted to / linked with a project
+  const linkedEstimatesCount = useMemo(() => {
+    const projectNumbers = new Set(projects.map(p => p.project_number).filter(Boolean));
+    const projectNames = new Set(projects.map(p => p.name).filter(Boolean));
+    return estimates.filter(e =>
+      (e.project_number && projectNumbers.has(e.project_number)) ||
+      (e.project_name && projectNames.has(e.project_name))
+    ).length;
+  }, [estimates, projects]);
+
   // Upcoming deadlines: projects with a due date in the next 60 days, not completed
   const today = new Date();
   const upcomingDeadlines = projects
@@ -206,19 +216,49 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Grand total of all estimates */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
-        <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
-          <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
-          <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
-        </svg>
-        <div className="relative">
-          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Estimate Value</p>
-          <p className="text-4xl lg:text-5xl font-bold text-primary mt-1 leading-none" style={SERIF}>
-            ${estimateStats.totalValue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">across {estimateStats.total} estimate{estimateStats.total === 1 ? '' : 's'}</p>
+      {/* Grand total of all estimates + quantity + linked */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+          <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
+            <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
+            <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
+          </svg>
+          <div className="relative">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Estimate Value</p>
+            <p className="text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+              ${estimateStats.totalValue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">across {estimateStats.total} estimate{estimateStats.total === 1 ? '' : 's'}</p>
+          </div>
+        </div>
+
+        <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total Estimates</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
+              <FileText className="h-4 w-4 text-primary" />
+            </span>
+          </div>
+          <div>
+            <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{estimateStats.total}</span>
+            <span className="text-xs text-muted-foreground mt-1">estimate{estimateStats.total === 1 ? '' : 's'} created</span>
+          </div>
+        </div>
+
+        <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Linked to Projects</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
+              <FolderKanban className="h-4 w-4 text-emerald-400" />
+            </span>
+          </div>
+          <div>
+            <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{linkedEstimatesCount}</span>
+            <span className="text-xs text-muted-foreground mt-1">converted / linked</span>
+          </div>
         </div>
       </div>
 
@@ -245,6 +285,37 @@ export default function Dashboard() {
           );
         })}
       </div>
+
+      {/* Estimate totals by status — line graph */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base" style={SERIF}>Estimate Value by Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart
+              data={[
+                { name: 'Accepted', value: estimateStatusValue.accepted },
+                { name: 'Declined', value: estimateStatusValue.declined },
+                { name: 'Sent', value: estimateStatusValue.sent },
+                { name: 'Expired', value: estimateStatusValue.expired },
+                { name: 'Draft', value: estimateStatusValue.draft },
+              ]}
+              margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+              <Tooltip
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']}
+              />
+              <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
       {/* Total Revenue hero with pipeline-flow detail */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
