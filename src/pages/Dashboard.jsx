@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle, Pencil } from 'lucide-react';
+import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle, Pencil, XCircle, Send, AlarmClock } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { computeCol14 } from '@/lib/computeCol14';
@@ -100,6 +100,29 @@ export default function Dashboard() {
     pending: estimates.filter(e => e.status === 'draft' || e.status === 'sent').length,
   };
 
+  // Total $ value of estimates grouped by status
+  const estimateStatusValue = {
+    accepted: estimates.filter(e => e.status === 'accepted').reduce((s, e) => s + (e.total || 0), 0),
+    declined: estimates.filter(e => e.status === 'declined').reduce((s, e) => s + (e.total || 0), 0),
+    sent: estimates.filter(e => e.status === 'sent').reduce((s, e) => s + (e.total || 0), 0),
+    expired: estimates.filter(e => e.status === 'expired').reduce((s, e) => s + (e.total || 0), 0),
+    draft: estimates.filter(e => e.status === 'draft').reduce((s, e) => s + (e.total || 0), 0),
+  };
+  const estimateStatusCount = {
+    accepted: estimates.filter(e => e.status === 'accepted').length,
+    declined: estimates.filter(e => e.status === 'declined').length,
+    sent: estimates.filter(e => e.status === 'sent').length,
+    expired: estimates.filter(e => e.status === 'expired').length,
+    draft: estimates.filter(e => e.status === 'draft').length,
+  };
+  const estimateStatusCards = [
+    { title: 'Accepted', value: estimateStatusValue.accepted, count: estimateStatusCount.accepted, icon: CheckCircle, accent: 'text-emerald-400' },
+    { title: 'Declined', value: estimateStatusValue.declined, count: estimateStatusCount.declined, icon: XCircle, accent: 'text-red-400' },
+    { title: 'Sent', value: estimateStatusValue.sent, count: estimateStatusCount.sent, icon: Send, accent: 'text-blue-400' },
+    { title: 'Expired', value: estimateStatusValue.expired, count: estimateStatusCount.expired, icon: AlarmClock, accent: 'text-amber-400' },
+    { title: 'Draft', value: estimateStatusValue.draft, count: estimateStatusCount.draft, icon: FileText, accent: 'text-primary' },
+  ];
+
   // Project stats
   const projectStats = {
     total: projects.length,
@@ -181,6 +204,30 @@ export default function Dashboard() {
             <Link to="/estimates/new"><FilePlus className="h-4 w-4 mr-1.5" /> New Estimate</Link>
           </Button>
         </div>
+      </div>
+
+      {/* Estimate status values */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {estimateStatusCards.map(c => {
+          const Icon = c.icon;
+          return (
+            <div key={c.title} className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{c.title}</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
+                  <Icon className={`h-4 w-4 ${c.accent}`} />
+                </span>
+              </div>
+              <div>
+                <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>
+                  ${c.value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-xs text-muted-foreground mt-1">{c.count} estimate{c.count === 1 ? '' : 's'}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Total Revenue hero with pipeline-flow detail */}
