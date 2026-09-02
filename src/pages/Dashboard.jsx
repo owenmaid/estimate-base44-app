@@ -376,7 +376,7 @@ export default function Dashboard() {
           </svg>
           <div className="relative">
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Revenue</p>
-            <p className="text-4xl lg:text-5xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+            <p className="text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
               ${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} project{projectStats.total === 1 ? '' : 's'}</p>
