@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Plus, Save, ChevronDown, FileText } from 'lucide-react';
 import LineItemRow from './LineItemRow';
+import { calculateEstimateFromLineItems } from '@/lib/calculations';
 
 const emptyItem = { description: '', quantity: 1, unit_price: 0, total: 0 };
 
@@ -48,9 +49,11 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
     setForm(prev => ({ ...prev, line_items: prev.line_items.filter((_, i) => i !== index) }));
   };
 
-  const subtotal = form.line_items.reduce((sum, item) => sum + (item.total || 0), 0);
-  const taxAmount = subtotal * ((form.tax_rate || 0) / 100);
-  const total = subtotal + taxAmount - (form.discount || 0);
+  const { subtotal, taxAmount, total } = calculateEstimateFromLineItems(
+    form.line_items,
+    form.tax_rate,
+    form.discount,
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
