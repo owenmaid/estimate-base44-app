@@ -459,14 +459,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Band 2: Estimates */}
-      <div className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold px-1" style={SERIF}>Estimates</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {estimateStatCards.map(c => <WarmStatCard key={c.title} {...c} />)}
-        </div>
-      </div>
-
       {/* Band 3: Projects Overview */}
       <div>
         <div className="flex items-center justify-between mb-4">
