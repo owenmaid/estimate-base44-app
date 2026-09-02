@@ -7,7 +7,7 @@ import { Plus, FlaskConical, Zap, Calendar } from 'lucide-react';
 import FormulaEditor from '@/components/calculation/FormulaEditor';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
-import { calculateCostComponents, getShiftHours } from '@/lib/calculations';
+import { calculateScheduleRow } from '@/lib/calculations';
 import { getErrorMessage } from '@/lib/reliability';
 
 const blankFormula = () => ({
@@ -23,50 +23,28 @@ const NUM_COLS = 17;
 const COL_HEADERS = Array.from({ length: NUM_COLS }, (_, i) => `Col ${i + 1}`);
 
 // Sub-component: renders all <td> cells for one equipment row
-function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, gridData, setGridData }) {
+function EquipmentRowCells({ row, inventoryValueMap, rowCalculations, gridData, setGridData }) {
   const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
     ?? inventoryValueMap.byName[row.label?.toLowerCase()]
     ?? null;
   const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-  const label = (row.label || '').toLowerCase();
-  const isSpecial = label.includes('pre-work') || label.includes('post-work');
-  const shiftHrs = isSpecial ? 10 : 12;
+  const calculation = rowCalculations[row.id] || {};
+  const shiftHrs = calculation.shiftHours || 12;
+  const col1Value = calculation.col1 || 0;
+  const col2Value = calculation.col2 || 0;
+  const col3Value = calculation.col3 || 0;
+  const col4Value = calculation.col4 || 0;
+  const col5Value = calculation.col5 || 0;
+  const col6Value = calculation.col6 || 0;
+  const col7Value = calculation.col7 || 0;
+  const col8Value = calculation.col8 || 0;
 
-  const col1Value = rowSums[row.id] || 0;
-  const col2Value = rowHours[row.id] || 0;
-  const col3Value = rowCol3[row.id] || 0;
-  const col4Value = rowCol4[row.id] || 0;
-  const col5Value = rowCol5[row.id] || 0;
-  const col6Value = rowCol6[row.id] || 0;
-  const col7Value = rowCol7[row.id] || 0;
-  const col8Value = rowCol8[row.id] || 0;
-
-  // Col9 and Col10 always show inventory values regardless of item_group
+  // Col9 and Col10 always show inventory values regardless of item_group.
   const col9Value = inventoryEntry?.reg ?? null;
   const col10Value = inventoryEntry?.ot ?? null;
-  // For non-Manpower: zero out inputs to Col11/12/13 so costs stay correct
-  const effectiveCol4 = isManpower ? col4Value : 0;
-  const effectiveCol5 = isManpower ? col5Value : 0;
-  const effectiveCol6 = isManpower ? col6Value : 0;
-  const effectiveCol7 = isManpower ? col7Value : 0;
-  const effectiveCol8 = isManpower ? col8Value : 0;
-
-  const {
-    regularCost: col11Value,
-    overtimeCost: col12Value,
-    specialCost: col13Value,
-  } = calculateCostComponents({
-    isManpower,
-    shiftHours: shiftHrs,
-    col1: col1Value,
-    col4: col4Value,
-    col5: effectiveCol5,
-    col6: effectiveCol6,
-    col7: effectiveCol7,
-    col8: effectiveCol8,
-    regRate: col9Value,
-    otRate: col10Value,
-  });
+  const col11Value = calculation.regularCost || 0;
+  const col12Value = calculation.overtimeCost || 0;
+  const col13Value = calculation.specialCost || 0;
 
   const activeStyle = 'w-full bg-primary/10 border border-primary/30 rounded px-1 py-1 text-xs text-primary font-semibold text-center min-h-[24px]';
   const inactiveStyle = 'w-full bg-secondary/30 border border-border/30 rounded px-1 py-1 text-xs text-muted-foreground/40 text-center min-h-[24px]';
@@ -215,171 +193,48 @@ export default function CalculationEngine() {
     return unsubscribe;
   }, [activeProjectId, queryClient]);
 
-  // Col 1: sum of all values > 0 per row
-  const rowSums = useMemo(() => {
-    const sums = {};
+  // Calculate every derived schedule column and cost through the shared engine.
+  const rowCalculations = useMemo(() => {
+    const calculations = {};
     equipmentRows.forEach(row => {
-      let sum = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (key.startsWith(`${row.id}_`)) {
-          const num = parseInt(value, 10);
-          if (!isNaN(num) && num > 0) sum += num;
-        }
-      });
-      sums[row.id] = sum;
+      const result = calculateScheduleRow(row, equipmentGrid, typeGrid, inventoryItems);
+      if (result) calculations[row.id] = result;
     });
-    return sums;
-  }, [equipmentRows, equipmentGrid]);
+    return calculations;
+  }, [equipmentRows, equipmentGrid, typeGrid, inventoryItems]);
 
-  // Col 2: Col1 × shiftHrs (Manpower only — non-Manpower rows are zeroed out to match cell display)
-  const rowHours = useMemo(() => {
-    const hours = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      if (!isManpower) { hours[row.id] = 0; return; }
-      const label = (row.label || '').toLowerCase();
-      const isSpecial = label.includes('pre-work') || label.includes('post-work');
-      hours[row.id] = (rowSums[row.id] || 0) * (isSpecial ? 10 : 12);
+  const {
+    rowSums,
+    rowHours,
+    rowCol3,
+    rowCol4,
+    rowCol5,
+    rowCol6,
+    rowCol7,
+    rowCol8,
+  } = useMemo(() => {
+    const maps = {
+      rowSums: {},
+      rowHours: {},
+      rowCol3: {},
+      rowCol4: {},
+      rowCol5: {},
+      rowCol6: {},
+      rowCol7: {},
+      rowCol8: {},
+    };
+    Object.entries(rowCalculations).forEach(([rowId, result]) => {
+      maps.rowSums[rowId] = result.col1;
+      maps.rowHours[rowId] = result.col2;
+      maps.rowCol3[rowId] = result.col3;
+      maps.rowCol4[rowId] = result.col4;
+      maps.rowCol5[rowId] = result.col5;
+      maps.rowCol6[rowId] = result.col6;
+      maps.rowCol7[rowId] = result.col7;
+      maps.rowCol8[rowId] = result.col8;
     });
-    return hours;
-  }, [equipmentRows, rowSums, inventoryValueMap]);
-
-  // Col 4: (N days × 8) + (Sa days × 4) (Manpower only)
-  const rowCol4 = useMemo(() => {
-    const result = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      if (!isManpower) { result[row.id] = 0; return; }
-      let nSum = 0, saSum = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        if (typeGrid[dateStr] === 'N') nSum += num;
-        else if (typeGrid[dateStr] === 'Sa') saSum += num;
-      });
-      result[row.id] = (nSum * 8) + (saSum * 4);
-    });
-    return result;
-  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
-
-  // Col 5: N days × (shiftHrs - 8) (Manpower only)
-  const rowCol5 = useMemo(() => {
-    const result = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      if (!isManpower) { result[row.id] = 0; return; }
-      const label = (row.label || '').toLowerCase();
-      const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
-      let nSum = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        if (typeGrid[dateStr] === 'N') nSum += num;
-      });
-      result[row.id] = nSum * Math.max(0, shiftHrs - 8);
-    });
-    return result;
-  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
-
-  // Col 6: Sa days × max(shiftHrs - 4, 0) (Manpower only)
-  const rowCol6 = useMemo(() => {
-    const result = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      if (!isManpower) { result[row.id] = 0; return; }
-      const label = (row.label || '').toLowerCase();
-      const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
-      let saSum = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        if (typeGrid[dateStr] === 'Sa') saSum += num;
-      });
-      result[row.id] = saSum * Math.max(shiftHrs - 4, 0);
-    });
-    return result;
-  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
-
-  // Col 7: Su days × shiftHrs (Manpower only)
-  const rowCol7 = useMemo(() => {
-    const result = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      if (!isManpower) { result[row.id] = 0; return; }
-      const label = (row.label || '').toLowerCase();
-      const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
-      let suSum = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        if (typeGrid[dateStr] === 'Su') suSum += num;
-      });
-      result[row.id] = suSum * shiftHrs;
-    });
-    return result;
-  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
-
-  // Col 8: St days × shiftHrs (Manpower only)
-  const rowCol8 = useMemo(() => {
-    const result = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      if (!isManpower) { result[row.id] = 0; return; }
-      const label = (row.label || '').toLowerCase();
-      const shiftHrs = (label.includes('pre-work') || label.includes('post-work')) ? 10 : 12;
-      let stSum = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        if (typeGrid[dateStr] === 'St') stSum += num;
-      });
-      result[row.id] = stSum * shiftHrs;
-    });
-    return result;
-  }, [equipmentRows, equipmentGrid, typeGrid, inventoryValueMap]);
-
-  // Col 3: Total Hrs = Col4 + Col5 + Col6 + Col7 + Col8 (Manpower only)
-  const rowCol3 = useMemo(() => {
-    const result = {};
-    equipmentRows.forEach(row => {
-      const inventoryEntry = inventoryValueMap.byId[String(row.item_id)]
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-        ?? null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      result[row.id] = isManpower
-        ? (rowCol4[row.id] || 0) + (rowCol5[row.id] || 0) + (rowCol6[row.id] || 0) + (rowCol7[row.id] || 0) + (rowCol8[row.id] || 0)
-        : 0;
-    });
-    return result;
-  }, [equipmentRows, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
+    return maps;
+  }, [rowCalculations]);
 
   // Ventilation Man Hours: Col2 for Manpower rows whose inventory category is "Ventilation Labour"
   const ventilationManHours = useMemo(() => {
@@ -438,42 +293,11 @@ export default function CalculationEngine() {
     try {
       const calculationGrid = {};
       equipmentRows.forEach(row => {
-        const label = (row.label || '').toLowerCase();
-        const isSpecial = label.includes('pre-work') || label.includes('post-work');
-        const shiftHrs = isSpecial ? 10 : 12;
+        const calculation = rowCalculations[row.id];
+        if (!calculation) return;
+        calculationGrid[`${row.id}_col13`] = calculation.specialCost;
+        calculationGrid[`${row.id}_col14`] = calculation.totalCost;
 
-        const inventoryEntry = inventoryValueMap.byId[row.item_id]
-          ?? inventoryValueMap.byName[row.label?.toLowerCase()]
-          ?? null;
-
-        const col10Value = inventoryEntry?.ot ?? null;
-        const col5Value = rowCol5[row.id] || 0;
-        const col6Value = rowCol6[row.id] || 0;
-        const col7Value = rowCol7[row.id] || 0;
-        const col8Value = rowCol8[row.id] || 0;
-        const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-        const effectiveCol5 = isManpower ? col5Value : 0;
-        const effectiveCol6 = isManpower ? col6Value : 0;
-        const effectiveCol7 = isManpower ? col7Value : 0;
-        const effectiveCol8 = isManpower ? col8Value : 0;
-
-        const col9Value = inventoryEntry?.reg ?? null;
-        const col4Value = rowCol4[row.id] || 0;
-        const costs = calculateCostComponents({
-          isManpower,
-          shiftHours: shiftHrs,
-          col1: rowSums[row.id] || 0,
-          col4: col4Value,
-          col5: effectiveCol5,
-          col6: effectiveCol6,
-          col7: effectiveCol7,
-          col8: effectiveCol8,
-          regRate: col9Value,
-          otRate: col10Value,
-        });
-
-        calculationGrid[`${row.id}_col13`] = costs.specialCost;
-        calculationGrid[`${row.id}_col14`] = costs.totalCost;
       });
 
       await base44.entities.Project.update(activeProject.id, { calculation_grid: calculationGrid });
@@ -482,7 +306,7 @@ export default function CalculationEngine() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (error) {
-      toast.error('Error saving calculation grid');
+      toast.error(getErrorMessage(error, 'Error saving calculation grid'));
       console.error(error);
     }
   };
@@ -558,7 +382,8 @@ export default function CalculationEngine() {
                         rowCol8={rowCol8}
                         gridData={gridData}
                         setGridData={setGridData}
-                      />
+                        rowCalculations={rowCalculations}
+                    />
                     </tr>
                   ))
                 )}
