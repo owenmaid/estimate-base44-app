@@ -288,42 +288,71 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Estimate totals by status — line graph */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
-          <CardTitle className="text-base" style={SERIF}>Estimates by Status</CardTitle>
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1">
-            <Button size="sm" variant={estimateChartMode === 'value' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('value')}>Totals</Button>
-            <Button size="sm" variant={estimateChartMode === 'count' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('count')}>Quantity</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <ResponsiveContainer width="100%" height={120}>
-            <LineChart
-              data={[
-                { name: 'Accepted', value: estimateStatusValue.accepted, count: estimateStatusCount.accepted },
-                { name: 'Declined', value: estimateStatusValue.declined, count: estimateStatusCount.declined },
-                { name: 'Sent', value: estimateStatusValue.sent, count: estimateStatusCount.sent },
-                { name: 'Expired', value: estimateStatusValue.expired, count: estimateStatusCount.expired },
-                { name: 'Draft', value: estimateStatusValue.draft, count: estimateStatusCount.draft },
-              ]}
-              margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => estimateChartMode === 'value' ? `$${(v/1000).toFixed(0)}k` : v} />
-              <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={v => estimateChartMode === 'value'
-                  ? [`$${Number(v).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']
-                  : [v, 'Quantity']}
-              />
-              <Line type="monotone" dataKey={estimateChartMode} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Estimate by status + Revenue by month */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
+            <CardTitle className="text-base" style={SERIF}>Estimates by Status</CardTitle>
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1">
+              <Button size="sm" variant={estimateChartMode === 'value' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('value')}>Totals</Button>
+              <Button size="sm" variant={estimateChartMode === 'count' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('count')}>Quantity</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-5 pb-4">
+            <ResponsiveContainer width="100%" height={120}>
+              <LineChart
+                data={[
+                  { name: 'Accepted', value: estimateStatusValue.accepted, count: estimateStatusCount.accepted },
+                  { name: 'Declined', value: estimateStatusValue.declined, count: estimateStatusCount.declined },
+                  { name: 'Sent', value: estimateStatusValue.sent, count: estimateStatusCount.sent },
+                  { name: 'Expired', value: estimateStatusValue.expired, count: estimateStatusCount.expired },
+                  { name: 'Draft', value: estimateStatusValue.draft, count: estimateStatusCount.draft },
+                ]}
+                margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => estimateChartMode === 'value' ? `$${(v/1000).toFixed(0)}k` : v} />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  formatter={v => estimateChartMode === 'value'
+                    ? [`$${Number(v).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']
+                    : [v, 'Quantity']}
+                />
+                <Line type="monotone" dataKey={estimateChartMode} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-5">
+            <CardTitle className="text-base" style={SERIF}>Revenue by Month</CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-4">
+            {revenueByMonth.length === 0 ? (
+              <div className="flex items-center justify-center h-[120px] text-muted-foreground text-sm">
+                No revenue data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={revenueByMonth} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Revenue']}
+                  />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Total Revenue hero with pipeline-flow detail */}
       <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
@@ -341,35 +370,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Band 1: Revenue + Project Values charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base" style={SERIF}>Revenue by Month</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {revenueByMonth.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
-                No revenue data yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={revenueByMonth} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                  <Tooltip
-                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Revenue']}
-                  />
-                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
+      {/* Band 1: Project Values chart */}
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base" style={SERIF}>Project Values</CardTitle>
