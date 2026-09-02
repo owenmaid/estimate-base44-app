@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, FlaskConical, Zap, Calendar } from 'lucide-react';
 import FormulaEditor from '@/components/calculation/FormulaEditor';
 import { toast } from 'sonner';
+import { useAuth } from '@/lib/AuthContext';
 
 const blankFormula = () => ({
   name: '',
@@ -149,6 +150,8 @@ function EquipmentRowCells({ row, inventoryValueMap, rowSums, rowHours, rowCol3,
 }
 
 export default function CalculationEngine() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [showNew, setShowNew] = useState(false);
   const [gridData, setGridData] = useState({});
   const queryClient = useQueryClient();
@@ -647,11 +650,13 @@ export default function CalculationEngine() {
       )}
 
       {/* New Formula Button */}
-      <div className="flex justify-center">
-        <Button onClick={() => setShowNew(true)} disabled={showNew} variant="outline">
-          <Plus className="h-4 w-4 mr-1.5" /> New Formula
-        </Button>
-      </div>
+      {isAdmin && (
+        <div className="flex justify-center">
+          <Button onClick={() => setShowNew(true)} disabled={showNew} variant="outline">
+            <Plus className="h-4 w-4 mr-1.5" /> New Formula
+          </Button>
+        </div>
+      )}
 
       {/* Status Banner */}
       {formulas.length > 0 && (
@@ -665,7 +670,7 @@ export default function CalculationEngine() {
       )}
 
       {/* New Formula Editor */}
-      {showNew && (
+      {isAdmin && showNew && (
         <div>
           <div className="flex items-center gap-2 mb-3">
             <FlaskConical className="h-4 w-4 text-primary" />
@@ -685,15 +690,35 @@ export default function CalculationEngine() {
         <div className="text-center py-16 border border-dashed border-border rounded-xl">
           <FlaskConical className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-foreground font-medium mb-1">No formulas yet</p>
-          <p className="text-sm text-muted-foreground mb-4">Create a formula to apply custom cost multipliers in Manpower Estimation.</p>
-          <Button onClick={() => setShowNew(true)} variant="outline">
-            <Plus className="h-4 w-4 mr-1.5" /> Create your first formula
-          </Button>
+          <p className="text-sm text-muted-foreground mb-4">{isAdmin ? 'Create a formula to apply custom cost multipliers in Manpower Estimation.' : 'No formulas have been configured by an administrator.'}</p>
+          {isAdmin && (
+            <Button onClick={() => setShowNew(true)} variant="outline">
+              <Plus className="h-4 w-4 mr-1.5" /> Create your first formula
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {formulas.map(formula => (
+          {formulas.map(formula => isAdmin ? (
             <FormulaEditor key={formula.id} formula={formula} onSave={handleSave} onToggle={handleToggle} onDelete={handleDelete} />
+          ) : (
+            <Card key={formula.id} className="border border-border">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-primary" /> {formula.name}
+                  </CardTitle>
+                  <span className={`text-xs font-medium ${formula.is_active ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {formula.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-1">
+                {formula.description && <p>{formula.description}</p>}
+                <p>Applies to: <span className="text-foreground">{formula.applies_to}</span></p>
+                <p>Expression: <span className="font-mono text-foreground">{formula.formula_expression || '—'}</span></p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
