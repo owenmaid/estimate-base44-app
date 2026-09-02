@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, Maximize2, X, Lock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { calculateScheduleRow } from '@/lib/calculations';
+import { calculateEstimateSummary, calculateScheduleRow, roundMoney } from '@/lib/calculations';
 
 const STATUS_STYLES = {
   active: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -28,9 +28,8 @@ const calcTask = (t) => {
   const cost = toNum(t.cost);
   const markup = toNum(t.markup);
   const taxPct = toNum(t.tax_pct);
-  const subtotal = qty * cost * (1 + markup / 100);
-  const taxAmount = subtotal * (taxPct / 100);
-  const total = subtotal + taxAmount;
+  const subtotal = roundMoney(qty * cost * (1 + markup / 100));
+  const { taxAmount, total } = calculateEstimateSummary(subtotal, taxPct);
   return {
     ...t,
     // preserve raw input strings so inputs don't fight the user while typing
@@ -151,18 +150,14 @@ export default function ProjectPlanning() {
   const handleLoad = async () => {
     setIsLoadingData(true);
     const fresh = await base44.entities.Project.get(id);
-    console.log('Loaded from DB:', JSON.stringify(fresh?.task_list));
     if (fresh && fresh.task_list?.length > 0) {
-      setTaskList(fresh.task_list.map(t => {
-        const qty = t.quantity != null ? parseFloat(t.quantity) : 0;
-        const cost = t.cost != null ? parseFloat(t.cost) : 0;
-        const markup = t.markup != null ? parseFloat(t.markup) : 0;
-        const taxPct = t.tax_pct != null ? parseFloat(t.tax_pct) : 0;
-        const subtotal = qty * cost * (1 + markup / 100);
-        const taxAmount = subtotal * (taxPct / 100);
-        const total = subtotal + taxAmount;
-        return { ...t, quantity: qty, cost, markup, tax_pct: taxPct, subtotal, tax_amount: taxAmount, total };
-      }));
+      setTaskList(fresh.task_list.map(t => calcTask({
+        ...t,
+        quantity: t.quantity != null ? parseFloat(t.quantity) : 0,
+        cost: t.cost != null ? parseFloat(t.cost) : 0,
+        markup: t.markup != null ? parseFloat(t.markup) : 0,
+        tax_pct: t.tax_pct != null ? parseFloat(t.tax_pct) : 0,
+      })));
       toast.success('Line items loaded from database');
     } else {
       toast.info('No line items found in database for this project');
