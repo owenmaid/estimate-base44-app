@@ -109,17 +109,17 @@ export default function CreateEstimatePanel() {
     queryFn: () => base44.entities.InventoryItem.list(),
   });
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+  const linkedProjectNumber = (clientInfo.project_number || '').trim();
+  const { data: linkedProjects = [] } = useQuery({
+    queryKey: ['linked-project', linkedProjectNumber],
+    queryFn: () => base44.entities.Project.filter(
+      { project_number: linkedProjectNumber },
+      null,
+      1
+    ),
+    enabled: !!linkedProjectNumber,
   });
-
-  // Find the project matching the linked project number
-  const linkedProject = useMemo(() => {
-    const pn = (clientInfo.project_number || '').trim().toLowerCase();
-    if (!pn) return null;
-    return projects.find(p => (p.project_number || '').trim().toLowerCase() === pn) || null;
-  }, [projects, clientInfo.project_number]);
+  const linkedProject = linkedProjects[0] || null;
 
   // Track the previous linked project id so we can detect a project switch
   const prevLinkedProjectIdRef = useRef(null);
@@ -130,14 +130,14 @@ export default function CreateEstimatePanel() {
   // (e.g. Equipment Schedule edits on Project Details Setup) trigger a Col14 refresh.
   const prevProjectSignatureRef = useRef(null);
 
-  // Realtime: refresh the projects list whenever a project record changes so the
-  // linked project (and its Col14 values) stays current across pages and tabs.
+  // Realtime: refresh only the linked project lookup so Col14 values stay current.
   useEffect(() => {
+    if (!linkedProjectNumber) return;
     const unsubscribe = base44.entities.Project.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['linked-project', linkedProjectNumber] });
     });
     return unsubscribe;
-  }, [queryClient]);
+  }, [linkedProjectNumber, queryClient]);
 
   // ── Auto-reprice: fires whenever linkedProject changes ──────────────────────
   // • First project link (null → project): reprice ALL items with a Col14 match (preserve non-matches)
