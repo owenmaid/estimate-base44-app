@@ -1,34 +1,41 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-
 import AppLayout from '@/components/layout/AppLayout';
-import Dashboard from '@/pages/Dashboard';
-import EstimatesList from '@/pages/EstimatesList';
-import CreateEstimate from '@/pages/CreateEstimate';
-import EstimateDetail from '@/pages/EstimateDetail';
-import Projects from '@/pages/Projects';
-import ProjectPlanning from '@/pages/ProjectPlanning';
-import ProjectBoard from '@/pages/ProjectBoard';
-import ProjectTemplates from '@/pages/ProjectTemplates';
-import Inventory from '@/pages/Inventory';
-import CalendarPage from '@/pages/CalendarPage';
-import GanttPage from '@/pages/GanttPage';
-import Settings from '@/pages/Settings';
-import ResourceAllocation from '@/pages/ResourceAllocation';
-import ProjectDetailsSetup from '@/pages/ProjectDetailsSetup';
-import CalculationRouting from '@/pages/CalculationRouting';
-import CalculationEngine from '@/pages/CalculationEngine';
-import ControlPage from '@/pages/ControlPage';
-import CreateEstimatePanel from '@/pages/CreateEstimatePanel';
-import ProjectCostDashboard from '@/pages/ProjectCostDashboard';
-import LineItemComparison from '@/pages/LineItemComparison';
-import ItemCostComparison from '@/pages/ItemCostComparison';
 import { ThemeProvider } from '@/lib/ThemeContext';
+
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const EstimatesList = lazy(() => import('@/pages/EstimatesList'));
+const CreateEstimate = lazy(() => import('@/pages/CreateEstimate'));
+const EstimateDetail = lazy(() => import('@/pages/EstimateDetail'));
+const Projects = lazy(() => import('@/pages/Projects'));
+const ProjectPlanning = lazy(() => import('@/pages/ProjectPlanning'));
+const ProjectBoard = lazy(() => import('@/pages/ProjectBoard'));
+const ProjectTemplates = lazy(() => import('@/pages/ProjectTemplates'));
+const Inventory = lazy(() => import('@/pages/Inventory'));
+const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+const GanttPage = lazy(() => import('@/pages/GanttPage'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const ResourceAllocation = lazy(() => import('@/pages/ResourceAllocation'));
+const ProjectDetailsSetup = lazy(() => import('@/pages/ProjectDetailsSetup'));
+const CalculationRouting = lazy(() => import('@/pages/CalculationRouting'));
+const CalculationEngine = lazy(() => import('@/pages/CalculationEngine'));
+const ControlPage = lazy(() => import('@/pages/ControlPage'));
+const CreateEstimatePanel = lazy(() => import('@/pages/CreateEstimatePanel'));
+const ProjectCostDashboard = lazy(() => import('@/pages/ProjectCostDashboard'));
+const LineItemComparison = lazy(() => import('@/pages/LineItemComparison'));
+const ItemCostComparison = lazy(() => import('@/pages/ItemCostComparison'));
+const PageNotFound = lazy(() => import('./lib/PageNotFound'));
+
+const RouteLoadingFallback = () => (
+  <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-label="Loading page">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+  </div>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -51,6 +58,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <Suspense fallback={<RouteLoadingFallback />}>
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
@@ -77,6 +85,7 @@ const AuthenticatedApp = () => {
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
