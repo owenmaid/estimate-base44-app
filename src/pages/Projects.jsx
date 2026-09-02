@@ -9,6 +9,8 @@ import ProjectModal from '@/components/projects/ProjectModal';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { computeCol14 } from '@/lib/computeCol14';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/reliability';
 
 // Resolve the inventory entry for a row (mirrors computeCol14's lookup).
 const rowInventoryEntry = (row, inventoryItems) =>
@@ -65,7 +67,9 @@ export default function Projects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setModalOpen(false);
+      toast.success('Project created');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to create the project.')),
   });
 
   return (
