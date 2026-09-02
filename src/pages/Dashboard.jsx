@@ -290,15 +290,15 @@ export default function Dashboard() {
 
       {/* Estimate totals by status — line graph */}
       <Card>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
           <CardTitle className="text-base" style={SERIF}>Estimates by Status</CardTitle>
           <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1">
             <Button size="sm" variant={estimateChartMode === 'value' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('value')}>Totals</Button>
             <Button size="sm" variant={estimateChartMode === 'count' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('count')}>Quantity</Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
+        <CardContent className="px-5 pb-4">
+          <ResponsiveContainer width="100%" height={120}>
             <LineChart
               data={[
                 { name: 'Accepted', value: estimateStatusValue.accepted, count: estimateStatusCount.accepted },
