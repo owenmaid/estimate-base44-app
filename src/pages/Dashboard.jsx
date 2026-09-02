@@ -206,6 +206,22 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Grand total of all estimates */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+        <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
+          <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
+          <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
+        </svg>
+        <div className="relative">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Estimate Value</p>
+          <p className="text-4xl lg:text-5xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+            ${estimateStats.totalValue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">across {estimateStats.total} estimate{estimateStats.total === 1 ? '' : 's'}</p>
+        </div>
+      </div>
+
       {/* Estimate status values */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {estimateStatusCards.map(c => {
