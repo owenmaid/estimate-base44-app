@@ -47,8 +47,8 @@ function WarmStatCard({ title, value, icon: Icon, accent }) {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-center justify-between">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{title}</span>
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
-          <Icon className={`h-4 w-4 ${accent}`} />
+        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+          <Icon className={`h-8 w-8 ${accent}`} />
         </span>
       </div>
       <span className="text-2xl font-bold text-foreground leading-tight tabular-nums" style={SERIF}>{value}</span>
@@ -210,10 +210,10 @@ export default function Dashboard() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/projects"><FolderKanban className="h-4 w-4 mr-1.5" /> Projects</Link>
+            <Link to="/projects"><FolderKanban className="h-8 w-8 mr-1.5" /> Projects</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/estimates/new"><FilePlus className="h-4 w-4 mr-1.5" /> New Estimate</Link>
+            <Link to="/estimates/new"><FilePlus className="h-8 w-8 mr-1.5" /> New Estimate</Link>
           </Button>
         </div>
       </div>
@@ -239,7 +239,7 @@ export default function Dashboard() {
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total Estimates</span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
+            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
               <FileText className="h-4 w-4 text-primary" />
             </span>
           </div>
@@ -253,7 +253,7 @@ export default function Dashboard() {
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Linked to Projects</span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
+            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
               <FolderKanban className="h-4 w-4 text-emerald-400" />
             </span>
           </div>
@@ -273,8 +273,8 @@ export default function Dashboard() {
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center justify-between">
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{c.title}</span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
-                  <Icon className={`h-4 w-4 ${c.accent}`} />
+                <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+                  <Icon className={`h-8 w-8 ${c.accent}`} />
                 </span>
               </div>
               <div>
@@ -406,7 +406,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2" style={SERIF}>
-              <CalendarClock className="h-4 w-4 text-primary" /> Upcoming Deadlines
+              <CalendarClock className="h-8 w-8 text-primary" /> Upcoming Deadlines
             </CardTitle>
             {overdue.length > 0 && (
               <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs border">
