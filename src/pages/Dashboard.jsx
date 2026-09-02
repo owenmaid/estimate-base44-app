@@ -219,7 +219,7 @@ export default function Dashboard() {
       </div>
 
       {/* Grand total of all estimates + quantity + linked */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
@@ -235,31 +235,33 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total Estimates</span>
-            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
-              <FileText className="h-4 w-4 text-primary" />
-            </span>
+        <div className="flex flex-col gap-3">
+          <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total Estimates</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+                <FileText className="h-4 w-4 text-primary" />
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{estimateStats.total}</span>
+              <span className="text-xs text-muted-foreground mt-1">estimate{estimateStats.total === 1 ? '' : 's'} created</span>
+            </div>
           </div>
-          <div>
-            <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{estimateStats.total}</span>
-            <span className="text-xs text-muted-foreground mt-1">estimate{estimateStats.total === 1 ? '' : 's'} created</span>
-          </div>
-        </div>
 
-        <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Linked to Projects</span>
-            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
-              <FolderKanban className="h-4 w-4 text-emerald-400" />
-            </span>
-          </div>
-          <div>
-            <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{linkedEstimatesCount}</span>
-            <span className="text-xs text-muted-foreground mt-1">converted / linked</span>
+          <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Linked to Projects</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+                <FolderKanban className="h-4 w-4 text-emerald-400" />
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{linkedEstimatesCount}</span>
+              <span className="text-xs text-muted-foreground mt-1">converted / linked</span>
+            </div>
           </div>
         </div>
 
