@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import EstimateForm from '@/components/estimates/EstimateForm';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/reliability';
 
 export default function CreateEstimate() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function CreateEstimate() {
       toast.success('Estimate created successfully');
       navigate(`/estimates/${result.id}`);
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to create the estimate.')),
   });
 
   return (
