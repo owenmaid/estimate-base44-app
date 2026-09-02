@@ -12,6 +12,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
 import { calculateCostComponents, getShiftHours } from '@/lib/calculations';
+import { getErrorMessage } from '@/lib/reliability';
 import { ProjectCostSummary, StatHolidaySummary } from '@/components/project-details/ProjectDetailsSummaries';
 
 export default function ProjectDetailsSetup() {
@@ -70,6 +71,7 @@ export default function ProjectDetailsSetup() {
       setSelectedProjectId(newProject.id);
       toast.success('Project saved successfully');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to save the project.')),
   });
 
   const updateProjectMutation = useMutation({
@@ -99,6 +101,7 @@ export default function ProjectDetailsSetup() {
       toast.success('Project renamed successfully');
       setIsEditingName(false);
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to rename the project.')),
   });
 
   const handleRenameProject = () => {
