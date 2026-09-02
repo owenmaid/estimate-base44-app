@@ -10,6 +10,7 @@ import { Search, X, FolderKanban, DollarSign, TrendingUp, Users, Wrench, Truck, 
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area, LineChart, Line } from 'recharts';
 import ProjectCostBreakdown from '@/components/projects/ProjectCostBreakdown';
+import { calculateCostComponents, calculateScheduleHours } from '@/lib/calculations';
 
 const STATUS_STYLES = {
   active:    'bg-green-500/15 text-green-400 border-green-500/30',
@@ -211,36 +212,24 @@ export default function ProjectCostDashboard() {
     const typeGrid = project.type_grid || {};
 
     const rowCosts = equipmentRows.map(row => {
-      const label = (row.label || '').toLowerCase();
-      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
       const inv = inventoryValueMap.byId[row.item_id] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
-      const regRate = inv?.reg ?? null;
-      const otRate = inv?.ot ?? null;
       const isManpower = inv?.item_group === 'Manpower Group';
-
-      let col1 = 0, col4 = 0, col5 = 0, col6 = 0, col7 = 0, col8 = 0;
-      Object.entries(equipmentGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        col1 += num;
-        const type = typeGrid[dateStr];
-        if (type === 'N') { col4 += num * 8; col5 += num * Math.max(shiftHrs - 8, 0); }
-        else if (type === 'Sa') { col4 += num * 4; col6 += num * Math.max(shiftHrs - 4, 0); }
-        else if (type === 'Su') col7 += num * shiftHrs;
-        else if (type === 'St') col8 += num * shiftHrs;
+      const hours = calculateScheduleHours(row, equipmentGrid, typeGrid, isManpower);
+      const costs = calculateCostComponents({
+        isManpower,
+        shiftHours: hours.shiftHours,
+        col1: hours.col1,
+        col4: hours.col4,
+        col5: hours.col5,
+        col6: hours.col6,
+        col7: hours.col7,
+        col8: hours.col8,
+        regRate: inv?.reg,
+        otRate: inv?.ot,
       });
-
-      const effCol5 = isManpower ? col5 : 0;
-      const effCol6 = isManpower ? col6 : 0;
-      const effCol7 = isManpower ? col7 : 0;
-      const effCol8 = isManpower ? col8 : 0;
-      const regCost = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
-      const otCost = otRate != null ? ((effCol5 + effCol6 + effCol7) * otRate) : 0;
-      const specialCost = otRate != null
-        ? (effCol8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (effCol8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
-        : 0;
+      const regCost = costs.regularCost;
+      const otCost = costs.overtimeCost;
+      const specialCost = costs.specialCost;
 
       const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
       const isConventional = sg1 === 'CONVENTIONAL';
@@ -255,7 +244,7 @@ export default function ProjectCostDashboard() {
         regCost,
         otCost,
         specialCost,
-        total: regCost + otCost + specialCost,
+        total: costs.totalCost,
       };
     });
 
