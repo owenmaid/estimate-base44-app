@@ -198,8 +198,8 @@ export default function ItemCostComparison() {
               No matching items with costs across the selected projects
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-auto max-h-[70vh]">
+              <table className="min-w-max text-sm">
                 <thead>
                   <tr className="text-muted-foreground border-b border-border text-[11px] uppercase tracking-wider bg-muted/30">
                     <th className="text-left px-4 py-3.5 font-medium sticky left-0 bg-muted/30 z-10">Item</th>
