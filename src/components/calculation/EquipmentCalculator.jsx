@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Calculator, Package, Zap, Save, FolderOpen } from 'lucide-react';
+import { calculateEstimateSummary, roundMoney } from '@/lib/calculations';
 
 // Safely evaluate a formula expression with given variable scope
 function evalFormula(expression, variables) {
@@ -166,16 +167,17 @@ export default function EquipmentCalculator() {
     const otMult = getMultiplier('ot_cost');
 
     const rows = lineItems.map(l => {
-      const regCost = l.quantity * l.unit_cost * regMult;
-      const otCost = l.ot_value * l.ot_hours * otMult;
-      const subtotal = (regCost + otCost) * subtotalMult;
+      const regCost = roundMoney(l.quantity * l.unit_cost * regMult);
+      const otCost = roundMoney(l.ot_value * l.ot_hours * otMult);
+      const subtotal = roundMoney((regCost + otCost) * subtotalMult);
       return { ...l, regCost, otCost, subtotal };
     });
     const subtotal = rows.reduce((s, r) => s + r.subtotal, 0);
     const totalMult = getMultiplier('total');
-    const adjustedSubtotal = subtotal * totalMult;
-    const taxAmount = adjustedSubtotal * (taxRate / 100);
-    const total = (adjustedSubtotal + taxAmount) * projectDays;
+    const adjustedSubtotal = roundMoney(subtotal * totalMult);
+    const summary = calculateEstimateSummary(adjustedSubtotal, taxRate);
+    const taxAmount = summary.taxAmount;
+    const total = roundMoney(summary.total * projectDays);
     const totalUnits = rows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
 
     // Split by Manpower Group vs non-Manpower
@@ -187,8 +189,8 @@ export default function EquipmentCalculator() {
     const nonManpowerSubtotal = nonManpowerRows.reduce((s, r) => s + r.subtotal, 0) * totalMult;
     const manpowerTax = adjustedSubtotal > 0 ? taxAmount * (manpowerSubtotal / adjustedSubtotal) : 0;
     const nonManpowerTax = adjustedSubtotal > 0 ? taxAmount * (nonManpowerSubtotal / adjustedSubtotal) : 0;
-    const manpowerTotal = (manpowerSubtotal + manpowerTax) * projectDays;
-    const nonManpowerTotal = (nonManpowerSubtotal + nonManpowerTax) * projectDays;
+    const manpowerTotal = roundMoney((manpowerSubtotal + manpowerTax) * projectDays);
+    const nonManpowerTotal = roundMoney((nonManpowerSubtotal + nonManpowerTax) * projectDays);
     const manpowerUnits = manpowerRows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
     const nonManpowerUnits = nonManpowerRows.reduce((s, r) => s + r.quantity + r.ot_hours, 0);
 
