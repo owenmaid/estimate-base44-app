@@ -165,11 +165,6 @@ export default function CalculationEngine() {
   const [gridData, setGridData] = useState({});
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
-  });
-
   const { data: formulas = [], isLoading } = useQuery({
     queryKey: ['formula-configs'],
     queryFn: () => base44.entities.FormulaConfig.list(),
@@ -197,13 +192,13 @@ export default function CalculationEngine() {
     return { byId, byName };
   }, [inventoryItems]);
 
-  // Find the active project from localStorage — reactive state so it updates on nav
-  const [activeProjectId, setActiveProjectId] = useState(() => localStorage.getItem('activeProjectId'));
-  useEffect(() => {
-    const id = localStorage.getItem('activeProjectId');
-    setActiveProjectId(id);
-  }, [projects]);
-  const activeProject = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
+  // Fetch only the active project selected in localStorage.
+  const [activeProjectId] = useState(() => localStorage.getItem('activeProjectId'));
+  const { data: activeProject = null } = useQuery({
+    queryKey: ['project', activeProjectId],
+    queryFn: () => base44.entities.Project.get(activeProjectId),
+    enabled: !!activeProjectId,
+  });
   const equipmentRows = activeProject?.equipment_rows || [];
   const equipmentGrid = activeProject?.equipment_grid || {};
   const typeGrid = activeProject?.type_grid || {};
@@ -213,7 +208,7 @@ export default function CalculationEngine() {
     if (!activeProjectId) return;
     const unsubscribe = base44.entities.Project.subscribe((event) => {
       if (event.id === activeProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
+        queryClient.invalidateQueries({ queryKey: ['project', activeProjectId] });
       }
     });
     return unsubscribe;
@@ -479,6 +474,7 @@ export default function CalculationEngine() {
 
       await base44.entities.Project.update(activeProject.id, { calculation_grid: calculationGrid });
       toast.success('Calculation grid saved');
+      queryClient.invalidateQueries({ queryKey: ['project', activeProjectId] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
     } catch (error) {
