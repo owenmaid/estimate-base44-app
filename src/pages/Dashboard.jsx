@@ -379,7 +379,7 @@ export default function Dashboard() {
             <p className="text-4xl lg:text-5xl font-bold text-primary mt-1 leading-none" style={SERIF}>
               ${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} projects · {estimateStats.total} estimates</p>
+            <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} project{projectStats.total === 1 ? '' : 's'}</p>
           </div>
         </div>
       </div>
