@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,22 +25,22 @@ const statusStyles = {
 };
 
 export default function EstimateDetail() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const id = window.location.pathname.split('/').pop();
+  const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
 
-  const { data: estimates = [], isLoading } = useQuery({
-    queryKey: ['estimates'],
-    queryFn: () => base44.entities.Estimate.list(),
+  const { data: estimate, isLoading, isError } = useQuery({
+    queryKey: ['estimate', id],
+    queryFn: () => base44.entities.Estimate.get(id),
+    enabled: !!id,
+    retry: false,
   });
-
-  const estimate = estimates.find(e => e.id === id);
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Estimate.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedEstimate) => {
+      queryClient.setQueryData(['estimate', id], updatedEstimate);
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       setEditing(false);
       toast.success('Estimate updated');
@@ -64,7 +64,7 @@ export default function EstimateDetail() {
     );
   }
 
-  if (!estimate) {
+  if (isError || !estimate) {
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">Estimate not found.</p>
