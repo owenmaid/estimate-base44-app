@@ -9,6 +9,7 @@ import { Plus, Search, Pencil, Trash2, Package, AlertTriangle, XCircle, Archive,
 import { toast } from 'sonner';
 import InventoryModal from '@/components/inventory/InventoryModal';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import { useAuth } from '@/lib/AuthContext';
 
 const STATUS_CONFIG = {
   in_stock:     { label: 'In Stock',     style: 'bg-green-500/15 text-green-400 border-green-500/30',   icon: Package },
@@ -19,6 +20,8 @@ const STATUS_CONFIG = {
 
 export default function Inventory() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [search, setSearch] = useState('');
   const [modalItem, setModalItem] = useState(null); // null = closed, false = new, object = edit
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -119,6 +122,7 @@ export default function Inventory() {
           <h1 className="text-2xl font-bold">Inventory</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage your stock and materials</p>
         </div>
+        {isAdmin && (
         <div className="flex items-center gap-2">
           <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
           <Button size="sm" variant="outline" onClick={() => csvInputRef.current?.click()} disabled={bulkCreateMutation.isPending}>
@@ -129,6 +133,7 @@ export default function Inventory() {
             <Plus className="h-4 w-4 mr-1.5" /> Add Item
           </Button>
         </div>
+        )}
       </div>
 
       {/* Stats */}
@@ -205,6 +210,7 @@ export default function Inventory() {
                       <Badge className={`text-xs border ${cfg.style}`}>{cfg.label}</Badge>
                     </td>
                     <td className="px-4 py-3">
+                      {isAdmin && (
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setModalItem(item)}>
                           <Pencil className="h-3.5 w-3.5" />
@@ -213,6 +219,7 @@ export default function Inventory() {
                            <Trash2 className="h-3.5 w-3.5" />
                          </Button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -222,7 +229,7 @@ export default function Inventory() {
         </div>
       )}
 
-      {modalItem !== null && (
+      {isAdmin && modalItem !== null && (
         <InventoryModal
           item={modalItem || null}
           onClose={() => setModalItem(null)}
@@ -232,6 +239,7 @@ export default function Inventory() {
         />
       )}
 
+      {isAdmin && (
       <ConfirmDeleteDialog
         open={confirmDeleteId !== null}
         title="Delete inventory item?"
@@ -239,6 +247,7 @@ export default function Inventory() {
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={() => { deleteMutation.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
       />
+      )}
     </div>
   );
 }
