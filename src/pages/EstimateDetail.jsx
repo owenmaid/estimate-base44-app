@@ -15,6 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import EstimateForm from '@/components/estimates/EstimateForm';
+import { getErrorMessage } from '@/lib/reliability';
 
 const statusStyles = {
   draft: "bg-secondary text-secondary-foreground",
@@ -45,6 +46,7 @@ export default function EstimateDetail() {
       setEditing(false);
       toast.success('Estimate updated');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to update the estimate.')),
   });
 
   const deleteMutation = useMutation({
@@ -54,6 +56,7 @@ export default function EstimateDetail() {
       navigate('/estimates');
       toast.success('Estimate deleted');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to delete the estimate.')),
   });
 
   if (isLoading) {
