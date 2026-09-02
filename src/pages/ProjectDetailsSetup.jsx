@@ -13,6 +13,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
 import { calculateCostComponents, getShiftHours } from '@/lib/calculations';
+import { ProjectCostSummary, StatHolidaySummary } from '@/components/project-details/ProjectDetailsSummaries';
 
 export default function ProjectDetailsSetup() {
   const navigate = useNavigate();
@@ -846,119 +847,13 @@ const addEquipmentRow = () => {
         </CardContent>
       </Card>
 
-      {/* Stat Holidays Results */}
-      {statHolidays.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-primary" />
-              Canadian Stat Holidays
-              <span className="text-xs text-muted-foreground font-normal ml-1">
-                {startDate && endDate ? `${format(parseISO(startDate), 'MMM d, yyyy')} – ${format(parseISO(endDate), 'MMM d, yyyy')}` : ''}
-              </span>
-              <Badge variant="secondary" className="ml-auto">{statHolidays.length} found</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-secondary/60 border-b border-border">
-                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Date</th>
-                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Holiday</th>
-                  <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Provinces / Scope</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statHolidays.map((h, i) => (
-                  <tr key={i} className="border-b border-border hover:bg-secondary/20">
-                    <td className="px-4 py-2 font-medium text-foreground whitespace-nowrap">
-                      {(() => { try { return h.date ? format(parseISO(h.date), 'EEE, MMM d yyyy') : '—'; } catch { return h.date || '—'; } })()}
-                    </td>
-                    <td className="px-4 py-2 text-foreground">{h.name}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{h.provinces}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
-
-{/* Manpower vs Equipment Cost Summary */}
-      {selectedProjectId && equipmentRows.length > 0 && (() => {
-        const getEntry = (row) => equipmentInventory.find(i => i.id === row.item_id) ?? equipmentInventory.find(i => (i.name || '').toLowerCase() === (row.label || '').toLowerCase() || (i.sku || '').toLowerCase() === (row.label || '').toLowerCase());
-        const sumCosts = (rows) => rows.reduce((sum, row) => {
-          const c = calculateRowCosts[row.id] || {};
-          return sum + (c.regCost || 0) + (c.otCost || 0) + (c.specialCost || 0);
-        }, 0);
-        const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 2 });
-
-        const isDcsmEquip = (sg2) => sg2 === 'EQUIPMENT' || sg2 === 'LOGISTICS' || sg2 === 'CONSUMABLES';
-        const isVentEquip = (sg2) => sg2 === 'EQUIPMENT' || sg2 === 'LOGISTICS' || sg2 === 'CONSUMABLES' || sg2 === 'SHIPPING' || sg2 === 'SECUREMENT';
-        const dcsmManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && e?.sub_group_02 === 'MANPOWER'; });
-        const ventManpower = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && e?.sub_group_02 === 'MANPOWER'; });
-        const dcsmEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'DCSM' && isDcsmEquip(e?.sub_group_02); });
-        const ventEquip = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'VENTILATION' && isVentEquip(e?.sub_group_02); });
-        const conventional = equipmentRows.filter(row => { const e = getEntry(row); return e?.sub_group_01 === 'CONVENTIONAL'; });
-
-        const b1 = sumCosts(dcsmManpower);
-        const b2 = sumCosts(ventManpower);
-        const b3 = sumCosts(dcsmEquip);
-        const b4 = sumCosts(ventEquip);
-        const b5 = sumCosts(conventional);
-        const grandTotal = b1 + b2 + b3 + b4; // Conventional Costs excluded
-
-        const blocks = [
-          { label: 'DCSM Manpower', value: b1, icon: <Users className="h-5 w-5 text-blue-400 shrink-0" />, rows: dcsmManpower.length },
-          { label: 'Ventilation Manpower', value: b2, icon: <Users className="h-5 w-5 text-cyan-400 shrink-0" />, rows: ventManpower.length },
-          { label: 'DCSM Equipment', value: b3, icon: <Wrench className="h-5 w-5 text-orange-400 shrink-0" />, rows: dcsmEquip.length },
-          { label: 'Ventilation Equipment', value: b4, icon: <Wrench className="h-5 w-5 text-yellow-400 shrink-0" />, rows: ventEquip.length },
-          { label: 'Conventional Costs', value: b5, icon: <DollarSign className="h-5 w-5 text-rose-400 shrink-0" />, rows: conventional.length },
-        ];
-
-        return (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                Cost Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-6 gap-3 mb-3">
-                {blocks.map((b, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 border border-border">
-                    {b.icon}
-                    <div>
-                      <p className="text-xs text-muted-foreground">{b.label}</p>
-                      <p className="text-sm font-bold text-foreground">{fmt(b.value)}</p>
-                      <p className="text-xs text-muted-foreground">{b.rows} row{b.rows !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/30">
-                  <DollarSign className="h-5 w-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Project Cost</p>
-                    <p className="text-sm font-bold text-primary">{fmt(grandTotal)}</p>
-                    <p className="text-xs text-muted-foreground">{equipmentRows.length} row{equipmentRows.length !== 1 ? 's' : ''}</p>
-                  </div>
-                </div>
-              </div>
-              {b5 > 0 && (
-                <p className="text-xs text-muted-foreground italic mt-1">
-                  * Conventional Costs ({fmt(b5)}) not included in Total Project Cost.
-                </p>
-              )}
-              {b5 === 0 && conventional.length > 0 && (
-                <p className="text-xs text-muted-foreground italic mt-1">
-                  * Conventional Costs not included in Total Project Cost.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })()}
+      <StatHolidaySummary holidays={statHolidays} startDate={startDate} endDate={endDate} />
+      <ProjectCostSummary
+        selectedProjectId={selectedProjectId}
+        equipmentRows={equipmentRows}
+        equipmentInventory={equipmentInventory}
+        rowCosts={calculateRowCosts}
+      />
 
       {/* Equipment Spreadsheet + Calculations */}
       {dates.length > 0 && (
