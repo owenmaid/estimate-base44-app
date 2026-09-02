@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Plus, Save, ChevronDown, FileText } from 'lucide-react';
 import LineItemRow from './LineItemRow';
-import { calculateEstimateFromLineItems } from '@/lib/calculations';
+import { calculateEstimateFromLineItems, roundMoney } from '@/lib/calculations';
+import { createStableId, validateEstimateData } from '@/lib/reliability';
+import { toast } from 'sonner';
 
-const emptyItem = { description: '', quantity: 1, unit_price: 0, total: 0 };
+const emptyItem = () => ({ _uiId: createStableId('line'), description: '', quantity: 1, unit_price: 0, total: 0 });
 
 export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
   const [form, setForm] = useState({
@@ -22,7 +24,7 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
     project_name: '',
     description: '',
     status: 'draft',
-    line_items: [{ ...emptyItem }],
+    line_items: [emptyItem()],
     tax_rate: 0,
     discount: 0,
     valid_until: '',
@@ -31,7 +33,11 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
   });
 
   useEffect(() => {
-    if (initialData) setForm(prev => ({ ...prev, ...initialData }));
+    if (initialData) setForm(prev => ({
+      ...prev,
+      ...initialData,
+      line_items: (initialData.line_items || []).map(item => ({ ...item, _uiId: createStableId('line') })),
+    }));
   }, [initialData]);
 
   const updateField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
@@ -42,7 +48,7 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
     setForm(prev => ({ ...prev, line_items: items }));
   };
 
-  const addLineItem = () => setForm(prev => ({ ...prev, line_items: [...prev.line_items, { ...emptyItem }] }));
+  const addLineItem = () => setForm(prev => ({ ...prev, line_items: [...prev.line_items, emptyItem()] }));
 
   const removeLineItem = (index) => {
     if (form.line_items.length <= 1) return;
@@ -57,7 +63,28 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = { ...form, subtotal, tax_amount: taxAmount, total };
+    const validationError = validateEstimateData(form, [{ items: form.line_items }]);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    const payload = {
+      ...form,
+      client_name: form.client_name.trim(),
+      project_name: form.project_name.trim(),
+      tax_rate: Number(form.tax_rate || 0),
+      discount: roundMoney(form.discount),
+      line_items: form.line_items.map(({ _uiId, ...item }) => ({
+        ...item,
+        description: item.description.trim(),
+        quantity: Number(item.quantity || 0),
+        unit_price: roundMoney(item.unit_price),
+        total: roundMoney(item.total),
+      })),
+      subtotal: roundMoney(subtotal),
+      tax_amount: roundMoney(taxAmount),
+      total: roundMoney(total),
+    };
     // Keep transient UI state and Base44-managed metadata out of saved records.
     ['_notesOpen', 'id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample']
       .forEach(key => delete payload[key]);
@@ -144,7 +171,7 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
             <div className="col-span-1" />
           </div>
           {form.line_items.map((item, i) => (
-            <LineItemRow key={i} item={item} index={i} onChange={updateLineItem} onRemove={removeLineItem} />
+            <LineItemRow key={item._uiId} item={item} index={i} onChange={updateLineItem} onRemove={removeLineItem} />
           ))}
           <Button type="button" variant="outline" size="sm" onClick={addLineItem} className="mt-2">
             <Plus className="h-4 w-4 mr-1" /> Add Item
