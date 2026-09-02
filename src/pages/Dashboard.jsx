@@ -43,12 +43,15 @@ const SERIF = { fontFamily: "'Playfair Display', Georgia, serif" };
 // Warm stat card for the Petro-Chemical Tint dashboard.
 function WarmStatCard({ title, value, icon: Icon, accent }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2 transition-colors hover:border-primary/40">
+    <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden h-full">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{title}</span>
-        <Icon className={`h-4 w-4 ${accent}`} />
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{title}</span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/40 border border-border">
+          <Icon className={`h-4 w-4 ${accent}`} />
+        </span>
       </div>
-      <span className="text-2xl font-bold text-foreground leading-tight" style={SERIF}>{value}</span>
+      <span className="text-2xl font-bold text-foreground leading-tight tabular-nums" style={SERIF}>{value}</span>
     </div>
   );
 }
@@ -331,15 +334,15 @@ export default function Dashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-muted-foreground border-b border-border text-xs uppercase tracking-wider">
-                        <th className="text-left px-4 py-3 font-medium">Project</th>
-                        <th className="text-left px-4 py-3 font-medium">Number</th>
-                        <th className="text-left px-4 py-3 font-medium">Client</th>
-                        <th className="text-left px-4 py-3 font-medium">Status</th>
-                        <th className="text-left px-4 py-3 font-medium">End Date</th>
-                        <th className="text-left px-4 py-3 font-medium">Estimate</th>
-                        <th className="text-right px-4 py-3 font-medium">Estimate Value</th>
-                        <th className="text-right px-4 py-3 font-medium">Value</th>
+                      <tr className="text-muted-foreground border-b border-border text-[11px] uppercase tracking-wider bg-muted/30">
+                        <th className="text-left px-4 py-3.5 font-medium">Project</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Number</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Client</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Status</th>
+                        <th className="text-left px-4 py-3.5 font-medium">End Date</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Estimate</th>
+                        <th className="text-right px-4 py-3.5 font-medium">Estimate Value</th>
+                        <th className="text-right px-4 py-3.5 font-medium">Value</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -347,27 +350,27 @@ export default function Dashboard() {
                         const value = projectEquipmentCost(p, inventoryItems);
                         const est = estimateByProject.byNumber[p.project_number] || estimateByProject.byName[p.name];
                         return (
-                          <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                            <td className="px-4 py-2.5">
+                          <tr key={p.id} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
+                            <td className="px-4 py-3">
                               <Link to={`/project-planning/${p.id}`} className="font-medium text-foreground hover:text-primary">
                                 {p.name}
                               </Link>
                             </td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{p.project_number || '—'}</td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{p.client || '—'}</td>
-                            <td className="px-4 py-2.5">
+                            <td className="px-4 py-3 text-muted-foreground tabular-nums">{p.project_number || '—'}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{p.client || '—'}</td>
+                            <td className="px-4 py-3">
                               <Badge className={`text-xs border ${STATUS_STYLES[p.status] || 'bg-muted text-muted-foreground border-border'}`}>
                                 {STATUS_LABELS[p.status] || p.status}
                               </Badge>
                             </td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{p.end_date || '—'}</td>
-                            <td className="px-4 py-2.5 text-muted-foreground">
+                            <td className="px-4 py-3 text-muted-foreground tabular-nums">{p.end_date || '—'}</td>
+                            <td className="px-4 py-3 text-muted-foreground tabular-nums">
                               {est?.estimate_number || '—'}
                             </td>
-                            <td className="px-4 py-2.5 text-right text-muted-foreground">
+                            <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                               {est && est.subtotal != null ? `$${est.subtotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
                             </td>
-                            <td className="px-4 py-2.5 text-right font-semibold text-primary">
+                            <td className="px-4 py-3 text-right font-semibold text-primary tabular-nums">
                               {value > 0 ? `$${value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
                             </td>
                           </tr>
@@ -376,9 +379,9 @@ export default function Dashboard() {
                     </tbody>
                     {projects.length > 0 && (
                       <tfoot>
-                        <tr className="border-t-2 border-border font-semibold">
-                          <td colSpan={7} className="px-4 py-3 text-right text-muted-foreground">Total Value</td>
-                          <td className="px-4 py-3 text-right text-primary">
+                        <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                          <td colSpan={7} className="px-4 py-3.5 text-right text-muted-foreground uppercase text-[11px] tracking-wider">Total Value</td>
+                          <td className="px-4 py-3.5 text-right text-primary tabular-nums">
                             ${projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
