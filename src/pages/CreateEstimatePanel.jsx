@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import PalettePanel from '@/components/estimate-panel/PalettePanel';
 import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
+import { CloseEstimateDialog, SaveTemplateDialog } from '@/components/estimate-panel/EstimatePanelDialogs';
 import { X, Download, BookmarkPlus } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
@@ -1002,80 +1003,23 @@ export default function CreateEstimatePanel() {
         </div>
       </div>
 
-      {/* Close Confirmation Dialog */}
-      {showCloseConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-card border border-border rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h2 className="text-base font-bold text-foreground mb-2">Un-Saved Estimate!</h2>
-            <p className="text-sm text-muted-foreground mb-6">Do you wish to save the document?</p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={handleCloseNo}
-                className="px-4 py-2 text-sm rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                No
-              </button>
-              <button
-                onClick={handleCloseYes}
-                disabled={saveMutation.isPending}
-                className="px-4 py-2 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
-              >
-                {saveMutation.isPending ? 'Saving…' : 'Yes'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CloseEstimateDialog
+        open={showCloseConfirm}
+        isSaving={saveMutation.isPending}
+        onDiscard={handleCloseNo}
+        onSave={handleCloseYes}
+      />
 
-      {/* Save as Template Modal */}
-      {isAdmin && showSaveTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-card border border-border rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h2 className="text-base font-bold text-foreground mb-1">Save as Estimate Template</h2>
-            <p className="text-xs text-muted-foreground mb-4">
-              This snapshot will be saved to the Templates page and can be reopened in the Estimate Panel anytime.
-              <span className="block mt-1 text-destructive font-medium">Note: "Est_Template" is a reserved name and cannot be used.</span>
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Template Name *</label>
-                <input
-                  autoFocus
-                  className="w-full text-sm bg-secondary border border-border rounded px-3 py-1.5 text-foreground outline-none focus:border-primary transition-colors"
-                  placeholder="e.g. KEYERA FT SASK Standard"
-                  value={templateName}
-                  onChange={e => setTemplateName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSaveTemplate()}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
-                <textarea
-                  className="w-full text-sm bg-secondary border border-border rounded px-3 py-1.5 text-foreground outline-none focus:border-primary transition-colors resize-none h-16"
-                  placeholder="What is this template for?"
-                  value={templateDesc}
-                  onChange={e => setTemplateDesc(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end mt-4">
-              <button
-                onClick={() => setShowSaveTemplate(false)}
-                className="px-4 py-2 text-sm rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveTemplate}
-                disabled={!templateName.trim() || templateSaving}
-                className="px-4 py-2 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50"
-              >
-                {templateSaving ? 'Saving…' : 'Save Template'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SaveTemplateDialog
+        open={isAdmin && showSaveTemplate}
+        templateName={templateName}
+        templateDescription={templateDesc}
+        isSaving={templateSaving}
+        onNameChange={setTemplateName}
+        onDescriptionChange={setTemplateDesc}
+        onCancel={() => setShowSaveTemplate(false)}
+        onSave={handleSaveTemplate}
+      />
 
       {/* Main split layout */}
       <div className="flex flex-1 overflow-hidden">
