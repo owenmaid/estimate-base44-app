@@ -37,6 +37,7 @@ export default function CreateEstimatePanel() {
   const [logoUrls, setLogoUrls] = useState({ infoSignalLogo: '', dynaVentLogo: '' });
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), staleTime: 0 });
+  const isAdmin = user?.role === 'admin';
 
   // Auto-load logos from user settings whenever user data arrives
   useEffect(() => {
@@ -959,6 +960,7 @@ export default function CreateEstimatePanel() {
         </div>
 
         <div className="flex items-center gap-2">
+          {isAdmin && (
           <button
             onClick={() => { setTemplateName(''); setTemplateDesc(''); setShowSaveTemplate(true); }}
             className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
@@ -966,6 +968,7 @@ export default function CreateEstimatePanel() {
           >
             <BookmarkPlus className="h-3.5 w-3.5" /> Save as Template
           </button>
+          )}
           <button
             onClick={async () => {
               await generateEstimatePDF({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number, logoUrls, manwayAvgDCSM, conventionalCostsTotal, hideZeroItems: !!linkedProject });
@@ -1022,7 +1025,7 @@ export default function CreateEstimatePanel() {
       )}
 
       {/* Save as Template Modal */}
-      {showSaveTemplate && (
+      {isAdmin && showSaveTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-card border border-border rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
             <h2 className="text-base font-bold text-foreground mb-1">Save as Estimate Template</h2>
