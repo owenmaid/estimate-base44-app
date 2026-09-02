@@ -8,6 +8,7 @@ import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
 import { X, Download, BookmarkPlus } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
+import { calculateEstimateSummary } from '@/lib/calculations';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
@@ -870,9 +871,11 @@ export default function CreateEstimatePanel() {
   }));
 
   // ── Totals ─────────────────────────────────────────────────────────────────
-  const subtotal = projectCostValue;
-  const taxAmount = subtotal * (clientInfo.tax_rate / 100);
-  const total = subtotal + taxAmount - (clientInfo.discount || 0);
+  const { subtotal, taxAmount, total } = calculateEstimateSummary(
+    projectCostValue,
+    clientInfo.tax_rate,
+    clientInfo.discount,
+  );
 
   // ── Save / Update ──────────────────────────────────────────────────────────
   const saveMutation = useMutation({
