@@ -22,7 +22,7 @@ test('creates safe unique numeric IDs for schema-compatible task records', () =>
 });
 
 test('creates readable estimate numbers with a collision-resistant suffix', () => {
-  assert.match(createEstimateNumber(new Date('2026-09-02T12:00:00Z')), /^EST-20260902-\d{5}$/);
+  assert.match(createEstimateNumber(new Date('2026-09-02T12:00:00Z')), /^EST-20260902-[A-Z0-9]{7}$/);
 });
 
 test('validates required estimate fields, dates and money inputs', () => {
