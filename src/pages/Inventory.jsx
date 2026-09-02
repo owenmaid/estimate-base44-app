@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import InventoryModal from '@/components/inventory/InventoryModal';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 import { useAuth } from '@/lib/AuthContext';
+import { getErrorMessage } from '@/lib/reliability';
 
 const STATUS_CONFIG = {
   in_stock:     { label: 'In Stock',     style: 'bg-green-500/15 text-green-400 border-green-500/30',   icon: Package },
@@ -78,16 +79,19 @@ export default function Inventory() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.InventoryItem.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventoryItems'] }); setModalItem(null); toast.success('Item added!'); },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to add the inventory item.')),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.InventoryItem.update(id, data),
     onSuccess: (updated) => { queryClient.invalidateQueries({ queryKey: ['inventoryItems'] }); setModalItem(updated); toast.success('Item updated!'); },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to update the inventory item.')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.InventoryItem.delete(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['inventoryItems'] }); toast.success('Item deleted'); },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to delete the inventory item.')),
   });
 
   const handleSave = (form) => {
