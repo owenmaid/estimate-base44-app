@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { calculateScheduleRow, roundMoney } from './calculations.js';
 
 /**
  * Fetch equipment calculations from ProjectDetailsSetup by project number and SKU
@@ -26,24 +27,36 @@ export const fetchEquipmentTotal = async (projectNumber, sku) => {
 
     if (!matchingItem) return null;
 
-    // Calculate totals based on equipmentRows and costs
-    // This mirrors the logic from ProjectDetailsSetup
-    const equipmentRows = matchingProject.equipment_rows || [];
-    const matchingRow = equipmentRows.find(
-      r => r.item_id === matchingItem.id
+    const matchingRows = (matchingProject.equipment_rows || []).filter(
+      row => String(row.item_id) === String(matchingItem.id)
+        || String(row.label || '').toLowerCase() === String(matchingItem.name || '').toLowerCase()
     );
 
-    if (!matchingRow) return null;
+    if (matchingRows.length === 0) return null;
 
-    // For now, return placeholder structure
-    // The actual totals would be calculated in ProjectDetailsSetup
+    const totals = matchingRows.reduce((sum, row) => {
+      const calculation = calculateScheduleRow(
+        row,
+        matchingProject.equipment_grid || {},
+        matchingProject.type_grid || {},
+        [matchingItem],
+      );
+      if (!calculation) return sum;
+      sum.regCost += calculation.regularCost;
+      sum.otCost += calculation.overtimeCost;
+      sum.specialCost += calculation.specialCost;
+      sum.total += calculation.totalCost;
+      return sum;
+    }, { regCost: 0, otCost: 0, specialCost: 0, total: 0 });
+
     return {
-      regCost: 0,
-      otCost: 0,
-      specialCost: 0,
-      total: 0,
+      regCost: roundMoney(totals.regCost),
+      otCost: roundMoney(totals.otCost),
+      specialCost: roundMoney(totals.specialCost),
+      total: roundMoney(totals.total),
       found: true,
     };
+
   } catch (error) {
     console.error('Error fetching equipment total:', error);
     return null;

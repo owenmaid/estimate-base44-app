@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -37,8 +38,18 @@ const RouteLoadingFallback = () => (
   </div>
 );
 
+const LoginRedirect = () => {
+  const { navigateToLogin } = useAuth();
+
+  useEffect(() => {
+    navigateToLogin();
+  }, [navigateToLogin]);
+
+  return <RouteLoadingFallback />;
+};
+
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -52,15 +63,15 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
+      return <LoginRedirect />;
     }
   }
 
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route element={<ProtectedRoute unauthenticatedElement={<LoginRedirect />} />}>
+        <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/estimates" element={<EstimatesList />} />
         <Route path="/estimates/new" element={<CreateEstimate />} />
@@ -82,6 +93,7 @@ const AuthenticatedApp = () => {
         <Route path="/project-cost-dashboard" element={<ProjectCostDashboard />} />
         <Route path="/line-item-comparison" element={<LineItemComparison />} />
         <Route path="/item-cost-comparison" element={<ItemCostComparison />} />
+        </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
