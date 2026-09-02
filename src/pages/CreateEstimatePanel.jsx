@@ -9,7 +9,8 @@ import { CloseEstimateDialog, SaveTemplateDialog } from '@/components/estimate-p
 import { X, Download, BookmarkPlus } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
-import { calculateEstimateSummary } from '@/lib/calculations';
+import { calculateEstimateSummary, roundMoney } from '@/lib/calculations';
+import { createEstimateNumber, createStableId, getErrorMessage, validateEstimateData } from '@/lib/reliability';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
@@ -24,7 +25,7 @@ export default function CreateEstimatePanel() {
 
   // Sections: [{id, title, items:[{id,description,quantity,unit_price,total,markup}]}]
   const [sections, setSections] = useState([
-    { id: Date.now(), title: 'Section 1', items: [] },
+    { id: createStableId('section'), title: 'Section 1', items: [] },
     { id: 'summary', title: 'Summary', _isSummary: true, items: [] }
   ]);
 
@@ -81,15 +82,15 @@ export default function CreateEstimatePanel() {
       lineItems.forEach((item) => {
         if (item.description && item.description.startsWith('__SECTION__:')) {
           const title = item.description.slice('__SECTION__:'.length);
-          current = { id: Date.now() + Math.random(), title, items: [] };
+          current = { id: createStableId('section'), title, items: [] };
           rebuilt.push(current);
         } else {
           if (!current) {
-            current = { id: Date.now() + Math.random(), title: 'Section 1', items: [] };
+            current = { id: createStableId('section'), title: 'Section 1', items: [] };
             rebuilt.push(current);
           }
           current.items.push({
-            id: Date.now() + Math.random(),
+            id: createStableId('item'),
             description: item.description,
             quantity: item.quantity,
             unit_price: item.unit_price,
@@ -98,7 +99,7 @@ export default function CreateEstimatePanel() {
           });
         }
       });
-      setSections(rebuilt.length > 0 ? rebuilt : [{ id: Date.now(), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
+      setSections(rebuilt.length > 0 ? rebuilt : [{ id: createStableId('section'), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
       toast.success(`Template "${tmpl.name}" loaded — ready to save as new estimate.`);
     } catch (e) {
       // ignore parse errors
@@ -320,16 +321,16 @@ export default function CreateEstimatePanel() {
           current = { id: 'summary', title, _isSummary: true, items: [] };
           rebuilt.push(current);
         } else {
-          current = { id: Date.now() + Math.random(), title, items: [] };
+          current = { id: createStableId('section'), title, items: [] };
           rebuilt.push(current);
         }
       } else {
         if (!current) {
-          current = { id: Date.now() + Math.random(), title: 'Section 1', items: [] };
+          current = { id: createStableId('section'), title: 'Section 1', items: [] };
           rebuilt.push(current);
         }
         current.items.push({
-          id: Date.now() + Math.random(),
+          id: createStableId('item'),
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
@@ -410,7 +411,7 @@ export default function CreateEstimatePanel() {
   // ── Reset to blank ─────────────────────────────────────────────────────────
   const handleNew = () => {
     setActiveEstimate(null);
-    setSections([{ id: Date.now(), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
+    setSections([{ id: createStableId('section'), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
     setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0, start_date: '', end_date: '' });
     // Reset logos to whatever is saved in user settings
     const savedLogos = user?.settings?.logoUrls || {};
@@ -483,7 +484,7 @@ export default function CreateEstimatePanel() {
 
   // ── Sections CRUD ──────────────────────────────────────────────────────────
   const addSection = () => {
-    setSections(prev => [...prev, { id: Date.now(), title: `Section ${prev.length + 1}`, items: [] }]);
+    setSections(prev => [...prev, { id: createStableId('section'), title: `Section ${prev.length + 1}`, items: [] }]);
   };
 
   const renameSection = (sectionId, title) => {
@@ -505,7 +506,7 @@ export default function CreateEstimatePanel() {
       return {
         ...s,
         items: [...s.items, {
-          id: Date.now() + Math.random(),
+          id: createStableId('item'),
           description: item.description || '',
           quantity: qty,
           unit_price: unitPrice,
@@ -563,7 +564,7 @@ export default function CreateEstimatePanel() {
       const rightItems = sectionToSplit.items.slice(midPoint);
       
       const leftSection = {
-        id: Date.now() + 1,
+        id: createStableId('item'),
         title: sectionToSplit.title + ' (Left)',
         items: leftItems,
         _splitFrom: sectionId,
@@ -571,7 +572,7 @@ export default function CreateEstimatePanel() {
       };
       
       const rightSection = {
-        id: Date.now() + 2,
+        id: createStableId('item'),
         title: sectionToSplit.title + ' (Right)',
         items: rightItems,
         _splitFrom: sectionId,
@@ -810,11 +811,11 @@ export default function CreateEstimatePanel() {
     const existingDescs = s.items.map(i => normalizeDesc(i.description));
     const newBrackets = [];
     if (!existingDescs.includes('dcsm est total hours') && dcsmHoursValue > 0)
-      newBrackets.push({ id: Date.now() + 1, description: '[DCSM Est Total Hours]',           quantity: 1, unit_price: 0, markup: 0, total: 0 });
+      newBrackets.push({ id: createStableId('item'), description: '[DCSM Est Total Hours]',           quantity: 1, unit_price: 0, markup: 0, total: 0 });
     if (!existingDescs.includes('total ventilation labour hours') && ventHoursValue > 0)
-      newBrackets.push({ id: Date.now() + 2, description: '[Total Ventilation Labour Hours]',  quantity: 1, unit_price: 0, markup: 0, total: 0 });
+      newBrackets.push({ id: createStableId('item'), description: '[Total Ventilation Labour Hours]',  quantity: 1, unit_price: 0, markup: 0, total: 0 });
     if (!existingDescs.includes('total project labour hours') && totalProjectLabourHours > 0)
-      newBrackets.push({ id: Date.now() + 3, description: '[Total Project Labour Hours]',      quantity: 1, unit_price: 0, markup: 0, total: 0 });
+      newBrackets.push({ id: createStableId('item'), description: '[Total Project Labour Hours]',      quantity: 1, unit_price: 0, markup: 0, total: 0 });
     return newBrackets.length > 0 ? { ...s, items: [...s.items, ...newBrackets] } : s;
   });
 
@@ -881,11 +882,20 @@ export default function CreateEstimatePanel() {
   // ── Save / Update ──────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const validationError = validateEstimateData(clientInfo, sectionsWithAggregate);
+      if (validationError) throw new Error(validationError);
+
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
         lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
-          lineItems.push({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, markup: item.markup, total: item.total });
+          lineItems.push({
+            description: item.description.trim(),
+            quantity: Number(item.quantity || 0),
+            unit_price: roundMoney(item.unit_price),
+            markup: Number(item.markup || 0),
+            total: roundMoney(item.total),
+          });
         });
       });
       // Add summary section as a special section with tax/discount info
@@ -895,21 +905,21 @@ export default function CreateEstimatePanel() {
       }
 
       const basePayload = {
-        client_name: clientInfo.client_name,
-        project_name: clientInfo.project_name,
-        project_number: clientInfo.project_number,
+        client_name: clientInfo.client_name.trim(),
+        project_name: clientInfo.project_name.trim(),
+        project_number: clientInfo.project_number.trim(),
         client_email: clientInfo.client_email,
         client_phone: clientInfo.client_phone,
         client_address: clientInfo.client_address,
         notes: clientInfo.notes,
-        tax_rate: clientInfo.tax_rate,
-        discount: clientInfo.discount,
+        tax_rate: Number(clientInfo.tax_rate || 0),
+        discount: roundMoney(clientInfo.discount),
         start_date: clientInfo.start_date || '',
         end_date: clientInfo.end_date || '',
         line_items: lineItems,
-        subtotal,
-        tax_amount: taxAmount,
-        total,
+        subtotal: roundMoney(subtotal),
+        tax_amount: roundMoney(taxAmount),
+        total: roundMoney(total),
         info_signal_logo: logoUrls.infoSignalLogo,
         dyna_vent_logo: logoUrls.dynaVentLogo,
       };
@@ -940,7 +950,7 @@ export default function CreateEstimatePanel() {
       return base44.entities.Estimate.create({
         ...basePayload,
         status: 'draft',
-        estimate_number: `EST-${Date.now().toString().slice(-6)}`,
+        estimate_number: createEstimateNumber(),
       });
     },
     onSuccess: (saved) => {
@@ -948,6 +958,7 @@ export default function CreateEstimatePanel() {
       setActiveEstimate(saved);
       toast.success(activeEstimate ? 'Estimate updated!' : 'Estimate saved as draft!');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to save the estimate.')),
   });
 
   return (
