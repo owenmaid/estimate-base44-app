@@ -935,7 +935,7 @@ export default function CreateEstimatePanel() {
 
       // New save: if project_number is set, check for an existing record with that number first
       if (clientInfo.project_number.trim()) {
-        const existing = await base44.entities.Estimate.filter({ project_number: clientInfo.project_number.trim() });
+        const existing = await base44.entities.Estimate.filter({ project_number: clientInfo.project_number.trim() }, null, 1);
         if (existing && existing.length > 0) {
           const match = existing[0];
           return base44.entities.Estimate.update(match.id, {
