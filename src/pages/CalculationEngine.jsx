@@ -8,6 +8,7 @@ import FormulaEditor from '@/components/calculation/FormulaEditor';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
 import { calculateCostComponents, getShiftHours } from '@/lib/calculations';
+import { getErrorMessage } from '@/lib/reliability';
 
 const blankFormula = () => ({
   name: '',
@@ -406,16 +407,19 @@ export default function CalculationEngine() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FormulaConfig.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['formula-configs'] }); setShowNew(false); toast.success('Formula created'); },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to create the formula.')),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.FormulaConfig.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['formula-configs'] }); toast.success('Formula saved'); },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to save the formula.')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.FormulaConfig.delete(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['formula-configs'] }); toast.success('Formula deleted'); },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to delete the formula.')),
   });
 
   const handleSave = (draft) => draft.id ? updateMutation.mutate({ id: draft.id, data: draft }) : createMutation.mutate(draft);
