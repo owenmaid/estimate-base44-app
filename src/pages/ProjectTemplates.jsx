@@ -12,6 +12,7 @@ import { Plus, Trash2, CheckCircle2, Circle, LayoutTemplate, Pencil, X, Save, Fi
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import { useAuth } from '@/lib/AuthContext';
 
 const TASK_TYPES = ['Manpower', 'Equipment', 'Logistics'];
 
@@ -143,7 +144,7 @@ function TemplateEditor({ template, onClose, onSaved }) {
 }
 
 // ── Estimate Template Card ────────────────────────────────────────────────────
-function EstimateTemplateCard({ tmpl, onDelete, onLoad }) {
+function EstimateTemplateCard({ tmpl, onDelete, onLoad, canManage }) {
   const sectionCount = (tmpl.line_items || []).filter(i => (i.description || '').startsWith('__SECTION__:')).length;
   const lineCount = (tmpl.line_items || []).filter(i => !(i.description || '').startsWith('__SECTION__:') && i.description !== '__SPACER__').length;
 
@@ -179,9 +180,11 @@ function EstimateTemplateCard({ tmpl, onDelete, onLoad }) {
           <Button variant="outline" size="sm" className="flex-1" onClick={() => onLoad(tmpl)}>
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Load in Panel
           </Button>
-          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(tmpl.id)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {canManage && (
+            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(tmpl.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -190,6 +193,8 @@ function EstimateTemplateCard({ tmpl, onDelete, onLoad }) {
 
 export default function ProjectTemplates() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const [editing, setEditing] = useState(null);
   const [activeTab, setActiveTab] = useState('project');
@@ -256,7 +261,7 @@ export default function ProjectTemplates() {
           <h1 className="text-2xl font-bold">Templates</h1>
           <p className="text-sm text-muted-foreground mt-1">Reusable project task structures and estimate snapshots</p>
         </div>
-        {activeTab === 'project' && (
+        {isAdmin && activeTab === 'project' && (
           <Button size="sm" onClick={() => setEditing(false)}>
             <Plus className="h-4 w-4 mr-1.5" /> New Project Template
           </Button>
@@ -330,6 +335,7 @@ export default function ProjectTemplates() {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground">{(tmpl.task_list || []).length} preset tasks</p>
+                  {isAdmin && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(tmpl)}>
                       <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
@@ -338,6 +344,7 @@ export default function ProjectTemplates() {
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -367,13 +374,14 @@ export default function ProjectTemplates() {
                 tmpl={tmpl}
                 onDelete={(id) => setConfirmDeleteEstimateTmpl(id)}
                 onLoad={handleLoadEstimateTemplate}
+                canManage={isAdmin}
               />
             ))}
           </div>
         )
       )}
 
-      {isOpen && (
+      {isAdmin && isOpen && (
         <TemplateEditor
           template={editing || null}
           onClose={() => setEditing(null)}
