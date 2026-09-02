@@ -30,6 +30,16 @@
       "type": "string",
       "description": "Project number or identifier"
     },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project start date captured on the estimate"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project end date captured on the estimate"
+    },
     "description": {
       "type": "string",
       "description": "General description or notes"
@@ -66,6 +76,18 @@
           },
           "total": {
             "type": "number"
+          },
+          "_isSummary": {
+            "type": "boolean",
+            "description": "Marks the persisted summary section row"
+          },
+          "tax_rate": {
+            "type": "number",
+            "description": "Tax rate stored on the summary row"
+          },
+          "discount": {
+            "type": "number",
+            "description": "Discount stored on the summary row"
           }
         }
       }
