@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -57,6 +57,8 @@ function WarmStatCard({ title, value, icon: Icon, accent }) {
 }
 
 export default function Dashboard() {
+  const [estimateChartMode, setEstimateChartMode] = useState('value'); // 'value' | 'count'
+
   const { data: estimates = [], isLoading: loadingEstimates } = useQuery({
     queryKey: ['estimates'],
     queryFn: () => base44.entities.Estimate.list('-created_date'),
@@ -288,30 +290,36 @@ export default function Dashboard() {
 
       {/* Estimate totals by status — line graph */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base" style={SERIF}>Estimate Value by Status</CardTitle>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-base" style={SERIF}>Estimates by Status</CardTitle>
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1">
+            <Button size="sm" variant={estimateChartMode === 'value' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('value')}>Totals</Button>
+            <Button size="sm" variant={estimateChartMode === 'count' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('count')}>Quantity</Button>
+          </div>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart
               data={[
-                { name: 'Accepted', value: estimateStatusValue.accepted },
-                { name: 'Declined', value: estimateStatusValue.declined },
-                { name: 'Sent', value: estimateStatusValue.sent },
-                { name: 'Expired', value: estimateStatusValue.expired },
-                { name: 'Draft', value: estimateStatusValue.draft },
+                { name: 'Accepted', value: estimateStatusValue.accepted, count: estimateStatusCount.accepted },
+                { name: 'Declined', value: estimateStatusValue.declined, count: estimateStatusCount.declined },
+                { name: 'Sent', value: estimateStatusValue.sent, count: estimateStatusCount.sent },
+                { name: 'Expired', value: estimateStatusValue.expired, count: estimateStatusCount.expired },
+                { name: 'Draft', value: estimateStatusValue.draft, count: estimateStatusCount.draft },
               ]}
               margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => estimateChartMode === 'value' ? `$${(v/1000).toFixed(0)}k` : v} />
               <Tooltip
                 contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={v => [`$${v.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']}
+                formatter={v => estimateChartMode === 'value'
+                  ? [`$${Number(v).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']
+                  : [v, 'Quantity']}
               />
-              <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey={estimateChartMode} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
