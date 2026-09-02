@@ -564,7 +564,7 @@ export default function CreateEstimatePanel() {
       const rightItems = sectionToSplit.items.slice(midPoint);
       
       const leftSection = {
-        id: createStableId('item'),
+        id: createStableId('section'),
         title: sectionToSplit.title + ' (Left)',
         items: leftItems,
         _splitFrom: sectionId,
@@ -572,7 +572,7 @@ export default function CreateEstimatePanel() {
       };
       
       const rightSection = {
-        id: createStableId('item'),
+        id: createStableId('section'),
         title: sectionToSplit.title + ' (Right)',
         items: rightItems,
         _splitFrom: sectionId,
