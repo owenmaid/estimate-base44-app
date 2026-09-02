@@ -2,12 +2,13 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
+import { calculateLineTotal } from '@/lib/calculations';
 
 export default function LineItemRow({ item, index, onChange, onRemove }) {
   const handleChange = (field, value) => {
     const updated = { ...item, [field]: value };
     if (field === 'quantity' || field === 'unit_price') {
-      updated.total = (updated.quantity || 0) * (updated.unit_price || 0);
+      updated.total = calculateLineTotal(updated.quantity, updated.unit_price);
     }
     onChange(index, updated);
   };
