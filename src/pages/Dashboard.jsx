@@ -219,7 +219,7 @@ export default function Dashboard() {
       </div>
 
       {/* Grand total of all estimates + quantity + linked */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
@@ -262,6 +262,46 @@ export default function Dashboard() {
             <span className="text-xs text-muted-foreground mt-1">converted / linked</span>
           </div>
         </div>
+
+        <Card>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2" style={SERIF}>
+              <CalendarClock className="h-8 w-8 text-primary" /> Upcoming Deadlines
+            </CardTitle>
+            {overdue.length > 0 && (
+              <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs border">
+                {overdue.length} overdue
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {upcomingDeadlines.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No upcoming deadlines in the next 60 days</p>
+            ) : upcomingDeadlines.map(p => {
+              const daysLeft = Math.ceil((p.dueDate - today) / (1000 * 60 * 60 * 24));
+              const urgent = daysLeft <= 7;
+              return (
+                <Link to={`/project-planning/${p.id}`} key={p.id}>
+                  <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{p.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.client || 'No client'}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 ml-3 flex-shrink-0">
+                      <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
+                      <span className={`text-xs font-medium ${urgent ? 'text-red-400' : 'text-muted-foreground'}`}>
+                        {daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d left`}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+            <div className="pt-1">
+              <Link to="/projects" className="text-xs text-primary hover:underline">View all projects →</Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Estimate status values */}
@@ -417,53 +457,11 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Band 2: Deadlines + Estimates */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <Card>
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2" style={SERIF}>
-              <CalendarClock className="h-8 w-8 text-primary" /> Upcoming Deadlines
-            </CardTitle>
-            {overdue.length > 0 && (
-              <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs border">
-                {overdue.length} overdue
-              </Badge>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {upcomingDeadlines.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">No upcoming deadlines in the next 60 days</p>
-            ) : upcomingDeadlines.map(p => {
-              const daysLeft = Math.ceil((p.dueDate - today) / (1000 * 60 * 60 * 24));
-              const urgent = daysLeft <= 7;
-              return (
-                <Link to={`/project-planning/${p.id}`} key={p.id}>
-                  <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{p.client || 'No client'}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 ml-3 flex-shrink-0">
-                      <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
-                      <span className={`text-xs font-medium ${urgent ? 'text-red-400' : 'text-muted-foreground'}`}>
-                        {daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d left`}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-            <div className="pt-1">
-              <Link to="/projects" className="text-xs text-primary hover:underline">View all projects →</Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex flex-col gap-3">
-          <h2 className="text-base font-semibold px-1" style={SERIF}>Estimates</h2>
-          <div className="grid grid-cols-2 gap-3 flex-1">
-            {estimateStatCards.map(c => <WarmStatCard key={c.title} {...c} />)}
-          </div>
+      {/* Band 2: Estimates */}
+      <div className="flex flex-col gap-3">
+        <h2 className="text-base font-semibold px-1" style={SERIF}>Estimates</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {estimateStatCards.map(c => <WarmStatCard key={c.title} {...c} />)}
         </div>
       </div>
 
