@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { roundMoney } from '@/lib/calculations';
+import { toast } from 'sonner';
 
 const ITEM_GROUPS = ['Service Group', 'Equipment Group', 'Manpower Group', 'Totals Group'];
 
@@ -35,8 +37,24 @@ export default function InventoryModal({ item, onClose, onSave, allItems = [], o
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    onSave(form);
+    if (!form.name.trim()) {
+      toast.error('Enter an item name.');
+      return;
+    }
+    const numericFields = ['quantity', 'unit_cost', 'reg_value', 'ot_value', 'min_stock'];
+    if (numericFields.some(field => form[field] !== '' && form[field] !== null && (!Number.isFinite(Number(form[field])) || Number(form[field]) < 0))) {
+      toast.error('Quantity, costs, rates and minimum stock must be non-negative numbers.');
+      return;
+    }
+    onSave({
+      ...form,
+      name: form.name.trim(),
+      quantity: Number(form.quantity || 0),
+      min_stock: Number(form.min_stock || 0),
+      unit_cost: roundMoney(form.unit_cost),
+      reg_value: form.reg_value === null || form.reg_value === '' ? null : roundMoney(form.reg_value),
+      ot_value: form.ot_value === null || form.ot_value === '' ? null : roundMoney(form.ot_value),
+    });
   };
 
   return (
