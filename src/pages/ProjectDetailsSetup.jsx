@@ -12,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format, eachDayOfInterval, parseISO, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
+import { calculateCostComponents, getShiftHours } from '@/lib/calculations';
 
 export default function ProjectDetailsSetup() {
   const navigate = useNavigate();
@@ -497,39 +498,31 @@ const addEquipmentRow = () => {
     return sums;
   }, [equipmentRows, equipmentGrid]);
 
-  // Calculate Reg Cost (Col11), OT Cost (Col12), Special Cost (Col13) per row
-  // Mirrors CalculationEngine logic exactly:
-  //   Manpower: regCost = col4 × regRate, otCost/specCost use effective cols
-  //   Non-Manpower: regCost = col1 (rowSum) × regRate, otCost/specCost = 0
+  // Calculate all cost components through the shared calculation engine.
   const calculateRowCosts = useMemo(() => {
     const costs = {};
     equipmentRows.forEach(row => {
-      const label = (row.label || '').toLowerCase();
-      const shiftHrs = label.includes('pre-work') || label.includes('post-work') ? 10 : 12;
-      const inventoryEntry = inventoryValueMap.byId[row.item_id] 
-        ?? inventoryValueMap.byName[row.label?.toLowerCase()] 
+      const inventoryEntry = inventoryValueMap.byId[row.item_id]
+        ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
-      const regRate = inventoryEntry?.reg ?? null;
-      const otRate = inventoryEntry?.ot ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-
-      const col1 = rowSums[row.id] || 0;
-      const col4 = rowCol4[row.id] || 0;
-      const col5 = isManpower ? (rowCol5[row.id] || 0) : 0;
-      const col6 = isManpower ? (rowCol6[row.id] || 0) : 0;
-      const col7 = isManpower ? (rowCol7[row.id] || 0) : 0;
-      const col8 = isManpower ? (rowCol8[row.id] || 0) : 0;
-
-      // Col11: Manpower = col4 × regRate, non-Manpower = col1 × regRate
-      const regCost = regRate != null ? ((isManpower ? col4 : col1) * regRate) : null;
-      // Col12: OT cost (Manpower only)
-      const otCost = otRate != null ? ((col5 + col6 + col7) * otRate) : null;
-      // Col13: Special cost (Manpower only)
-      const specialCost = otRate != null
-        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
-        : null;
-
-      costs[row.id] = { regCost, otCost, specialCost };
+      const result = calculateCostComponents({
+        isManpower,
+        shiftHours: getShiftHours(row.label),
+        col1: rowSums[row.id] || 0,
+        col4: rowCol4[row.id] || 0,
+        col5: rowCol5[row.id] || 0,
+        col6: rowCol6[row.id] || 0,
+        col7: rowCol7[row.id] || 0,
+        col8: rowCol8[row.id] || 0,
+        regRate: inventoryEntry?.reg,
+        otRate: inventoryEntry?.ot,
+      });
+      costs[row.id] = {
+        regCost: result.regularCost,
+        otCost: result.overtimeCost,
+        specialCost: result.specialCost,
+      };
     });
     return costs;
   }, [equipmentRows, rowSums, rowCol4, rowCol5, rowCol6, rowCol7, rowCol8, inventoryValueMap]);
@@ -537,30 +530,26 @@ const addEquipmentRow = () => {
   const buildCalculationGrid = () => {
     const calculationGrid = {};
     equipmentRows.forEach(row => {
-      const label = (row.label || '').toLowerCase();
-      const isSpecial = label.includes('pre-work') || label.includes('post-work');
-      const shiftHrs = isSpecial ? 10 : 12;
       const inventoryEntry = inventoryValueMap.byId[row.item_id]
         ?? inventoryValueMap.byName[row.label?.toLowerCase()]
         ?? null;
       const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      const regRate = inventoryEntry?.reg ?? null;
-      const otRate = inventoryEntry?.ot ?? null;
-      const col1 = rowSums[row.id] || 0;
-      const col4 = rowCol4[row.id] || 0;
-      const col5 = isManpower ? (rowCol5[row.id] || 0) : 0;
-      const col6 = isManpower ? (rowCol6[row.id] || 0) : 0;
-      const col7 = isManpower ? (rowCol7[row.id] || 0) : 0;
-      const col8 = isManpower ? (rowCol8[row.id] || 0) : 0;
-      const c11 = regRate != null ? ((isManpower ? col4 : col1) * regRate) : 0;
-      const c12 = otRate != null ? ((col5 + col6 + col7) * otRate) : 0;
-      const c13 = otRate != null
-        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
-        : 0;
-      calculationGrid[`${row.id}_col11`] = c11;
-      calculationGrid[`${row.id}_col12`] = c12;
-      calculationGrid[`${row.id}_col13`] = c13;
-      calculationGrid[`${row.id}_col14`] = c11 + c12 + c13;
+      const costs = calculateCostComponents({
+        isManpower,
+        shiftHours: getShiftHours(row.label),
+        col1: rowSums[row.id] || 0,
+        col4: rowCol4[row.id] || 0,
+        col5: rowCol5[row.id] || 0,
+        col6: rowCol6[row.id] || 0,
+        col7: rowCol7[row.id] || 0,
+        col8: rowCol8[row.id] || 0,
+        regRate: inventoryEntry?.reg,
+        otRate: inventoryEntry?.ot,
+      });
+      calculationGrid[`${row.id}_col11`] = costs.regularCost;
+      calculationGrid[`${row.id}_col12`] = costs.overtimeCost;
+      calculationGrid[`${row.id}_col13`] = costs.specialCost;
+      calculationGrid[`${row.id}_col14`] = costs.totalCost;
     });
     return calculationGrid;
   };
