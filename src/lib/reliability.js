@@ -6,13 +6,18 @@ const randomValue = () => {
 
 export function createStableId(prefix = 'id') {
   const uuid = globalThis.crypto?.randomUUID?.();
-  return uuid ? `${prefix}_${uuid}` : `${prefix}_${Date.now().toString(36)}_${randomValue().toString(36)}`;
+  const value = uuid || `${Date.now().toString(36)}_${randomValue().toString(36)}`;
+  return prefix ? `${prefix}_${value}` : value;
 }
 
-// Project task schemas use numeric IDs. Millisecond time plus a random suffix stays
-// within Number.MAX_SAFE_INTEGER while avoiding collisions during rapid inserts.
+let lastNumericId = 0;
+
+// Project task schemas use numeric IDs. The monotonic guard guarantees uniqueness
+// for rapid inserts while keeping the value within Number.MAX_SAFE_INTEGER.
 export function createNumericId() {
-  return (Date.now() * 1000) + (randomValue() % 1000);
+  const candidate = (Date.now() * 1000) + (randomValue() % 1000);
+  lastNumericId = Math.max(candidate, lastNumericId + 1);
+  return lastNumericId;
 }
 
 export function createEstimateNumber(date = new Date()) {
