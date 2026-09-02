@@ -219,7 +219,7 @@ export default function Dashboard() {
       </div>
 
       {/* Grand total of all estimates + quantity + linked */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.85fr_1.95fr] gap-3 items-start">
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
