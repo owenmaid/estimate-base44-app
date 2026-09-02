@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 import { useAuth } from '@/lib/AuthContext';
+import { createNumericId, getErrorMessage } from '@/lib/reliability';
 
 const TASK_TYPES = ['Manpower', 'Equipment', 'Logistics'];
 
@@ -39,13 +40,17 @@ function TemplateEditor({ template, onClose, onSaved }) {
       toast.success(isNew ? 'Template created!' : 'Template updated!');
       onSaved();
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to save the template.')),
   });
 
   const addTask = () => {
-    if (!newTaskName.trim()) return;
+    if (!newTaskName.trim()) {
+      toast.error('Enter a task name.');
+      return;
+    }
     setForm(f => ({
       ...f,
-      task_list: [...f.task_list, { id: Date.now(), name: newTaskName.trim(), type: newTaskType || null, done: false }],
+      task_list: [...f.task_list, { id: createNumericId(), name: newTaskName.trim(), type: newTaskType || null, done: false }],
     }));
     setNewTaskName('');
     setNewTaskType('');
@@ -133,7 +138,14 @@ function TemplateEditor({ template, onClose, onSaved }) {
 
         <div className="flex justify-end gap-2 p-5 border-t border-border">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => saveMutation.mutate(form)} disabled={!form.name || saveMutation.isPending}>
+          <Button onClick={() => {
+            const name = form.name.trim();
+            if (!name) {
+              toast.error('Enter a template name.');
+              return;
+            }
+            saveMutation.mutate({ ...form, name });
+          }} disabled={saveMutation.isPending}>
             <Save className="h-4 w-4 mr-1.5" />
             {saveMutation.isPending ? 'Saving...' : 'Save Template'}
           </Button>
@@ -218,6 +230,7 @@ export default function ProjectTemplates() {
       queryClient.invalidateQueries({ queryKey: ['projectTemplates'] });
       toast.success('Template deleted');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to delete the template.')),
   });
 
   const deleteEtMutation = useMutation({
@@ -226,6 +239,7 @@ export default function ProjectTemplates() {
       queryClient.invalidateQueries({ queryKey: ['estimateTemplates'] });
       toast.success('Estimate template deleted');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to delete the estimate template.')),
   });
 
   // Navigate to CreateEstimatePanel with template data stored in sessionStorage.
