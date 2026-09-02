@@ -22,7 +22,7 @@ export function createNumericId() {
 
 export function createEstimateNumber(date = new Date()) {
   const day = date.toISOString().slice(0, 10).replaceAll('-', '');
-  const suffix = (randomValue() % 100000).toString().padStart(5, '0');
+  const suffix = randomValue().toString(36).toUpperCase().padStart(7, '0').slice(-7);
   return `EST-${day}-${suffix}`;
 }
 
