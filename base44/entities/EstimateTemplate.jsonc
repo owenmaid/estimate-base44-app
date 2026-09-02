@@ -39,6 +39,18 @@
           },
           "total": {
             "type": "number"
+          },
+          "_isSummary": {
+            "type": "boolean",
+            "description": "Marks the persisted summary section row"
+          },
+          "tax_rate": {
+            "type": "number",
+            "description": "Tax rate stored on the summary row"
+          },
+          "discount": {
+            "type": "number",
+            "description": "Discount stored on the summary row"
           }
         }
       }
