@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -38,6 +38,16 @@ const RouteLoadingFallback = () => (
   </div>
 );
 
+const LoginRedirect = () => {
+  const { navigateToLogin } = useAuth();
+
+  useEffect(() => {
+    navigateToLogin();
+  }, [navigateToLogin]);
+
+  return <RouteLoadingFallback />;
+};
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -61,7 +71,7 @@ const AuthenticatedApp = () => {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
     <Routes>
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute unauthenticatedElement={<LoginRedirect />} />}>
         <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/estimates" element={<EstimatesList />} />
