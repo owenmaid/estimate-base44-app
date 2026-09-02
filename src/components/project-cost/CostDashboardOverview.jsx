@@ -24,11 +24,11 @@ export const CostDashboardHeader = memo(function CostDashboardHeader() {
 });
 
 const KPI_DEFINITIONS = [
-  { key: 'cost', label: 'Total Cost Value', icon: DollarSign, color: 'green', selectedBorder: 'border-green-500/30' },
-  { key: 'manpower', label: 'Manpower Cost', icon: Users, color: 'blue', selectedBorder: 'border-blue-500/30' },
-  { key: 'equipment', label: 'Equipment Cost', icon: Wrench, color: 'orange', selectedBorder: 'border-orange-500/30' },
-  { key: 'logistics', label: 'Logistics Cost', icon: Truck, color: 'purple', selectedBorder: 'border-purple-500/30' },
-  { key: 'consumables', label: 'Consumables', icon: Package, color: 'teal', selectedBorder: 'border-teal-500/30' },
+  { key: 'cost', label: 'Total Cost Value', icon: DollarSign, iconBox: 'bg-green-500/15', iconColor: 'text-green-400', selectedBorder: 'border-green-500/30' },
+  { key: 'manpower', label: 'Manpower Cost', icon: Users, iconBox: 'bg-blue-500/15', iconColor: 'text-blue-400', selectedBorder: 'border-blue-500/30' },
+  { key: 'equipment', label: 'Equipment Cost', icon: Wrench, iconBox: 'bg-orange-500/15', iconColor: 'text-orange-400', selectedBorder: 'border-orange-500/30' },
+  { key: 'logistics', label: 'Logistics Cost', icon: Truck, iconBox: 'bg-purple-500/15', iconColor: 'text-purple-400', selectedBorder: 'border-purple-500/30' },
+  { key: 'consumables', label: 'Consumables', icon: Package, iconBox: 'bg-teal-500/15', iconColor: 'text-teal-400', selectedBorder: 'border-teal-500/30' },
 ];
 
 export const CostKpiCards = memo(function CostKpiCards({
@@ -66,13 +66,13 @@ export const CostKpiCards = memo(function CostKpiCards({
           {selectedProject.project_number && <span className="text-muted-foreground">#{selectedProject.project_number}</span>}
         </div>
       )}
-      {KPI_DEFINITIONS.map(({ key, label, icon: Icon, color, selectedBorder }) => (
+      {KPI_DEFINITIONS.map(({ key, label, icon: Icon, iconBox, iconColor, selectedBorder }) => (
         <Card key={key} className={isFiltered ? selectedBorder : ''}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</span>
-              <div className={`h-8 w-8 rounded-lg bg-${color}-500/15 flex items-center justify-center`}>
-                <Icon className={`h-4 w-4 text-${color}-400`} />
+              <div className={`h-8 w-8 rounded-lg ${iconBox} flex items-center justify-center`}>
+                <Icon className={`h-4 w-4 ${iconColor}`} />
               </div>
             </div>
             <div className="text-xl font-bold">{money(values[key])}</div>
