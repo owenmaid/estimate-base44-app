@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, Maximize2, X, Lock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { calculateScheduleRow } from '@/lib/calculations';
 
 const STATUS_STYLES = {
   active: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -288,53 +289,20 @@ export default function ProjectPlanning() {
     const tGrid = project.type_grid || {};
 
     return rows.map(row => {
-      const label = (row.label || '').toLowerCase();
-      const isSpecial = label.includes('pre-work') || label.includes('post-work');
-      const shiftHrs = isSpecial ? 10 : 12;
-
-      const inventoryEntry = inventoryAll.find(i => String(i.id) === String(row.item_id))
-        ?? inventoryAll.find(i => (i.name || '').toLowerCase() === label)
-        ?? null;
-      const regRate = inventoryEntry?.reg_value != null ? Number(inventoryEntry.reg_value) : null;
-      const otRate = inventoryEntry?.ot_value != null ? Number(inventoryEntry.ot_value) : null;
-      const isManpower = inventoryEntry?.item_group === 'Manpower Group';
-      const category = inventoryEntry?.category || '—';
-
-      // Col1: total count across all dates
-      let col1 = 0;
-      // Col4: N×8 + Sa×4
-      let col4 = 0;
-      // Col5: N×(shift-8)
-      let col5 = 0;
-      // Col6: Sa×max(shift-4,0)
-      let col6 = 0;
-      // Col7: Su×shift
-      let col7 = 0;
-      // Col8: St×shift
-      let col8 = 0;
-
-      Object.entries(eGrid).forEach(([key, value]) => {
-        if (!key.startsWith(`${row.id}_`)) return;
-        const dateStr = key.slice(`${row.id}_`.length);
-        const num = parseInt(value, 10);
-        if (isNaN(num) || num <= 0) return;
-        col1 += num;
-        const type = tGrid[dateStr] || '';
-        if (type === 'N') { col4 += num * 8; col5 += num * Math.max(shiftHrs - 8, 0); }
-        else if (type === 'Sa') { col4 += num * 4; col6 += num * Math.max(shiftHrs - 4, 0); }
-        else if (type === 'Su') { col7 += num * shiftHrs; }
-        else if (type === 'St') { col8 += num * shiftHrs; }
-      });
-
-      const regCost = regRate != null ? (isManpower ? col4 : col1) * regRate : null;
-      const otCost = (isManpower && otRate != null) ? (col5 + col6 + col7) * otRate : null;
-      const specialCost = (isManpower && otRate != null)
-        ? (col8 * 2 * (4 / (shiftHrs * 2)) * otRate) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * otRate)
-        : null;
-      const rowTotal = (regCost || 0) + (otCost || 0) + (specialCost || 0);
-
-      return { id: row.id, label: row.label, category, isManpower, col1, regCost, otCost, specialCost, rowTotal };
-    }).filter(r => r.col1 > 0 || r.rowTotal > 0);
+      const result = calculateScheduleRow(row, eGrid, tGrid, inventoryAll);
+      if (!result) return null;
+      return {
+        id: row.id,
+        label: row.label,
+        category: result.inventoryItem.category || '—',
+        isManpower: result.isManpower,
+        col1: result.col1,
+        regCost: result.regularCost,
+        otCost: result.overtimeCost,
+        specialCost: result.specialCost,
+        rowTotal: result.totalCost,
+      };
+    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
   }, [project, inventoryAll]);
 
   if (isLoading || !form) {
