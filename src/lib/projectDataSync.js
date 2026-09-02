@@ -10,18 +10,18 @@ export const fetchEquipmentTotal = async (projectNumber, sku) => {
   try {
     if (!projectNumber || !sku) return null;
 
-    // Fetch all projects
-    const projects = await base44.entities.Project.list();
-    const matchingProject = projects.find(
-      p => p.project_number === projectNumber
+    const [matchingProject] = await base44.entities.Project.filter(
+      { project_number: projectNumber },
+      null,
+      1
     );
 
     if (!matchingProject) return null;
 
-    // Fetch inventory to find the matching item
-    const inventory = await base44.entities.InventoryItem.list();
-    const matchingItem = inventory.find(
-      i => i.sku === sku
+    const [matchingItem] = await base44.entities.InventoryItem.filter(
+      { sku },
+      null,
+      1
     );
 
     if (!matchingItem) return null;
@@ -56,8 +56,12 @@ export const fetchEquipmentTotal = async (projectNumber, sku) => {
 export const validateProjectNumber = async (projectNumber) => {
   try {
     if (!projectNumber) return false;
-    const projects = await base44.entities.Project.list();
-    return projects.some(p => p.project_number === projectNumber);
+    const matches = await base44.entities.Project.filter(
+      { project_number: projectNumber },
+      null,
+      1
+    );
+    return matches.length > 0;
   } catch (error) {
     console.error('Error validating project number:', error);
     return false;
