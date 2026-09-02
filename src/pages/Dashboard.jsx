@@ -367,18 +367,20 @@ export default function Dashboard() {
       </div>
 
       {/* Total Revenue hero with pipeline-flow detail */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
-        <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
-          <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
-          <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
-        </svg>
-        <div className="relative">
-          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Revenue</p>
-          <p className="text-4xl lg:text-5xl font-bold text-primary mt-1 leading-none" style={SERIF}>
-            ${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} projects · {estimateStats.total} estimates</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+          <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
+            <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
+            <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
+          </svg>
+          <div className="relative">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Revenue</p>
+            <p className="text-4xl lg:text-5xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+              ${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} projects · {estimateStats.total} estimates</p>
+          </div>
         </div>
       </div>
 
