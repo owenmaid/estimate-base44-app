@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { ThemeProvider } from '@/lib/ThemeContext';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -60,7 +61,8 @@ const AuthenticatedApp = () => {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/estimates" element={<EstimatesList />} />
         <Route path="/estimates/new" element={<CreateEstimate />} />
@@ -82,6 +84,7 @@ const AuthenticatedApp = () => {
         <Route path="/project-cost-dashboard" element={<ProjectCostDashboard />} />
         <Route path="/line-item-comparison" element={<LineItemComparison />} />
         <Route path="/item-cost-comparison" element={<ItemCostComparison />} />
+        </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
