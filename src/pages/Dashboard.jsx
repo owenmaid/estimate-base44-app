@@ -320,7 +320,18 @@ export default function Dashboard() {
                     ? [`$${Number(v).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, 'Value']
                     : [v, 'Quantity']}
                 />
-                <Line type="monotone" dataKey={estimateChartMode} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
+                <Line
+                  type="monotone"
+                  dataKey={estimateChartMode}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={2}
+                  dot={(props) => {
+                    const STATUS_COLORS = { Accepted: '#22c55e', Declined: '#ef4444', Sent: '#3b82f6', Expired: '#f59e0b', Draft: '#f97316' };
+                    const color = STATUS_COLORS[props.payload.name] || 'hsl(var(--primary))';
+                    return { r: 5, fill: color, stroke: color, strokeWidth: 0 };
+                  }}
+                  activeDot={{ r: 7, strokeWidth: 0 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
