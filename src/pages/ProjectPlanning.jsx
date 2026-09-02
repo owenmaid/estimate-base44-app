@@ -272,11 +272,6 @@ export default function ProjectPlanning() {
   };
 
   // ── Equipment rows from Project Details Setup (read-only) ──────────────────
-  const { data: inventoryAll = [] } = useQuery({
-    queryKey: ['inventoryAll'],
-    queryFn: () => base44.entities.InventoryItem.list(),
-  });
-
   const equipmentSetupRows = useMemo(() => {
     if (!project) return [];
     const rows = project.equipment_rows || [];
@@ -284,7 +279,7 @@ export default function ProjectPlanning() {
     const tGrid = project.type_grid || {};
 
     return rows.map(row => {
-      const result = calculateScheduleRow(row, eGrid, tGrid, inventoryAll);
+      const result = calculateScheduleRow(row, eGrid, tGrid, inventoryItems);
       if (!result) return null;
       return {
         id: row.id,
@@ -298,7 +293,7 @@ export default function ProjectPlanning() {
         rowTotal: result.totalCost,
       };
     }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
-  }, [project, inventoryAll]);
+  }, [project, inventoryItems]);
 
   if (isLoading || !form) {
     return (
