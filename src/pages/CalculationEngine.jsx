@@ -7,7 +7,7 @@ import { Plus, FlaskConical, Zap, Calendar } from 'lucide-react';
 import FormulaEditor from '@/components/calculation/FormulaEditor';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
-import { calculateCostComponents } from '@/lib/calculations';
+import { calculateCostComponents, getShiftHours } from '@/lib/calculations';
 
 const blankFormula = () => ({
   name: '',
@@ -574,35 +574,31 @@ export default function CalculationEngine() {
                     col7: equipmentRows.reduce((s, r) => s + (rowCol7[r.id] || 0), 0),
                     col8: equipmentRows.reduce((s, r) => s + (rowCol8[r.id] || 0), 0),
                   };
-                  // Col11/12/13/14 per row
-                  const col11Total = equipmentRows.reduce((s, r) => {
-                    const inv = inventoryValueMap.byId[String(r.item_id)] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
-                    const isManpower = inv?.item_group === 'Manpower Group';
-                    const col9 = inv?.reg ?? null;
-                    if (col9 == null) return s;
-                    return s + (isManpower ? rowCol4[r.id] : rowSums[r.id]) * col9;
-                  }, 0);
-                  const col12Total = equipmentRows.reduce((s, r) => {
-                    const inv = inventoryValueMap.byId[String(r.item_id)] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
-                    const isManpower = inv?.item_group === 'Manpower Group';
-                    if (!isManpower) return s;
-                    const col10 = inv?.ot ?? null;
-                    if (col10 == null) return s;
-                    return s + ((rowCol5[r.id] || 0) + (rowCol6[r.id] || 0) + (rowCol7[r.id] || 0)) * col10;
-                  }, 0);
-                  const col13Total = equipmentRows.reduce((s, r) => {
-                    const inv = inventoryValueMap.byId[String(r.item_id)] ?? inventoryValueMap.byName[r.label?.toLowerCase()] ?? null;
-                    const isManpower = inv?.item_group === 'Manpower Group';
-                    if (!isManpower) return s;
-                    const col10 = inv?.ot ?? null;
-                    if (col10 == null) return s;
-                    const label = (r.label || '').toLowerCase();
-                    const isSpecial = label.includes('pre-work') || label.includes('post-work');
-                    const shiftHrs = isSpecial ? 10 : 12;
-                    const col8 = rowCol8[r.id] || 0;
-                    return s + (col8 * 2 * (4 / (shiftHrs * 2)) * col10) + (col8 * 2 * ((shiftHrs * 2 - 4) / (shiftHrs * 2)) * col10);
-                  }, 0);
-                  const col14Total = col11Total + col12Total + col13Total;
+                  // Col11/12/13/14 all use the shared cost calculation.
+                  const costTotals = equipmentRows.reduce((sum, row) => {
+                    const inv = inventoryValueMap.byId[String(row.item_id)] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
+                    const costs = calculateCostComponents({
+                      isManpower: inv?.item_group === 'Manpower Group',
+                      shiftHours: getShiftHours(row.label),
+                      col1: rowSums[row.id] || 0,
+                      col4: rowCol4[row.id] || 0,
+                      col5: rowCol5[row.id] || 0,
+                      col6: rowCol6[row.id] || 0,
+                      col7: rowCol7[row.id] || 0,
+                      col8: rowCol8[row.id] || 0,
+                      regRate: inv?.reg,
+                      otRate: inv?.ot,
+                    });
+                    sum.regular += costs.regularCost;
+                    sum.overtime += costs.overtimeCost;
+                    sum.special += costs.specialCost;
+                    sum.total += costs.totalCost;
+                    return sum;
+                  }, { regular: 0, overtime: 0, special: 0, total: 0 });
+                  const col11Total = costTotals.regular;
+                  const col12Total = costTotals.overtime;
+                  const col13Total = costTotals.special;
+                  const col14Total = costTotals.total;
 
                   const colValues = [
                     totals.col1, totals.col2, totals.col3, totals.col4,
