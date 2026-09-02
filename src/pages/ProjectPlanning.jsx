@@ -13,6 +13,7 @@ import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, Circle, Maximize2, X, Lock
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { calculateEstimateSummary, calculateScheduleRow, roundMoney } from '@/lib/calculations';
+import { createNumericId, getErrorMessage } from '@/lib/reliability';
 
 const STATUS_STYLES = {
   active: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -136,6 +137,7 @@ export default function ProjectPlanning() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project saved!');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to save the project.')),
   });
 
   const deleteMutation = useMutation({
@@ -145,6 +147,7 @@ export default function ProjectPlanning() {
       toast.success('Project deleted');
       navigate('/projects');
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Unable to delete the project.')),
   });
 
   const handleLoad = async () => {
@@ -166,6 +169,14 @@ export default function ProjectPlanning() {
   };
 
   const handleSave = () => {
+    if (!form.name.trim()) {
+      toast.error('Enter a project name before saving.');
+      return;
+    }
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      toast.error('End date cannot be earlier than start date.');
+      return;
+    }
     const done = taskList.filter(t => t.done).length;
     const autoProgress = taskList.length > 0 ? Math.round((done / taskList.length) * 100) : form.progress;
     // Clean task list: ensure all numeric fields are proper numbers before saving
@@ -176,12 +187,12 @@ export default function ProjectPlanning() {
       assignee: t.assignee || null,
       done: !!t.done,
       quantity: toNum(t.quantity),
-      cost: toNum(t.cost),
+      cost: roundMoney(t.cost),
       markup: toNum(t.markup),
       tax_pct: toNum(t.tax_pct),
-      subtotal: toNum(t.subtotal),
-      tax_amount: toNum(t.tax_amount),
-      total: toNum(t.total),
+      subtotal: roundMoney(t.subtotal),
+      tax_amount: roundMoney(t.tax_amount),
+      total: roundMoney(t.total),
     }));
     updateMutation.mutate({
       ...form,
@@ -204,9 +215,16 @@ export default function ProjectPlanning() {
   };
 
   const addTask = () => {
-    if (!newTaskName.trim()) return;
+    if (!newTaskName.trim()) {
+      toast.error('Enter a line item name.');
+      return;
+    }
+    if ([newQty, newCost, newMarkup, newTaxPct].some(value => value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0))) {
+      toast.error('Quantity, cost, markup and tax must be non-negative numbers.');
+      return;
+    }
     const raw = {
-      id: Date.now(),
+      id: createNumericId(),
       name: newTaskName.trim(),
       type: newTaskType || null,
       assignee: newAssignee.trim() || null,
@@ -234,12 +252,12 @@ export default function ProjectPlanning() {
       assignee: t.assignee || null,
       done: !!t.done,
       quantity: toNum(t.quantity),
-      cost: toNum(t.cost),
+      cost: roundMoney(t.cost),
       markup: toNum(t.markup),
       tax_pct: toNum(t.tax_pct),
-      subtotal: toNum(t.subtotal),
-      tax_amount: toNum(t.tax_amount),
-      total: toNum(t.total),
+      subtotal: roundMoney(t.subtotal),
+      tax_amount: roundMoney(t.tax_amount),
+      total: roundMoney(t.total),
     }));
     updateMutation.mutate({ ...form, task_list: cleanedTaskList, tasks: cleanedTaskList.length, done, progress: autoProgress });
   };
