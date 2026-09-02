@@ -57,7 +57,11 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ ...form, subtotal, tax_amount: taxAmount, total });
+    const payload = { ...form, subtotal, tax_amount: taxAmount, total };
+    // Keep transient UI state and Base44-managed metadata out of saved records.
+    ['_notesOpen', 'id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample']
+      .forEach(key => delete payload[key]);
+    onSubmit(payload);
   };
 
   return (
