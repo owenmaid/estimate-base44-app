@@ -1003,23 +1003,27 @@ export default function CreateEstimatePanel() {
         </div>
       </div>
 
-      <CloseEstimateDialog
-        open={showCloseConfirm}
-        isSaving={saveMutation.isPending}
-        onDiscard={handleCloseNo}
-        onSave={handleCloseYes}
-      />
+      {showCloseConfirm && (
+        <CloseEstimateDialog
+          open
+          isSaving={saveMutation.isPending}
+          onDiscard={handleCloseNo}
+          onSave={handleCloseYes}
+        />
+      )}
 
-      <SaveTemplateDialog
-        open={isAdmin && showSaveTemplate}
-        templateName={templateName}
-        templateDescription={templateDesc}
-        isSaving={templateSaving}
-        onNameChange={setTemplateName}
-        onDescriptionChange={setTemplateDesc}
-        onCancel={() => setShowSaveTemplate(false)}
-        onSave={handleSaveTemplate}
-      />
+      {isAdmin && showSaveTemplate && (
+        <SaveTemplateDialog
+          open
+          templateName={templateName}
+          templateDescription={templateDesc}
+          isSaving={templateSaving}
+          onNameChange={setTemplateName}
+          onDescriptionChange={setTemplateDesc}
+          onCancel={() => setShowSaveTemplate(false)}
+          onSave={handleSaveTemplate}
+        />
+      )}
 
       {/* Main split layout */}
       <div className="flex flex-1 overflow-hidden">
