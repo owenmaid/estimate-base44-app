@@ -399,25 +399,14 @@ export default function CalculationEngine() {
                     col7: equipmentRows.reduce((s, r) => s + (rowCol7[r.id] || 0), 0),
                     col8: equipmentRows.reduce((s, r) => s + (rowCol8[r.id] || 0), 0),
                   };
-                  // Col11/12/13/14 all use the shared cost calculation.
+                  // Col11/12/13/14 reuse the per-row costs already computed in rowCalculations.
                   const costTotals = equipmentRows.reduce((sum, row) => {
-                    const inv = inventoryValueMap.byId[String(row.item_id)] ?? inventoryValueMap.byName[row.label?.toLowerCase()] ?? null;
-                    const costs = calculateCostComponents({
-                      isManpower: inv?.item_group === 'Manpower Group',
-                      shiftHours: getShiftHours(row.label),
-                      col1: rowSums[row.id] || 0,
-                      col4: rowCol4[row.id] || 0,
-                      col5: rowCol5[row.id] || 0,
-                      col6: rowCol6[row.id] || 0,
-                      col7: rowCol7[row.id] || 0,
-                      col8: rowCol8[row.id] || 0,
-                      regRate: inv?.reg,
-                      otRate: inv?.ot,
-                    });
-                    sum.regular += costs.regularCost;
-                    sum.overtime += costs.overtimeCost;
-                    sum.special += costs.specialCost;
-                    sum.total += costs.totalCost;
+                    const calc = rowCalculations[row.id];
+                    if (!calc) return sum;
+                    sum.regular += calc.regularCost || 0;
+                    sum.overtime += calc.overtimeCost || 0;
+                    sum.special += calc.specialCost || 0;
+                    sum.total += calc.totalCost || 0;
                     return sum;
                   }, { regular: 0, overtime: 0, special: 0, total: 0 });
                   const col11Total = costTotals.regular;
