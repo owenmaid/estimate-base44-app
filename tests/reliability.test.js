@@ -8,6 +8,7 @@ import {
   getErrorMessage,
   validateEstimateData,
 } from '../src/lib/reliability.js';
+import { CALCULATION_CODES, calculationCodeFor, inferCalculationCode } from '../src/lib/calculationCodes.js';
 
 test('creates unique prefixed stable IDs', () => {
   const ids = new Set(Array.from({ length: 100 }, () => createStableId('item')));
@@ -46,4 +47,22 @@ test('validates required estimate fields, dates and money inputs', () => {
 test('extracts useful API errors and preserves a fallback', () => {
   assert.equal(getErrorMessage({ response: { data: { message: 'Denied' } } }), 'Denied');
   assert.equal(getErrorMessage(null, 'Save failed'), 'Save failed');
+});
+
+
+test('infers stable calculation codes for legacy estimate labels', () => {
+  assert.equal(inferCalculationCode('DCSM Est Total'), CALCULATION_CODES.DCSM_TOTAL);
+  assert.equal(inferCalculationCode('[Lead Ventilation Tech]'), CALCULATION_CODES.LEAD_VENT_BRACKET);
+  assert.equal(
+    inferCalculationCode('Ventilation Total Labour | Logistics Cost', { section: true }),
+    CALCULATION_CODES.VENT_LABOUR_LOGISTICS,
+  );
+});
+
+test('stored calculation codes survive display-label changes', () => {
+  const renamed = {
+    description: 'Customer-facing renamed total',
+    calculation_code: CALCULATION_CODES.PROJECT_COST_TOTAL,
+  };
+  assert.equal(calculationCodeFor(renamed), CALCULATION_CODES.PROJECT_COST_TOTAL);
 });
