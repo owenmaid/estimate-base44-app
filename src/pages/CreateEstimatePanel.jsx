@@ -622,19 +622,13 @@ export default function CreateEstimatePanel() {
   // getSectionTotal: if section has bracket items, sum their totals (avoids double-counting).
   // Otherwise sum all leaf items.
   const getSectionTotal = (sectionItems) => {
-    const bracketItems = sectionItems.filter(i => isSubtotalHeader(i.description));
+    const bracketItems = sectionItems.filter(i => isSubtotalHeader(i));
     if (bracketItems.length > 0) {
       return bracketItems.reduce((s, i) => s + (i.total || 0), 0);
     }
-    return sectionItems.filter(i => !isSpacer(i.description)).reduce((s, i) => s + (i.total || 0), 0);
+    return sectionItems.filter(i => !isSpacer(i)).reduce((s, i) => s + (i.total || 0), 0);
   };
 
-  // sumSectionsByTitle: sum getSectionTotal for all sections whose title matches the list
-  const sumSectionsByTitle = (sectionList, titleList) =>
-    sectionList.reduce((sum, s) => {
-      const title = normalizeDesc(s.title);
-      return titleList.includes(title) ? sum + getSectionTotal(s.items) : sum;
-    }, 0);
 
   // ensureItemTotal: for leaf items, calculate total from unit_price/qty/markup if missing,
   // or back-calculate unit_price from total if unit_price is missing.
