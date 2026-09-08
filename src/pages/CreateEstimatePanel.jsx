@@ -437,7 +437,7 @@ export default function CreateEstimatePanel() {
     try {
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
-        lineItems.push({ id: s.id || createStableId('section'), calculation_code: s.calculation_code || inferCalculationCode(s.title, { section: true }), description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
+        lineItems.push({ id: s.id || createStableId('section'), calculation_code: sectionCode(s), description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
           const isHeader = /[\[\]]/.test(item.description || '');
           const isSpacer = (item.description || '') === '__SPACER__';
@@ -495,7 +495,17 @@ export default function CreateEstimatePanel() {
   };
 
   const renameSection = (sectionId, title) => {
-    setSections(prev => prev.map(s => s.id === sectionId ? { ...s, title } : s));
+    setSections(prev => prev.map(s => {
+      if (s.id !== sectionId) return s;
+      const inferred = inferCalculationCode(title, { section: true });
+      return {
+        ...s,
+        title,
+        calculation_code: s.calculation_code === C.SECTION && inferred !== C.SECTION
+          ? inferred
+          : s.calculation_code,
+      };
+    }));
   };
 
   const removeSection = (sectionId) => {
@@ -897,7 +907,7 @@ export default function CreateEstimatePanel() {
 
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
-        lineItems.push({ id: s.id || createStableId('section'), calculation_code: s.calculation_code || inferCalculationCode(s.title, { section: true }), description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
+        lineItems.push({ id: s.id || createStableId('section'), calculation_code: sectionCode(s), description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
           lineItems.push({
             id: item.id || createStableId('item'),
