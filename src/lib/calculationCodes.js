@@ -83,7 +83,12 @@ export function inferCalculationCode(value = '', { section = false, summary = fa
 }
 
 export function calculationCodeFor(record, options) {
-  return record?.calculation_code || inferCalculationCode(record?.description || record?.title, options);
+  const inferred = inferCalculationCode(record?.description || record?.title, options);
+  // Generic sections may be renamed into a known business section before first save.
+  if (record?.calculation_code === CALCULATION_CODES.SECTION && inferred && inferred !== CALCULATION_CODES.SECTION) {
+    return inferred;
+  }
+  return record?.calculation_code || inferred;
 }
 
 export function hasCalculationCode(record, code, options) {
