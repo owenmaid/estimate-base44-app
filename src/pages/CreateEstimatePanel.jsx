@@ -11,6 +11,7 @@ import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
 import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
 import { calculateEstimateSummary, roundMoney } from '@/lib/calculations';
 import { createEstimateNumber, createStableId, getErrorMessage, validateEstimateData } from '@/lib/reliability';
+import { CALCULATION_CODES as C, calculationCodeFor, inferCalculationCode } from '@/lib/calculationCodes';
 
 export default function CreateEstimatePanel() {
   const queryClient = useQueryClient();
@@ -25,8 +26,8 @@ export default function CreateEstimatePanel() {
 
   // Sections: [{id, title, items:[{id,description,quantity,unit_price,total,markup}]}]
   const [sections, setSections] = useState([
-    { id: createStableId('section'), title: 'Section 1', items: [] },
-    { id: 'summary', title: 'Summary', _isSummary: true, items: [] }
+    { id: createStableId('section'), title: 'Section 1', calculation_code: C.SECTION, items: [] },
+    { id: 'summary', title: 'Summary', calculation_code: C.SUMMARY, _isSummary: true, items: [] }
   ]);
 
   // Client info
@@ -82,15 +83,16 @@ export default function CreateEstimatePanel() {
       lineItems.forEach((item) => {
         if (item.description && item.description.startsWith('__SECTION__:')) {
           const title = item.description.slice('__SECTION__:'.length);
-          current = { id: createStableId('section'), title, items: [] };
+          current = { id: createStableId('section'), title, calculation_code: item.calculation_code || inferCalculationCode(title, { section: true }), items: [] };
           rebuilt.push(current);
         } else {
           if (!current) {
-            current = { id: createStableId('section'), title: 'Section 1', items: [] };
+            current = { id: createStableId('section'), title: 'Section 1', calculation_code: C.SECTION, items: [] };
             rebuilt.push(current);
           }
           current.items.push({
-            id: createStableId('item'),
+            id: item.id || createStableId('item'),
+            calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
             description: item.description,
             quantity: item.quantity,
             unit_price: item.unit_price,
@@ -99,7 +101,7 @@ export default function CreateEstimatePanel() {
           });
         }
       });
-      setSections(rebuilt.length > 0 ? rebuilt : [{ id: createStableId('section'), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
+      setSections(rebuilt.length > 0 ? rebuilt : [{ id: createStableId('section'), title: 'Section 1', calculation_code: C.SECTION, items: [] }, { id: 'summary', title: 'Summary', calculation_code: C.SUMMARY, _isSummary: true, items: [] }]);
       toast.success(`Template "${tmpl.name}" loaded — ready to save as new estimate.`);
     } catch (e) {
       // ignore parse errors
@@ -318,19 +320,20 @@ export default function CreateEstimatePanel() {
       if (item.description && item.description.startsWith('__SECTION__:')) {
         const title = item.description.slice('__SECTION__:'.length);
         if (item._isSummary || title.toLowerCase() === 'summary') {
-          current = { id: 'summary', title, _isSummary: true, items: [] };
+          current = { id: 'summary', title, calculation_code: C.SUMMARY, _isSummary: true, items: [] };
           rebuilt.push(current);
         } else {
-          current = { id: createStableId('section'), title, items: [] };
+          current = { id: createStableId('section'), title, calculation_code: item.calculation_code || inferCalculationCode(title, { section: true }), items: [] };
           rebuilt.push(current);
         }
       } else {
         if (!current) {
-          current = { id: createStableId('section'), title: 'Section 1', items: [] };
+          current = { id: createStableId('section'), title: 'Section 1', calculation_code: C.SECTION, items: [] };
           rebuilt.push(current);
         }
         current.items.push({
-          id: createStableId('item'),
+          id: item.id || createStableId('item'),
+          calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
@@ -341,7 +344,7 @@ export default function CreateEstimatePanel() {
     });
     const hasSummary = rebuilt.some(s => s._isSummary);
     if (!hasSummary) {
-      rebuilt.push({ id: 'summary', title: 'Summary', _isSummary: true, items: [] });
+      rebuilt.push({ id: 'summary', title: 'Summary', calculation_code: C.SUMMARY, _isSummary: true, items: [] });
     }
     return rebuilt;
   };
@@ -411,7 +414,7 @@ export default function CreateEstimatePanel() {
   // ── Reset to blank ─────────────────────────────────────────────────────────
   const handleNew = () => {
     setActiveEstimate(null);
-    setSections([{ id: createStableId('section'), title: 'Section 1', items: [] }, { id: 'summary', title: 'Summary', _isSummary: true, items: [] }]);
+    setSections([{ id: createStableId('section'), title: 'Section 1', calculation_code: C.SECTION, items: [] }, { id: 'summary', title: 'Summary', calculation_code: C.SUMMARY, _isSummary: true, items: [] }]);
     setClientInfo({ client_name: '', project_number: '', project_name: '', client_email: '', client_phone: '', client_address: '', notes: '', tax_rate: 0, discount: 0, start_date: '', end_date: '' });
     // Reset logos to whatever is saved in user settings
     const savedLogos = user?.settings?.logoUrls || {};
@@ -432,11 +435,13 @@ export default function CreateEstimatePanel() {
     try {
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
-        lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
+        lineItems.push({ id: s.id || createStableId('section'), calculation_code: s.calculation_code || inferCalculationCode(s.title, { section: true }), description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
           const isHeader = /[\[\]]/.test(item.description || '');
           const isSpacer = (item.description || '') === '__SPACER__';
           lineItems.push({
+            id: item.id || createStableId('item'),
+            calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
             description: item.description,
             quantity: item.quantity,
             markup: item.markup,
@@ -448,7 +453,7 @@ export default function CreateEstimatePanel() {
       // Add summary section marker with tax/discount info
       const summarySection = sections.find(s => s._isSummary);
       if (summarySection) {
-        lineItems.push({ description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true, tax_rate: clientInfo.tax_rate, discount: clientInfo.discount });
+        lineItems.push({ id: summarySection.id || 'summary', calculation_code: C.SUMMARY, description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true, tax_rate: clientInfo.tax_rate, discount: clientInfo.discount });
       }
       await base44.entities.EstimateTemplate.create({
         name: trimmed,
@@ -506,7 +511,8 @@ export default function CreateEstimatePanel() {
       return {
         ...s,
         items: [...s.items, {
-          id: createStableId('item'),
+          id: item.id || createStableId('item'),
+          calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
           description: item.description || '',
           quantity: qty,
           unit_price: unitPrice,
@@ -525,6 +531,7 @@ export default function CreateEstimatePanel() {
         items: s.items.map(item => {
           if (item.id !== itemId) return item;
           const updated = { ...item, [field]: value };
+          if (field === 'description' && !item.calculation_code) updated.calculation_code = inferCalculationCode(value) || undefined;
           const markedUp = updated.unit_price * (1 + updated.markup / 100);
           updated.total = markedUp * updated.quantity;
           return updated;
@@ -592,6 +599,8 @@ export default function CreateEstimatePanel() {
   const isSubtotalHeader = (desc) => /[\[\]]/.test(desc || '');
   const isSpacer = (desc) => (desc || '') === '__SPACER__';
   const normalizeDesc = (desc) => (desc || '').replace(/[\[\]]/g, '').toLowerCase().trim();
+  const itemCode = item => calculationCodeFor(item);
+  const sectionCode = section => calculationCodeFor(section, { section: true });
 
   // getSectionTotal: if section has bracket items, sum their totals (avoids double-counting).
   // Otherwise sum all leaf items.
@@ -659,14 +668,13 @@ export default function CreateEstimatePanel() {
 
   // ── PASS 1: inject "Total Labour | Logistics Cost" ─────────────────────────
   // = sum of section totals for: Indirects Total + Directs Total + Support and Logistics
-  const LABOUR_SOURCES = ['indirects total', 'directs total', 'support and logistics'];
-  const LABOUR_TARGET  = 'total labour | logistics cost';
-  const labourTotal = sumSectionsByTitle(sectionsBase, LABOUR_SOURCES);
+  const LABOUR_SOURCES = new Set([C.INDIRECTS_TOTAL, C.DIRECTS_TOTAL, C.SUPPORT_LOGISTICS]);
+  const labourTotal = sectionsBase.reduce((sum, section) => LABOUR_SOURCES.has(sectionCode(section)) ? sum + getSectionTotal(section.items) : sum, 0);
 
   const sectionsPass1 = sectionsBase.map(s => ({
     ...s,
     items: s.items.map(item =>
-      normalizeDesc(item.description) === LABOUR_TARGET
+      itemCode(item) === C.LABOUR_TOTAL
         ? { ...item, total: labourTotal }
         : item
     ),
@@ -675,10 +683,9 @@ export default function CreateEstimatePanel() {
   // ── PASS 2: inject "DCSM Est Total" ────────────────────────────────────────
   // = sum of ALL leaf items (excluding bracketed subtotals) across:
   //   Indirects Total + Directs Total + Support and Logistics + Total Equipment | Consumables Cost
-  const DCSM_LEAF_SOURCES = ['indirects total', 'directs total', 'support and logistics', 'total equipment | consumables cost'];
-  const DCSM_TARGET  = 'dcsm est total';
+  const DCSM_LEAF_SOURCES = new Set([C.INDIRECTS_TOTAL, C.DIRECTS_TOTAL, C.SUPPORT_LOGISTICS, C.EQUIPMENT_CONSUMABLES_TOTAL]);
   const dcsmTotal = sectionsPass1.reduce((sum, s) => {
-    if (!DCSM_LEAF_SOURCES.includes(normalizeDesc(s.title))) return sum;
+    if (!DCSM_LEAF_SOURCES.has(sectionCode(s))) return sum;
     return sum + s.items.reduce((itemSum, item) => {
       if (isSubtotalHeader(item.description) || isSpacer(item.description)) return itemSum;
       return itemSum + (item.total || 0);
@@ -688,7 +695,7 @@ export default function CreateEstimatePanel() {
   const sectionsPass2 = sectionsPass1.map(s => ({
     ...s,
     items: s.items.map(item =>
-      normalizeDesc(item.description) === DCSM_TARGET
+      itemCode(item) === C.DCSM_TOTAL
         ? { ...item, unit_price: dcsmTotal, quantity: 1, markup: 0, total: dcsmTotal }
         : item
     ),
@@ -780,9 +787,9 @@ export default function CreateEstimatePanel() {
   // ── PASS 4: inject "Ventilation Total Cost" ────────────────────────────────
   // = sum of ALL leaf items (excluding bracketed subtotals) across:
   //   Ventilation Total Labour | Logistics Cost + Ventilation Total Equipment | Consumable Costs
-  const VENT_TOTAL_LEAF_SOURCES = ['ventilation total labour | logistics cost', 'ventilation total equipment | consumable costs'];
+  const VENT_TOTAL_LEAF_SOURCES = new Set([C.VENT_LABOUR_LOGISTICS, C.VENT_EQUIPMENT_CONSUMABLES]);
   const ventilationSectionTotal = sectionsPass3WithBrackets.reduce((sum, s) => {
-    if (!VENT_TOTAL_LEAF_SOURCES.includes(normalizeDesc(s.title))) return sum;
+    if (!VENT_TOTAL_LEAF_SOURCES.has(sectionCode(s))) return sum;
     return sum + s.items.reduce((itemSum, item) => {
       if (isSubtotalHeader(item.description) || isSpacer(item.description)) return itemSum;
       return itemSum + (item.total || 0);
@@ -793,7 +800,7 @@ export default function CreateEstimatePanel() {
     ...s,
     items: s.items.map(item => {
       const n = normalizeDesc(item.description);
-      if (n === 'ventilation total cost' || n === 'total cost for ventilation') {
+      if (itemCode(item) === C.VENT_TOTAL) {
         return { ...item, total: ventilationSectionTotal };
       }
       return item;
@@ -887,9 +894,11 @@ export default function CreateEstimatePanel() {
 
       const lineItems = [];
       sectionsWithAggregate.forEach(s => {
-        lineItems.push({ description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
+        lineItems.push({ id: s.id || createStableId('section'), calculation_code: s.calculation_code || inferCalculationCode(s.title, { section: true }), description: `__SECTION__:${s.title}`, quantity: 0, unit_price: 0, total: 0 });
         s.items.forEach(item => {
           lineItems.push({
+            id: item.id || createStableId('item'),
+            calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
             description: item.description.trim(),
             quantity: Number(item.quantity || 0),
             unit_price: roundMoney(item.unit_price),
@@ -901,7 +910,7 @@ export default function CreateEstimatePanel() {
       // Add summary section as a special section with tax/discount info
       const summarySection = sections.find(s => s._isSummary);
       if (summarySection) {
-        lineItems.push({ description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true, tax_rate: clientInfo.tax_rate, discount: clientInfo.discount });
+        lineItems.push({ id: summarySection.id || 'summary', calculation_code: C.SUMMARY, description: `__SECTION__:${summarySection.title}`, quantity: 0, unit_price: 0, total: 0, _isSummary: true, tax_rate: clientInfo.tax_rate, discount: clientInfo.discount });
       }
 
       const basePayload = {
