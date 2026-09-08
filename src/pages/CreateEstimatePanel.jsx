@@ -957,8 +957,9 @@ export default function CreateEstimatePanel() {
 
       // New save: if project_number is set, check for an existing record with that number first
       if (clientInfo.project_number.trim()) {
-        const existing = await base44.entities.Estimate.filter({ project_number: clientInfo.project_number.trim() }, null, 1);
-        if (existing && existing.length > 0) {
+        const existing = await base44.entities.Estimate.filter({ project_number: clientInfo.project_number.trim() }, null, 2);
+        if (existing.length > 1) throw new Error('Multiple estimates use this project number. Resolve the duplicate records before saving.');
+        if (existing.length === 1) {
           const match = existing[0];
           return base44.entities.Estimate.update(match.id, {
             ...basePayload,
@@ -968,11 +969,14 @@ export default function CreateEstimatePanel() {
         }
       }
 
-      // Truly new — create
+      // Truly new — create after guarding the generated number against a collision.
+      const estimateNumber = createEstimateNumber();
+      const duplicateNumber = await base44.entities.Estimate.filter({ estimate_number: estimateNumber }, null, 1);
+      if (duplicateNumber.length > 0) throw new Error('Generated estimate number already exists. Please save again.');
       return base44.entities.Estimate.create({
         ...basePayload,
         status: 'draft',
-        estimate_number: createEstimateNumber(),
+        estimate_number: estimateNumber,
       });
     },
     onSuccess: (saved) => {
