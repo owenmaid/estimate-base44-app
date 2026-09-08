@@ -42,6 +42,7 @@ test('validates required estimate fields, dates and money inputs', () => {
   assert.match(validateEstimateData({ ...valid, end_date: '2026-08-31' }, sections), /end date/i);
   assert.match(validateEstimateData({ ...valid, discount: -1 }, sections), /discount/i);
   assert.match(validateEstimateData(valid, [{ items: [{ description: '', quantity: 1, unit_price: 10 }] }]), /line item/i);
+  assert.match(validateEstimateData(valid, [{ items: [{ description: 'Labour', quantity: 1, unit_price: 10, markup: 1001 }] }]), /markup/i);
 });
 
 test('extracts useful API errors and preserves a fallback', () => {
