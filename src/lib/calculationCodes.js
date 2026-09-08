@@ -21,6 +21,13 @@ export const CALCULATION_CODES = Object.freeze({
   VENT_LABOUR_LOGISTICS: 'VENT_LABOUR_LOGISTICS',
   VENT_EQUIPMENT_CONSUMABLES: 'VENT_EQUIPMENT_CONSUMABLES',
   VENT_TOTAL: 'VENT_TOTAL',
+  PROJECT_TOTALS: 'PROJECT_TOTALS',
+  DCSM_TOTAL_HOURS: 'DCSM_TOTAL_HOURS',
+  VENT_TOTAL_HOURS: 'VENT_TOTAL_HOURS',
+  PROJECT_TOTAL_HOURS: 'PROJECT_TOTAL_HOURS',
+  DCSM_COST_TOTAL: 'DCSM_COST_TOTAL',
+  VENT_COST_TOTAL: 'VENT_COST_TOTAL',
+  PROJECT_COST_TOTAL: 'PROJECT_COST_TOTAL',
 });
 
 export const normalizeCalculationLabel = (value = '') =>
@@ -51,6 +58,15 @@ const LABEL_CODES = new Map([
   ['ventilation total labour | logistics cost', CALCULATION_CODES.VENT_LABOUR_LOGISTICS],
   ['ventilation total equipment | consumable costs', CALCULATION_CODES.VENT_EQUIPMENT_CONSUMABLES],
   ['ventilation total cost', CALCULATION_CODES.VENT_TOTAL],
+  ['total cost for ventilation', CALCULATION_CODES.VENT_TOTAL],
+  ['project totals', CALCULATION_CODES.PROJECT_TOTALS],
+  ['dcsm est total hours', CALCULATION_CODES.DCSM_TOTAL_HOURS],
+  ['total ventilation labour hours', CALCULATION_CODES.VENT_TOTAL_HOURS],
+  ['total project labour hours', CALCULATION_CODES.PROJECT_TOTAL_HOURS],
+  ['total cost for dcsm', CALCULATION_CODES.DCSM_COST_TOTAL],
+  ['total costs for dcsm', CALCULATION_CODES.DCSM_COST_TOTAL],
+  ['total costs for ventilation', CALCULATION_CODES.VENT_COST_TOTAL],
+  ['total project cost', CALCULATION_CODES.PROJECT_COST_TOTAL],
 ]);
 
 export function inferCalculationCode(value = '', { section = false, summary = false } = {}) {
