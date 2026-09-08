@@ -103,8 +103,8 @@ export default function CreateEstimatePanel() {
       });
       setSections(rebuilt.length > 0 ? rebuilt : [{ id: createStableId('section'), title: 'Section 1', calculation_code: C.SECTION, items: [] }, { id: 'summary', title: 'Summary', calculation_code: C.SUMMARY, _isSummary: true, items: [] }]);
       toast.success(`Template "${tmpl.name}" loaded — ready to save as new estimate.`);
-    } catch (e) {
-      // ignore parse errors
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Unable to load the saved estimate template. The stored draft may be damaged.'));
     }
   }, [user]);
 
@@ -408,7 +408,9 @@ export default function CreateEstimatePanel() {
       } else {
         loadEstimate(data);
       }
-    } catch (e) { /* ignore load errors */ }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Unable to load the project estimate draft.'));
+    }
   }, []);
 
   // ── Reset to blank ─────────────────────────────────────────────────────────
@@ -467,8 +469,8 @@ export default function CreateEstimatePanel() {
       setShowSaveTemplate(false);
       setTemplateName('');
       setTemplateDesc('');
-    } catch (e) {
-      toast.error('Failed to save template');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to save template'));
     } finally {
       setTemplateSaving(false);
     }
