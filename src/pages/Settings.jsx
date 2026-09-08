@@ -11,6 +11,7 @@ import { useTheme } from '@/lib/ThemeContext';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/reliability';
 
 const DEFAULT_PROFILE = { displayName: '', company: '', currency: 'USD', language: 'en' };
 const DEFAULT_NOTIFICATIONS = { emailEstimates: true, emailReminders: true, browserAlerts: false };
@@ -58,8 +59,8 @@ export default function Settings() {
     try {
       await persistSettings();
       toast.success('Settings saved successfully');
-    } catch (e) {
-      toast.error('Failed to save settings');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to save settings'));
     } finally {
       setSaving(false);
     }
@@ -75,7 +76,7 @@ export default function Settings() {
       await persistSettings({ logoUrls: updatedLogos });
       toast.success('Logo uploaded and saved!');
     } catch (error) {
-      toast.error('Failed to upload logo');
+      toast.error(getErrorMessage(error, 'Failed to upload logo'));
     } finally {
       setUploadingLogo(null);
     }

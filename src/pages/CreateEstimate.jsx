@@ -6,14 +6,19 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import EstimateForm from '@/components/estimates/EstimateForm';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/reliability';
+import { createEstimateNumber, getErrorMessage } from '@/lib/reliability';
 
 export default function CreateEstimate() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (data) => base44.entities.Estimate.create(data),
+    mutationFn: async (data) => {
+      const estimateNumber = String(data.estimate_number || '').trim() || createEstimateNumber();
+      const duplicate = await base44.entities.Estimate.filter({ estimate_number: estimateNumber }, null, 1);
+      if (duplicate.length > 0) throw new Error(`Estimate number "${estimateNumber}" already exists.`);
+      return base44.entities.Estimate.create({ ...data, estimate_number: estimateNumber });
+    },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate created successfully');
