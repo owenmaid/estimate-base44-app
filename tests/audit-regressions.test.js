@@ -29,3 +29,30 @@ test('equipment data sync does not return placeholder zero totals', async () => 
   assert.match(source, /calculateScheduleRow/);
   assert.doesNotMatch(source, /For now, return placeholder structure/);
 });
+
+
+test('financial schemas enforce safe ranges and stable estimate metadata', async () => {
+  const [estimateSource, projectSource, inventorySource] = await Promise.all([
+    readSource('base44/entities/Estimate.jsonc'),
+    readSource('base44/entities/Project.jsonc'),
+    readSource('base44/entities/InventoryItem.jsonc'),
+  ]);
+  const estimate = JSON.parse(estimateSource);
+  const project = JSON.parse(projectSource);
+  const inventory = JSON.parse(inventorySource);
+
+  assert.equal(estimate.properties.tax_rate.maximum, 100);
+  assert.equal(estimate.properties.discount.minimum, 0);
+  assert.equal(estimate.properties.line_items.items.properties.id.type, 'string');
+  assert.equal(estimate.properties.line_items.items.properties.calculation_code.type, 'string');
+  assert.equal(project.properties.progress.maximum, 100);
+  assert.equal(project.properties.task_list.items.properties.tax_pct.maximum, 100);
+  assert.equal(inventory.properties.unit_cost.minimum, 0);
+});
+
+test('estimate panel persists IDs and stable calculation codes', async () => {
+  const source = await readSource('src/pages/CreateEstimatePanel.jsx');
+  assert.match(source, /calculation_code:/);
+  assert.match(source, /item\.id \|\| createStableId\('item'\)/);
+  assert.match(source, /itemCode\(item\) === C\.DCSM_TOTAL/);
+});
