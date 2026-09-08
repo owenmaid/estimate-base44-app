@@ -58,17 +58,21 @@
     "progress": {
       "type": "number",
       "default": 0,
-      "description": "Progress percentage 0-100"
+      "description": "Progress percentage 0-100",
+      "minimum": 0,
+      "maximum": 100
     },
     "tasks": {
       "type": "number",
       "default": 0,
-      "description": "Total number of tasks"
+      "description": "Total number of tasks",
+      "minimum": 0
     },
     "done": {
       "type": "number",
       "default": 0,
-      "description": "Number of completed tasks"
+      "description": "Number of completed tasks",
+      "minimum": 0
     },
     "description": {
       "type": "string",
@@ -97,25 +101,34 @@
             "type": "boolean"
           },
           "quantity": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "cost": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "markup": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000
           },
           "tax_pct": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
           },
           "subtotal": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "tax_amount": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "total": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           }
         }
       }
