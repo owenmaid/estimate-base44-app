@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function ProjectModal({ onClose, onSave }) {
   const [form, setForm] = useState({ name: '', project_number: '', client: '', status: 'planning', start_date: '', end_date: '' });
@@ -21,8 +22,14 @@ export default function ProjectModal({ onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    if (form.start_date && form.end_date && form.end_date < form.start_date) return;
+    if (!form.name.trim()) {
+      toast.error('Enter a project name.');
+      return;
+    }
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      toast.error('End date cannot be earlier than start date.');
+      return;
+    }
 
     const projectData = {
       ...form,
