@@ -66,4 +66,11 @@ test('stored calculation codes survive display-label changes', () => {
     calculation_code: CALCULATION_CODES.PROJECT_COST_TOTAL,
   };
   assert.equal(calculationCodeFor(renamed), CALCULATION_CODES.PROJECT_COST_TOTAL);
+  assert.equal(
+    calculationCodeFor(
+      { title: 'Indirects Total', calculation_code: CALCULATION_CODES.SECTION },
+      { section: true },
+    ),
+    CALCULATION_CODES.INDIRECTS_TOTAL,
+  );
 });
