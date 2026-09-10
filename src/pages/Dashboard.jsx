@@ -43,15 +43,15 @@ const SERIF = { fontFamily: "'Playfair Display', Georgia, serif" };
 // Warm stat card for the Petro-Chemical Tint dashboard.
 function WarmStatCard({ title, value, icon: Icon, accent }) {
   return (
-    <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden h-full">
+    <div className="group relative rounded-xl border border-border bg-card p-3.5 sm:p-5 flex flex-col gap-2 sm:gap-3 transition-colors hover:border-primary/50 overflow-hidden h-full">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{title}</span>
-        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
-          <Icon className={`h-8 w-8 ${accent}`} />
+        <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{title}</span>
+        <span className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+          <Icon className={`h-5 w-5 sm:h-8 sm:w-8 ${accent}`} />
         </span>
       </div>
-      <span className="text-2xl font-bold text-foreground leading-tight tabular-nums" style={SERIF}>{value}</span>
+      <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums" style={SERIF}>{value}</span>
     </div>
   );
 }
@@ -201,74 +201,74 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-full bg-background p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
+    <div className="min-h-full bg-background p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" style={SERIF}>Executive Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={SERIF}>Executive Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">Full business overview</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/projects"><FolderKanban className="h-8 w-8 mr-1.5" /> Projects</Link>
+            <Link to="/projects"><FolderKanban className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5" /> Projects</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/estimates/new"><FilePlus className="h-8 w-8 mr-1.5" /> New Estimate</Link>
+            <Link to="/estimates/new"><FilePlus className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5" /> New Estimate</Link>
           </Button>
         </div>
       </div>
 
       {/* Grand total of all estimates + quantity + linked */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.85fr_1.95fr] gap-3 items-stretch">
-        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.85fr_1.95fr] gap-2 sm:gap-3 items-stretch">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-6">
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
             <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
             <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
           </svg>
           <div className="relative">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Estimate Value</p>
-            <p className="text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground">Total Estimate Value</p>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
               ${estimateStats.totalValue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-2">across {estimateStats.total} estimate{estimateStats.total === 1 ? '' : 's'}</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <div className="group relative rounded-xl border border-border bg-card p-3.5 sm:p-5 flex flex-col gap-2 sm:gap-3 transition-colors hover:border-primary/50 overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total Estimates</span>
-              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total Estimates</span>
+              <span className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
                 <FileText className="h-4 w-4 text-primary" />
               </span>
             </div>
             <div>
-              <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{estimateStats.total}</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{estimateStats.total}</span>
               <span className="text-xs text-muted-foreground mt-1">estimate{estimateStats.total === 1 ? '' : 's'} created</span>
             </div>
           </div>
 
-          <div className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+          <div className="group relative rounded-xl border border-border bg-card p-3.5 sm:p-5 flex flex-col gap-2 sm:gap-3 transition-colors hover:border-primary/50 overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center justify-between">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Linked to Projects</span>
-              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Linked to Projects</span>
+              <span className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
                 <FolderKanban className="h-4 w-4 text-emerald-400" />
               </span>
             </div>
             <div>
-              <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{linkedEstimatesCount}</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{linkedEstimatesCount}</span>
               <span className="text-xs text-muted-foreground mt-1">converted / linked</span>
             </div>
           </div>
         </div>
 
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col sm:col-span-2 lg:col-span-1">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2" style={SERIF}>
-              <CalendarClock className="h-8 w-8 text-primary" /> Upcoming Deadlines
+              <CalendarClock className="h-6 w-6 sm:h-8 sm:w-8 text-primary" /> Upcoming Deadlines
             </CardTitle>
             {overdue.length > 0 && (
               <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs border">
@@ -307,20 +307,20 @@ export default function Dashboard() {
       </div>
 
       {/* Estimate status values */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
         {estimateStatusCards.map(c => {
           const Icon = c.icon;
           return (
-            <div key={c.title} className="group relative rounded-xl border border-border bg-card p-5 flex flex-col gap-3 transition-colors hover:border-primary/50 overflow-hidden">
+            <div key={c.title} className="group relative rounded-xl border border-border bg-card p-3.5 sm:p-5 flex flex-col gap-2 sm:gap-3 transition-colors hover:border-primary/50 overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{c.title}</span>
-                <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
-                  <Icon className={`h-8 w-8 ${c.accent}`} />
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{c.title}</span>
+                <span className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-muted/40 border border-border">
+                  <Icon className={`h-5 w-5 sm:h-8 sm:w-8 ${c.accent}`} />
                 </span>
               </div>
               <div>
-                <span className="text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>
+                <span className="text-lg sm:text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>
                   ${c.value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
                 </span>
                 <span className="text-xs text-muted-foreground mt-1">{c.count} estimate{c.count === 1 ? '' : 's'}</span>
@@ -409,16 +409,16 @@ export default function Dashboard() {
       </div>
 
       {/* Total Revenue hero with pipeline-flow detail */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-3">
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-6">
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-25 pointer-events-none" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,70 C80,25 160,105 240,65 S400,25 400,70" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" />
             <path d="M0,90 C80,45 160,125 240,85 S400,45 400,90" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" opacity="0.6" />
             <path d="M0,45 C80,5 160,85 240,45 S400,5 400,45" fill="none" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.4" />
           </svg>
           <div className="relative">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total Revenue</p>
-            <p className="text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground">Total Revenue</p>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
               ${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} project{projectStats.total === 1 ? '' : 's'}</p>
@@ -438,13 +438,13 @@ export default function Dashboard() {
                 No project data yet
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={200} className="sm:!h-[240px]">
                 <LineChart
                   data={projects.map(p => ({ name: p.name, value: projectEquipmentCost(p, inventoryItems) }))}
                   margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={60} interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={60} interval="preserveStartEnd" />
                   <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
@@ -467,7 +467,7 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Stat cards */}
-          <div className="lg:col-span-4 grid grid-cols-2 gap-3 content-start">
+          <div className="lg:col-span-4 grid grid-cols-2 gap-2 sm:gap-3 content-start">
             {projectStatCards.map(c => <WarmStatCard key={c.title} {...c} />)}
           </div>
 
@@ -485,14 +485,14 @@ export default function Dashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border text-[11px] uppercase tracking-wider bg-muted/30">
-                        <th className="text-left px-4 py-3.5 font-medium">Project</th>
-                        <th className="text-left px-4 py-3.5 font-medium">Number</th>
-                        <th className="text-left px-4 py-3.5 font-medium">Client</th>
-                        <th className="text-left px-4 py-3.5 font-medium">Status</th>
-                        <th className="text-left px-4 py-3.5 font-medium">End Date</th>
-                        <th className="text-left px-4 py-3.5 font-medium">Estimate</th>
-                        <th className="text-right px-4 py-3.5 font-medium">Estimate Value</th>
-                        <th className="text-right px-4 py-3.5 font-medium">Value</th>
+                        <th className="text-left px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium">Project</th>
+                        <th className="text-left px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium hidden sm:table-cell">Number</th>
+                        <th className="text-left px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium hidden sm:table-cell">Client</th>
+                        <th className="text-left px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium">Status</th>
+                        <th className="text-left px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium hidden sm:table-cell">End Date</th>
+                        <th className="text-left px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium hidden sm:table-cell">Estimate</th>
+                        <th className="text-right px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium hidden sm:table-cell">Estimate Value</th>
+                        <th className="text-right px-3 py-2.5 sm:px-4 sm:py-3.5 font-medium">Value</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -501,26 +501,26 @@ export default function Dashboard() {
                         const est = estimateByProject.byNumber[p.project_number] || estimateByProject.byName[p.name];
                         return (
                           <tr key={p.id} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3">
                               <Link to={`/project-planning/${p.id}`} className="font-medium text-foreground hover:text-primary">
                                 {p.name}
                               </Link>
                             </td>
-                            <td className="px-4 py-3 text-muted-foreground tabular-nums">{p.project_number || '—'}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{p.client || '—'}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-muted-foreground tabular-nums hidden sm:table-cell">{p.project_number || '—'}</td>
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-muted-foreground hidden sm:table-cell">{p.client || '—'}</td>
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3">
                               <Badge className={`text-xs border ${STATUS_STYLES[p.status] || 'bg-muted text-muted-foreground border-border'}`}>
                                 {STATUS_LABELS[p.status] || p.status}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3 text-muted-foreground tabular-nums">{p.end_date || '—'}</td>
-                            <td className="px-4 py-3 text-muted-foreground tabular-nums">
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-muted-foreground tabular-nums hidden sm:table-cell">{p.end_date || '—'}</td>
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-muted-foreground tabular-nums hidden sm:table-cell">
                               {est?.estimate_number || '—'}
                             </td>
-                            <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-right text-muted-foreground tabular-nums hidden sm:table-cell">
                               {est && est.subtotal != null ? `$${est.subtotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-primary tabular-nums">
+                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-right font-semibold text-primary tabular-nums">
                               {value > 0 ? `$${value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}` : '—'}
                             </td>
                           </tr>
@@ -528,14 +528,26 @@ export default function Dashboard() {
                       })}
                     </tbody>
                     {projects.length > 0 && (
-                      <tfoot>
-                        <tr className="border-t-2 border-border bg-muted/20 font-semibold">
-                          <td colSpan={7} className="px-4 py-3.5 text-right text-muted-foreground uppercase text-[11px] tracking-wider">Total Value</td>
-                          <td className="px-4 py-3.5 text-right text-primary tabular-nums">
-                            ${projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}
-                          </td>
-                        </tr>
-                      </tfoot>
+                      <>
+                        {/* Mobile footer (4 visible columns) */}
+                        <tfoot className="sm:hidden">
+                          <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                            <td colSpan={3} className="px-3 py-3 text-right text-muted-foreground uppercase text-[11px] tracking-wider">Total</td>
+                            <td className="px-3 py-3 text-right text-primary tabular-nums">
+                              ${projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        </tfoot>
+                        {/* Desktop footer (8 visible columns) */}
+                        <tfoot className="hidden sm:table-footer-group">
+                          <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                            <td colSpan={7} className="px-4 py-3.5 text-right text-muted-foreground uppercase text-[11px] tracking-wider">Total Value</td>
+                            <td className="px-4 py-3.5 text-right text-primary tabular-nums">
+                              ${projects.reduce((s, p) => s + projectEquipmentCost(p, inventoryItems), 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </>
                     )}
                   </table>
                 </div>
