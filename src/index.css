@@ -135,6 +135,15 @@ html.light-mode { color-scheme: light; }
   }
 }
 
+/* Hide scrollbar on the Gantt table — top synced scrollbar controls horizontal scroll */
+.gantt-table-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.gantt-table-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* Bottom padding for content so it isn't hidden behind the mobile tab bar */
 .mobile-content-padding {
   padding-bottom: 0;

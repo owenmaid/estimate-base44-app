@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,29 @@ const COL_WIDTH = 50; // px per day column
 
 export default function DetailedProjectGantt() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const topScrollRef = useRef(null);
+  const tableScrollRef = useRef(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // Bidirectional scroll sync between top scrollbar and table
+  const handleTopScroll = (e) => {
+    if (syncing) return;
+    setSyncing(true);
+    if (tableScrollRef.current) tableScrollRef.current.scrollLeft = e.target.scrollLeft;
+    requestAnimationFrame(() => setSyncing(false));
+  };
+  const handleTableScroll = (e) => {
+    if (syncing) return;
+    setSyncing(true);
+    if (topScrollRef.current) topScrollRef.current.scrollLeft = e.target.scrollLeft;
+    requestAnimationFrame(() => setSyncing(false));
+  };
+
+  // Reset scroll position when project changes
+  useEffect(() => {
+    if (topScrollRef.current) topScrollRef.current.scrollLeft = 0;
+    if (tableScrollRef.current) tableScrollRef.current.scrollLeft = 0;
+  }, [selectedProjectId]);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
@@ -106,8 +129,21 @@ export default function DetailedProjectGantt() {
       ) : rows.length === 0 ? (
         <EmptyState icon={Package} message="No inventory items assigned to this project." />
       ) : (
+        <React.Fragment>
+        {/* Top scrollbar synced with table below */}
+        <div
+          ref={topScrollRef}
+          onScroll={handleTopScroll}
+          className="overflow-x-auto overflow-y-hidden"
+        >
+          <div style={{ width: `${260 + dates.length * COL_WIDTH}px`, height: '1px' }} />
+        </div>
         <Card className="overflow-hidden">
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent
+            ref={tableScrollRef}
+            onScroll={handleTableScroll}
+            className="p-0 overflow-x-auto gantt-table-scroll"
+          >
             <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <thead>
                 {/* Month row */}
@@ -171,6 +207,7 @@ export default function DetailedProjectGantt() {
             </table>
           </CardContent>
         </Card>
+        </React.Fragment>
       )}
 
       {/* Summary */}
