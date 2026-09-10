@@ -964,7 +964,7 @@ export default function CreateEstimatePanel() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-bold text-foreground">Create Estimate Panel</h1>
           {activeEstimate && (
@@ -974,7 +974,7 @@ export default function CreateEstimatePanel() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
           {isAdmin && (
           <button
             onClick={() => { setTemplateName(''); setTemplateDesc(''); setShowSaveTemplate(true); }}

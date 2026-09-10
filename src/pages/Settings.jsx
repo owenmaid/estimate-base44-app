@@ -82,7 +82,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">Manage your preferences and account configuration</p>
@@ -264,7 +264,7 @@ export default function Settings() {
           <div>
             <Label>Language</Label>
             <Select value={profile.language} onValueChange={v => setProfile(p => ({ ...p, language: v }))}>
-              <SelectTrigger className="mt-1 w-64"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="mt-1 w-full sm:w-64"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
                 <SelectItem value="es">Spanish</SelectItem>

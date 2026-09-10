@@ -61,7 +61,7 @@ function TemplateEditor({ template, onClose, onSaved }) {
     setForm(f => ({ ...f, task_list: f.task_list.map(t => t.id === id ? { ...t, name } : t) }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h2 className="text-lg font-semibold">{isNew ? 'New Template' : 'Edit Template'}</h2>
@@ -94,9 +94,9 @@ function TemplateEditor({ template, onClose, onSaved }) {
 
           <div>
             <Label className="mb-2 block">Preset Tasks</Label>
-            <div className="flex gap-2 mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <Select value={newTaskType} onValueChange={setNewTaskType}>
-                <SelectTrigger className="w-36 flex-shrink-0">
+                <SelectTrigger className="w-full sm:w-36 flex-shrink-0">
                   <SelectValue placeholder="Type..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -109,7 +109,7 @@ function TemplateEditor({ template, onClose, onSaved }) {
                 onChange={e => setNewTaskName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addTask()}
               />
-              <Button size="sm" onClick={addTask}><Plus className="h-4 w-4" /></Button>
+              <Button size="sm" onClick={addTask} className="flex-shrink-0"><Plus className="h-4 w-4" /></Button>
             </div>
 
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -269,8 +269,8 @@ export default function ProjectTemplates() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Templates</h1>
           <p className="text-sm text-muted-foreground mt-1">Reusable project task structures and estimate snapshots</p>
@@ -291,7 +291,7 @@ export default function ProjectTemplates() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.key
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'

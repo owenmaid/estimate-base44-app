@@ -163,16 +163,20 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
           <CardTitle className="text-base">Line Items</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-1">
+          <div className="overflow-x-auto -mx-1 px-1">
+          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-1 min-w-[560px]">
             <div className="col-span-5">Description</div>
             <div className="col-span-2">Qty</div>
             <div className="col-span-2">Unit Price</div>
             <div className="col-span-2 text-right">Total</div>
             <div className="col-span-1" />
           </div>
+          <div className="space-y-2 min-w-[560px]">
           {form.line_items.map((item, i) => (
             <LineItemRow key={item._uiId} item={item} index={i} onChange={updateLineItem} onRemove={removeLineItem} />
           ))}
+          </div>
+          </div>
           <Button type="button" variant="outline" size="sm" onClick={addLineItem} className="mt-2">
             <Plus className="h-4 w-4 mr-1" /> Add Item
           </Button>

@@ -73,14 +73,14 @@ export default function Projects() {
   });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Project Overview</h1>
           <p className="text-sm text-muted-foreground mt-1">{projects.length} projects total</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to="/project-board">
               <Kanban className="h-4 w-4 mr-1.5" /> Board
@@ -103,7 +103,7 @@ export default function Projects() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: 'Active', value: projects.filter(p => p.status === 'active').length, icon: FolderKanban, color: 'text-green-400' },
           { label: 'Planning', value: projects.filter(p => p.status === 'planning').length, icon: Clock, color: 'text-blue-400' },
@@ -111,10 +111,10 @@ export default function Projects() {
           { label: 'Completed', value: projects.filter(p => p.status === 'completed').length, icon: CheckCircle2, color: 'text-muted-foreground' },
         ].map(stat => (
           <Card key={stat.label}>
-            <CardContent className="flex items-center gap-3 pt-5 pb-5">
+            <CardContent className="flex items-center gap-3 pt-4 pb-4 sm:pt-5 sm:pb-5">
               <stat.icon className={`h-5 w-5 ${stat.color}`} />
               <div>
-                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
             </CardContent>
@@ -146,7 +146,7 @@ export default function Projects() {
           </CardContent>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className="text-left px-4 py-3 font-medium">Project #</th>

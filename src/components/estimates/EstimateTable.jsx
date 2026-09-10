@@ -45,7 +45,7 @@ export default function EstimateTable({ estimates, isLoading }) {
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="font-semibold">Estimate #</TableHead>

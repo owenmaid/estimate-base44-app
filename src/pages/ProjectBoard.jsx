@@ -78,14 +78,14 @@ export default function ProjectBoard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center h-64">
+      <div className="p-4 sm:p-6 flex items-center justify-center h-64">
         <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 h-full flex flex-col">
+    <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
       <div>
         <h1 className="text-2xl font-bold">Project Board</h1>
         <p className="text-sm text-muted-foreground mt-1">Drag cards between columns to update project status</p>

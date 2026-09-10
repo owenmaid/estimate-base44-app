@@ -119,7 +119,7 @@ export default function Inventory() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
@@ -141,10 +141,10 @@ export default function Inventory() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         {stats.map(s => (
           <Card key={s.label}>
-            <CardContent className="pt-5 pb-5">
+            <CardContent className="pt-4 pb-4 sm:pt-5 sm:pb-5">
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
             </CardContent>
@@ -176,8 +176,8 @@ export default function Inventory() {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-border overflow-x-auto">
+          <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-muted/50">
               <tr>
                 {['Name', 'SKU', 'Category', 'Group', 'Sub Grp 1', 'Sub Grp 2', 'Qty', 'Unit Cost', 'Reg Value', 'OT Value', 'Supplier', 'Location', 'Status', ''].map(h => (

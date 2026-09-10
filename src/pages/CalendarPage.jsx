@@ -29,7 +29,7 @@ export default function CalendarPage() {
   const getEvents = (d) => SAMPLE_EVENTS.filter(e => e.date === format(d, 'yyyy-MM-dd'));
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Calendar</h1>
         <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function CalendarPage() {
             return (
               <div
                 key={i}
-                className={`min-h-[80px] p-1.5 border-b border-r border-border ${!inMonth ? 'opacity-30' : ''}`}
+                className={`min-h-[60px] sm:min-h-[80px] p-1 sm:p-1.5 border-b border-r border-border ${!inMonth ? 'opacity-30' : ''}`}
               >
                 <span className={`text-xs font-medium inline-flex h-6 w-6 items-center justify-center rounded-full mb-1 ${today ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}>
                   {format(d, 'd')}

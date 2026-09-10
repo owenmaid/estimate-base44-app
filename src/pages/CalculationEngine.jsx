@@ -312,7 +312,7 @@ export default function CalculationEngine() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

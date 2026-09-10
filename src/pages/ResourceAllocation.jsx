@@ -22,7 +22,7 @@ function WorkloadBar({ used, capacity }) {
   const color = pct <= 60 ? 'bg-green-500' : pct <= 85 ? 'bg-yellow-500' : 'bg-destructive';
 
   return (
-    <div className="flex items-center gap-3 min-w-[180px]">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-[120px] sm:min-w-[180px]">
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
       </div>
@@ -46,7 +46,7 @@ function MemberRow({ member }) {
     <div className="border border-border rounded-xl overflow-hidden">
       <button
         onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-4 px-5 py-4 bg-card hover:bg-muted/30 transition-colors text-left"
+        className="w-full flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 bg-card hover:bg-muted/30 transition-colors text-left"
       >
         {/* Avatar */}
         <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
@@ -199,7 +199,7 @@ export default function ResourceAllocation() {
   const manpowerCount = inventoryItems.filter(i => ['direct labour', 'indirect labour'].includes(i.category?.toLowerCase())).length;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Resource Allocation</h1>
@@ -209,29 +209,29 @@ export default function ResourceAllocation() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Team Members</p>
-            <p className="text-2xl font-bold mt-1">{memberMap.length}</p>
+            <p className="text-xl sm:text-2xl font-bold mt-1">{memberMap.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Line Items Used / Capacity</p>
-            <p className="text-2xl font-bold mt-1">{totalUsed} <span className="text-base text-muted-foreground font-normal">/ {totalCapacity}</span></p>
+            <p className="text-xl sm:text-2xl font-bold mt-1">{totalUsed} <span className="text-base text-muted-foreground font-normal">/ {totalCapacity}</span></p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Over Capacity</p>
-            <p className={`text-2xl font-bold mt-1 ${overCapacityCount > 0 ? 'text-destructive' : ''}`}>{overCapacityCount}</p>
+            <p className={`text-xl sm:text-2xl font-bold mt-1 ${overCapacityCount > 0 ? 'text-destructive' : ''}`}>{overCapacityCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Unassigned Line Items</p>
-            <p className={`text-2xl font-bold mt-1 ${unassignedCount > 0 ? 'text-yellow-400' : ''}`}>{unassignedCount}</p>
+            <p className={`text-xl sm:text-2xl font-bold mt-1 ${unassignedCount > 0 ? 'text-yellow-400' : ''}`}>{unassignedCount}</p>
           </CardContent>
         </Card>
       </div>

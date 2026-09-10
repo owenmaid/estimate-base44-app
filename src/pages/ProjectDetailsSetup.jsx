@@ -620,14 +620,14 @@ const addEquipmentRow = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header with Load Project */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Project Details Setup</h1>
           <p className="text-muted-foreground text-sm mt-1">Define your project timeline and assign manpower to each day.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link to="/control-page">
             <Button variant="outline" size="sm">
               <SlidersHorizontal className="h-4 w-4 mr-1.5" /> Control Page
@@ -641,10 +641,10 @@ const addEquipmentRow = () => {
               onChange={e => { setSearch(e.target.value); setShowProjectDropdown(true); }}
               onFocus={() => setShowProjectDropdown(true)}
               onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
-              className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm w-64"
+              className="px-3 py-2 border border-border rounded-md bg-secondary text-foreground text-sm w-full sm:w-64"
             />
             {showProjectDropdown && sampleProjects.length > 0 && (
-              <div className="absolute top-full mt-1 w-64 bg-card border border-border rounded-md shadow-lg z-10 max-h-72 overflow-y-auto">
+              <div className="absolute top-full mt-1 w-full sm:w-64 bg-card border border-border rounded-md shadow-lg z-10 max-h-72 overflow-y-auto">
                 {sampleProjects.map(p => (
                   <button
                     key={p.id}

@@ -119,7 +119,7 @@ export default function ItemCostComparison() {
   };
 
   return (
-    <div className="min-h-full bg-background p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
+    <div className="min-h-full bg-background p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
@@ -172,9 +172,9 @@ export default function ItemCostComparison() {
 
       {/* Comparison table */}
       <Card>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <CardTitle className="text-base" style={SERIF}>Cost Breakdown by Item</CardTitle>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={search}
