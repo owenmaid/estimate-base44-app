@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sun, Moon, Bell, Globe, Shield, User, Palette, Save, Image } from 'lucide-react';
+import { Sun, Moon, Bell, Globe, Shield, User, Palette, Save, Image, Monitor, AlertTriangle, Trash2 } from 'lucide-react';
 import { useTheme } from '@/lib/ThemeContext';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -17,8 +18,8 @@ const DEFAULT_NOTIFICATIONS = { emailEstimates: true, emailReminders: true, brow
 const DEFAULT_LOGOS = { infoSignalLogo: '', dynaVentLogo: '' };
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark';
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
@@ -29,6 +30,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Populate state from saved user settings once user data arrives
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium">Theme</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Switch between light and dark background</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Choose light, dark, or system theme</p>
             </div>
             <div className="flex items-center gap-3">
               <Sun className={`h-4 w-4 transition-colors ${!isDark ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -109,7 +111,7 @@ export default function Settings() {
               <Moon className={`h-4 w-4 transition-colors ${isDark ? 'text-primary' : 'text-muted-foreground'}`} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <button
               onClick={() => setTheme('light')}
               className={`rounded-lg border-2 p-3 text-left transition-all ${!isDark ? 'border-primary' : 'border-border hover:border-muted-foreground'}`}
@@ -133,6 +135,16 @@ export default function Settings() {
               </div>
               <p className="text-xs font-medium">Dark</p>
               <p className="text-xs text-muted-foreground">Easy on the eyes</p>
+            </button>
+            <button
+              onClick={() => setTheme('system')}
+              className={`rounded-lg border-2 p-3 text-left transition-all ${theme === 'system' ? 'border-primary' : 'border-border hover:border-muted-foreground'}`}
+            >
+              <div className="h-16 rounded bg-gradient-to-br from-white to-[#1c1713] border border-gray-200 mb-2 flex items-center justify-center p-2">
+                <Monitor className="h-5 w-5 text-gray-500" />
+              </div>
+              <p className="text-xs font-medium">System</p>
+              <p className="text-xs text-muted-foreground">Auto-sync</p>
             </button>
           </div>
         </CardContent>
@@ -297,6 +309,26 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Delete Account */}
+      <Card className="border-destructive/30">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <CardTitle className="text-base text-destructive">Delete Account</CardTitle>
+          </div>
+          <CardDescription>Permanently delete your account and all associated data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            This action is irreversible. All your projects, estimates, and settings will be permanently removed.
+          </p>
+          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete My Account
+          </Button>
+        </CardContent>
+      </Card>
+
       <Separator />
 
       <div className="flex justify-end">
@@ -305,6 +337,18 @@ export default function Settings() {
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onCancel={() => setDeleteDialogOpen(false)}
+        onConfirm={() => {
+          setDeleteDialogOpen(false);
+          toast.error('Account deletion requires administrator assistance. Please contact support.');
+          base44.auth.logout();
+        }}
+        title="Delete your account?"
+        description="This action cannot be undone. All your projects, estimates, and settings will be permanently deleted. Are you absolutely sure?"
+      />
     </div>
   );
 }
