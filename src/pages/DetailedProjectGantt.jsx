@@ -11,26 +11,25 @@ const COL_WIDTH = 50; // px per day column
 export default function DetailedProjectGantt() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const topScrollRef = useRef(null);
+  const headerScrollRef = useRef(null);
   const tableScrollRef = useRef(null);
   const [syncing, setSyncing] = useState(false);
 
-  // Bidirectional scroll sync between top scrollbar and table
-  const handleTopScroll = (e) => {
+  // Sync horizontal scroll across top scrollbar, date header, and body table
+  const syncScroll = (source) => {
     if (syncing) return;
     setSyncing(true);
-    if (tableScrollRef.current) tableScrollRef.current.scrollLeft = e.target.scrollLeft;
-    requestAnimationFrame(() => setSyncing(false));
-  };
-  const handleTableScroll = (e) => {
-    if (syncing) return;
-    setSyncing(true);
-    if (topScrollRef.current) topScrollRef.current.scrollLeft = e.target.scrollLeft;
+    const left = source.scrollLeft;
+    if (topScrollRef.current && topScrollRef.current !== source) topScrollRef.current.scrollLeft = left;
+    if (headerScrollRef.current && headerScrollRef.current !== source) headerScrollRef.current.scrollLeft = left;
+    if (tableScrollRef.current && tableScrollRef.current !== source) tableScrollRef.current.scrollLeft = left;
     requestAnimationFrame(() => setSyncing(false));
   };
 
   // Reset scroll position when project changes
   useEffect(() => {
     if (topScrollRef.current) topScrollRef.current.scrollLeft = 0;
+    if (headerScrollRef.current) headerScrollRef.current.scrollLeft = 0;
     if (tableScrollRef.current) tableScrollRef.current.scrollLeft = 0;
   }, [selectedProjectId]);
 
@@ -128,30 +127,21 @@ export default function DetailedProjectGantt() {
         {showGantt && (
           <div
             ref={topScrollRef}
-            onScroll={handleTopScroll}
+            onScroll={(e) => syncScroll(e.target)}
             className="overflow-x-auto overflow-y-hidden"
           >
             <div style={{ width: `${260 + dates.length * COL_WIDTH}px`, height: '1px' }} />
           </div>
         )}
-      </div>
 
-      {/* Scrollable body */}
-      <div className="px-4 sm:px-6 pb-4 space-y-4">
-      {/* Gantt */}
-      {!selectedProjectId ? (
-        <EmptyState icon={BarChart3} message="Select a project above to view its inventory timeline." />
-      ) : !hasDateRange ? (
-        <EmptyState icon={CalendarRange} message="This project has no start/end date range set." />
-      ) : rows.length === 0 ? (
-        <EmptyState icon={Package} message="No inventory items assigned to this project." />
-      ) : (
-        <Card className="overflow-hidden">
-          <CardContent
-            ref={tableScrollRef}
-            onScroll={handleTableScroll}
-            className="p-0 overflow-x-auto gantt-table-scroll"
-          >
+        {/* Frozen date header (month + day rows) */}
+        {showGantt && (
+          <Card className="overflow-hidden rounded-b-none border-b-0">
+            <div
+              ref={headerScrollRef}
+              onScroll={(e) => syncScroll(e.target)}
+              className="overflow-x-auto gantt-table-scroll"
+            >
             <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <thead>
                 {/* Month row */}
@@ -183,6 +173,29 @@ export default function DetailedProjectGantt() {
                   })}
                 </tr>
               </thead>
+            </table>
+            </div>
+          </Card>
+        )}
+      </div>
+
+      {/* Scrollable body */}
+      <div className="px-4 sm:px-6 pb-4 space-y-4">
+      {/* Gantt */}
+      {!selectedProjectId ? (
+        <EmptyState icon={BarChart3} message="Select a project above to view its inventory timeline." />
+      ) : !hasDateRange ? (
+        <EmptyState icon={CalendarRange} message="This project has no start/end date range set." />
+      ) : rows.length === 0 ? (
+        <EmptyState icon={Package} message="No inventory items assigned to this project." />
+      ) : (
+        <Card className="overflow-hidden rounded-t-none">
+          <CardContent
+            ref={tableScrollRef}
+            onScroll={(e) => syncScroll(e.target)}
+            className="p-0 overflow-x-auto gantt-table-scroll"
+          >
+            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <tbody>
                 {rows.map(({ row, firstDate, lastDate, invItem }, ri) => {
                   const startCol = firstDate ? differenceInDays(firstDate, dates[0]) : -1;
