@@ -213,7 +213,7 @@ export default function DetailedProjectGantt() {
               <tbody>
                 {groups.map(group => (
                   <React.Fragment key={group.name}>
-                    <tr className="border-b border-border bg-secondary/40">
+                    <tr className="border-b border-border bg-white/25">
                       <td colSpan={dates.length + 1} className="px-4 py-1.5 font-semibold text-[11px] uppercase tracking-wide text-secondary-foreground sticky left-0 z-20">
                         {group.name} <span className="ml-1 text-muted-foreground font-normal normal-case tracking-normal">({group.rows.length})</span>
                       </td>
