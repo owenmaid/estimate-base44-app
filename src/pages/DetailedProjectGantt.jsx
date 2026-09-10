@@ -194,7 +194,7 @@ export default function DetailedProjectGantt() {
                           <td key={ci} className={`py-2.5 px-0.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
                             {inBar && (
                               <div
-                                className={`relative z-10 h-6 bg-primary/80 ${isBarStart ? 'rounded-l-full ml-1' : ''} ${isBarEnd ? 'rounded-r-full mr-1' : ''}`}
+                                className={`relative z-10 h-6 bg-primary/50 ${isBarStart ? 'rounded-l-full ml-1' : ''} ${isBarEnd ? 'rounded-r-full mr-1' : ''}`}
                               />
                             )}
                           </td>
