@@ -15,12 +15,22 @@ test('application routes and Base44 client require authentication', async () => 
   assert.doesNotMatch(client, /requiresAuth:\s*false/);
 });
 
-test('statutory holidays are deterministic and do not invoke an LLM', async () => {
-  const source = await readSource('base44/functions/getCanadaStatHolidays/entry.ts');
+test('Alberta statutory holiday function is deterministic and does not invoke an LLM', async () => {
+  const source = await readSource('base44/functions/getAlbertaStatHolidays/entry.ts');
 
   assert.doesNotMatch(source, /InvokeLLM|add_context_from_internet/);
   assert.match(source, /albertaHolidaysForYear/);
   assert.match(source, /DATE_PATTERN/);
+  assert.match(source, /const PROVINCE = 'AB'/);
+});
+
+test('Alberta statutory holiday function enforces the Alberta-only contract', async () => {
+  const source = await readSource('base44/functions/getAlbertaStatHolidays/entry.ts');
+
+  assert.match(source, /province = PROVINCE/);
+  assert.match(source, /Only Alberta statutory holidays are currently supported\./);
+  assert.match(source, /Date range cannot exceed 10 years\./);
+  assert.match(source, /endDate cannot be earlier than startDate\./);
 });
 
 test('equipment data sync does not return placeholder zero totals', async () => {
