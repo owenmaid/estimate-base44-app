@@ -15,22 +15,22 @@ test('application routes and Base44 client require authentication', async () => 
   assert.doesNotMatch(client, /requiresAuth:\s*false/);
 });
 
-test('Alberta statutory holiday function is deterministic and does not invoke an LLM', async () => {
-  const source = await readSource('base44/functions/getAlbertaStatHolidays/entry.ts');
+test('statutory holidays are deterministic and do not invoke an LLM', async () => {
+  const source = await readSource('base44/functions/getCanadaStatHolidays/entry.ts');
 
   assert.doesNotMatch(source, /InvokeLLM|add_context_from_internet/);
-  assert.match(source, /albertaHolidaysForYear/);
+  assert.match(source, /allCanadaHolidaysForYear/);
   assert.match(source, /DATE_PATTERN/);
-  assert.match(source, /const PROVINCE = 'AB'/);
+  assert.match(source, /normalizeProvince/);
+  assert.match(source, /National Day for Truth and Reconciliation/);
 });
 
-test('Alberta statutory holiday function enforces the Alberta-only contract', async () => {
-  const source = await readSource('base44/functions/getAlbertaStatHolidays/entry.ts');
+test('statutory holiday source supports all Canadian jurisdictions', async () => {
+  const source = await readSource('base44/functions/getCanadaStatHolidays/entry.ts');
 
-  assert.match(source, /province = PROVINCE/);
-  assert.match(source, /Only Alberta statutory holidays are currently supported\./);
-  assert.match(source, /Date range cannot exceed 10 years\./);
-  assert.match(source, /endDate cannot be earlier than startDate\./);
+  assert.match(source, /const PROVINCES = \['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'\]/);
+  assert.doesNotMatch(source, /Only Alberta statutory holidays are currently supported/);
+  assert.match(source, /province must be a valid Canadian province or territory code/);
 });
 
 test('equipment data sync does not return placeholder zero totals', async () => {
