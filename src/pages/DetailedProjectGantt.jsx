@@ -7,7 +7,7 @@ import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
 import { Package, CalendarRange, BarChart3 } from 'lucide-react';
 
 const COL_WIDTH = 50; // px per day column
-const GROUP_ORDER = ['Service Group', 'Equipment Group', 'Manpower Group', 'Totals Group'];
+const GROUP_ORDER = ['Manpower Group', 'Equipment Group', 'Service Group', 'Totals Group'];
 
 export default function DetailedProjectGantt() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
