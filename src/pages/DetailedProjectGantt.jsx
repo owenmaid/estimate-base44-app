@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { eachDayOfInterval, format, parseISO, differenceInDays, isWeekend } from 'date-fns';
+import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
 import { Package, CalendarRange, BarChart3 } from 'lucide-react';
 
 const COL_WIDTH = 50; // px per day column
@@ -59,17 +59,19 @@ export default function DetailedProjectGantt() {
     const rowData = equipmentRows.map(row => {
       let firstDate = null;
       let lastDate = null;
-      allDates.forEach(d => {
+      const activeMask = allDates.map(d => {
         const dateStr = format(d, 'yyyy-MM-dd');
         const key = `${row.id}_${dateStr}`;
         const val = Number(grid[key] || 0);
-        if (val > 0) {
+        const active = val > 0;
+        if (active) {
           if (!firstDate) firstDate = d;
           lastDate = d;
         }
+        return active;
       });
       const invItem = inventory.find(i => i.id === row.item_id);
-      return { row, firstDate, lastDate, invItem };
+      return { row, firstDate, lastDate, activeMask, invItem };
     });
 
     // Sort: assigned items chronologically by first active date, unassigned at end
@@ -197,9 +199,7 @@ export default function DetailedProjectGantt() {
           >
             <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <tbody>
-                {rows.map(({ row, firstDate, lastDate, invItem }, ri) => {
-                  const startCol = firstDate ? differenceInDays(firstDate, dates[0]) : -1;
-                  const endCol = lastDate ? differenceInDays(lastDate, dates[0]) : -1;
+                {rows.map(({ row, firstDate, activeMask, invItem }, ri) => {
                   return (
                     <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
                       <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10 w-60">
@@ -207,15 +207,15 @@ export default function DetailedProjectGantt() {
                         {invItem?.sku && <div className="text-muted-foreground text-[10px]">{invItem.sku}</div>}
                       </td>
                       {dates.map((d, ci) => {
-                        const inBar = firstDate && ci >= startCol && ci <= endCol;
-                        const isBarStart = ci === startCol;
-                        const isBarEnd = ci === endCol;
+                        const active = activeMask[ci];
+                        const runStart = active && (ci === 0 || !activeMask[ci - 1]);
+                        const runEnd = active && (ci === dates.length - 1 || !activeMask[ci + 1]);
                         const weekend = isWeekend(d);
                         return (
                           <td key={ci} className={`py-2.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
-                            {inBar && (
+                            {active && (
                               <div
-                                className={`absolute top-1 bottom-1 left-0 right-0 bg-primary/35 z-10 ${isBarStart ? 'rounded-l-full' : ''} ${isBarEnd ? 'rounded-r-full' : ''}`}
+                                className={`absolute top-1 bottom-1 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
                               />
                             )}
                           </td>
