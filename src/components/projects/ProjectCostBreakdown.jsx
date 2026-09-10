@@ -181,58 +181,58 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Grand Total</div>
-            <div className="text-2xl font-bold text-primary">{fmt(grandTotal)}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Grand Total</div>
+            <div className="text-lg sm:text-2xl font-bold text-primary tabular-nums">{fmt(grandTotal)}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Regular</div>
-            <div className="text-xl font-bold">{fmt(totalReg)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{grandTotal > 0 ? ((totalReg / grandTotal) * 100).toFixed(1) : 0}%</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Regular</div>
+            <div className="text-base sm:text-xl font-bold tabular-nums">{fmt(totalReg)}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{grandTotal > 0 ? ((totalReg / grandTotal) * 100).toFixed(1) : 0}%</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Overtime</div>
-            <div className="text-xl font-bold text-blue-400">{fmt(totalOT)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{grandTotal > 0 ? ((totalOT / grandTotal) * 100).toFixed(1) : 0}%</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Overtime</div>
+            <div className="text-base sm:text-xl font-bold text-blue-400 tabular-nums">{fmt(totalOT)}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{grandTotal > 0 ? ((totalOT / grandTotal) * 100).toFixed(1) : 0}%</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Special/Stat</div>
-            <div className="text-xl font-bold text-amber-400">{fmt(totalSpec)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{grandTotal > 0 ? ((totalSpec / grandTotal) * 100).toFixed(1) : 0}%</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Special/Stat</div>
+            <div className="text-base sm:text-xl font-bold text-amber-400 tabular-nums">{fmt(totalSpec)}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{grandTotal > 0 ? ((totalSpec / grandTotal) * 100).toFixed(1) : 0}%</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts Row */}
       {grandTotal > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Category</div>
-              <div className="flex items-center gap-3">
-                {/* Left-side legend */}
-                <div className="flex flex-col gap-1.5 flex-shrink-0" style={{ minWidth: 0, maxWidth: '50%' }}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* Legend — above chart on mobile, left on desktop */}
+                <div className="flex flex-col gap-1.5 flex-shrink-0 sm:max-w-[50%]">
                   {pieData.map((entry, i) => (
                     <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
                       <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      <span className="text-[9px] text-muted-foreground flex-1">{entry.name}</span>
+                      <span className="text-[9px] text-muted-foreground flex-1 truncate">{entry.name}</span>
                       <span className="text-[9px] font-semibold text-foreground text-left" style={{ minWidth: '60px' }}>${entry.value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                     </div>
                   ))}
                 </div>
                 {/* Doughnut chart */}
-                <div className="flex-1">
-                  <ResponsiveContainer width="100%" height={234}>
+                <div className="flex-1 min-w-0">
+                  <ResponsiveContainer width="100%" height={180} className="sm:!h-[234px]">
                     <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={65} outerRadius={98} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
                         {pieData.map((_, i) => (
                           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeCatShape(i)} />
                         ))}
@@ -248,11 +248,11 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="text-sm font-semibold mb-3 text-muted-foreground">Cost by Group</div>
-              <div className="flex items-center gap-3">
-                {/* Left-side legend */}
-                <div className="flex flex-col gap-2 flex-shrink-0" style={{ width: 'max-content', maxWidth: '45%' }}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* Legend */}
+                <div className="flex flex-col gap-2 flex-shrink-0 sm:max-w-[45%]">
                   {groupPieData.map((entry, i) => (
                     <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
                       <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
@@ -261,10 +261,10 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
                   ))}
                 </div>
                 {/* Doughnut chart */}
-                <div className="flex-1">
-                  <ResponsiveContainer width="100%" height={260}>
+                <div className="flex-1 min-w-0">
+                  <ResponsiveContainer width="100%" height={200} className="sm:!h-[260px]">
                     <PieChart>
-                      <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={65} outerRadius={104} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
+                      <Pie data={groupPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={84} dataKey="value" paddingAngle={2} stroke="none" strokeWidth={0}>
                         {groupPieData.map((_, i) => (
                           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" strokeWidth={0} shape={makeGrpShape(i)} />
                         ))}
@@ -301,42 +301,44 @@ export default function ProjectCostBreakdown({ project, costs, fmt, onClose }) {
             <div className="space-y-4">
               {Object.entries(byCategory).map(([category, group]) => (
                 <div key={category} className="border border-border rounded-lg overflow-hidden">
-                  <div className="bg-secondary/60 px-4 py-2.5 flex items-center justify-between">
-                    <span className="font-semibold text-sm">{category}</span>
-                    <span className="text-sm font-semibold text-primary">{fmt(group.total)}</span>
+                  <div className="bg-secondary/60 px-3 sm:px-4 py-2.5 flex items-center justify-between">
+                    <span className="font-semibold text-sm truncate">{category}</span>
+                    <span className="text-sm font-semibold text-primary whitespace-nowrap ml-2">{fmt(group.total)}</span>
                   </div>
-                  <table className="w-full text-xs table-fixed">
-                    <colgroup>
-                      <col className="w-[40%]" />
-                      <col className="w-[16%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[11%]" />
-                    </colgroup>
-                    <thead>
-                      <tr className="bg-secondary/30 border-b border-border">
-                        <th className="px-4 py-2 text-left text-muted-foreground">Row / Item</th>
-                        <th className="px-4 py-2 text-left text-muted-foreground">Group</th>
-                        <th className="px-4 py-2 text-right text-muted-foreground">Reg Cost</th>
-                        <th className="px-4 py-2 text-right text-muted-foreground">OT Cost</th>
-                        <th className="px-4 py-2 text-right text-muted-foreground">Special</th>
-                        <th className="px-4 py-2 text-right text-muted-foreground">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {group.rows.map((row, i) => (
-                        <tr key={i} className="border-b border-border last:border-b-0 hover:bg-secondary/10">
-                          <td className="px-4 py-2.5 font-medium truncate" title={row.label}>{row.label}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground truncate" title={row.item_group}>{row.item_group}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{row.regCost > 0 ? fmt(row.regCost) : '—'}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-blue-400">{row.otCost > 0 ? fmt(row.otCost) : '—'}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-amber-400">{row.specialCost > 0 ? fmt(row.specialCost) : '—'}</td>
-                          <td className="px-4 py-2.5 text-right font-mono font-semibold">{row.total > 0 ? fmt(row.total) : '—'}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs table-fixed min-w-[480px]">
+                      <colgroup>
+                        <col className="w-[40%]" />
+                        <col className="w-[16%]" />
+                        <col className="w-[11%]" />
+                        <col className="w-[11%]" />
+                        <col className="w-[11%]" />
+                        <col className="w-[11%]" />
+                      </colgroup>
+                      <thead>
+                        <tr className="bg-secondary/30 border-b border-border">
+                          <th className="px-3 sm:px-4 py-2 text-left text-muted-foreground">Row / Item</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-muted-foreground">Group</th>
+                          <th className="px-3 sm:px-4 py-2 text-right text-muted-foreground">Reg Cost</th>
+                          <th className="px-3 sm:px-4 py-2 text-right text-muted-foreground">OT Cost</th>
+                          <th className="px-3 sm:px-4 py-2 text-right text-muted-foreground">Special</th>
+                          <th className="px-3 sm:px-4 py-2 text-right text-muted-foreground">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {group.rows.map((row, i) => (
+                          <tr key={i} className="border-b border-border last:border-b-0 hover:bg-secondary/10">
+                            <td className="px-3 sm:px-4 py-2.5 font-medium truncate" title={row.label}>{row.label}</td>
+                            <td className="px-3 sm:px-4 py-2.5 text-muted-foreground truncate" title={row.item_group}>{row.item_group}</td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right font-mono">{row.regCost > 0 ? fmt(row.regCost) : '—'}</td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right font-mono text-blue-400">{row.otCost > 0 ? fmt(row.otCost) : '—'}</td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right font-mono text-amber-400">{row.specialCost > 0 ? fmt(row.specialCost) : '—'}</td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right font-mono font-semibold">{row.total > 0 ? fmt(row.total) : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ))}
             </div>

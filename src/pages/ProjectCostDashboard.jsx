@@ -621,7 +621,7 @@ export default function ProjectCostDashboard() {
   const selectedCosts = selectedProject ? computeProjectCosts(selectedProject) : null;
 
   return (
-    <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       <CostDashboardHeader />
       <CostKpiCards
         selectedProject={selectedProject}
@@ -732,7 +732,7 @@ export default function ProjectCostDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={220} className="sm:!h-[300px]">
               {equipChartType === 'line' ? (
                 <LineChart key={`equip-line-${selectedProject?.id}-${chartGranularity}`} data={equipmentAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -795,7 +795,7 @@ export default function ProjectCostDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={220} className="sm:!h-[300px]">
               {totalChartType === 'line' ? (
                 <LineChart key={`total-line-${selectedProject?.id}-${chartGranularity}`} data={monthlyAreaData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -836,7 +836,7 @@ export default function ProjectCostDashboard() {
             <CardTitle className="text-sm">Top Projects by Total Cost</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={504}>
+            <ResponsiveContainer width="100%" height={360} className="sm:!h-[504px]">
               <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }} barCategoryGap="5%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={(props) => {
@@ -875,16 +875,16 @@ export default function ProjectCostDashboard() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-secondary/60 border-b border-border">
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Project</th>
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Number</th>
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Reg Cost</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">OT Cost</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Special</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Equipment</th>
-                  <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Total</th>
-                  <th className="px-4 py-3 text-center font-semibold text-muted-foreground"></th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Project</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Number</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Client</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Status</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Reg Cost</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">OT Cost</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Special</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Equipment</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Total</th>
+                  <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-center font-semibold text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody>
@@ -899,22 +899,22 @@ export default function ProjectCostDashboard() {
                       className={`border-b border-border hover:bg-secondary/20 transition-colors cursor-pointer ${selectedProject?.id === p.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
                       onClick={() => { setSelectedProject(p); setSearch(p.name || ''); setShowDropdown(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     >
-                      <td className="px-4 py-3 font-medium">{p.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{p.project_number || '—'}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{p.client || '—'}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium whitespace-nowrap">{p.name}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-muted-foreground font-mono text-xs whitespace-nowrap">{p.project_number || '—'}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-muted-foreground whitespace-nowrap">{p.client || '—'}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <Badge className={`text-xs border ${STATUS_STYLES[p.status]}`}>{STATUS_LABELS[p.status]}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalReg > 0 ? fmt(p.costs.totalReg) : '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalOT > 0 ? fmt(p.costs.totalOT) : '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs">{p.costs.totalSpec > 0 ? fmt(p.costs.totalSpec) : '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs text-orange-400">{p.costs.totalEquipment > 0 ? fmt(p.costs.totalEquipment) : '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-primary">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs whitespace-nowrap">{p.costs.totalReg > 0 ? fmt(p.costs.totalReg) : '—'}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs whitespace-nowrap">{p.costs.totalOT > 0 ? fmt(p.costs.totalOT) : '—'}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs whitespace-nowrap">{p.costs.totalSpec > 0 ? fmt(p.costs.totalSpec) : '—'}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs text-orange-400 whitespace-nowrap">{p.costs.totalEquipment > 0 ? fmt(p.costs.totalEquipment) : '—'}</td>
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs font-semibold text-primary whitespace-nowrap">
                         {p.estimateTotal != null
                           ? <>{fmt(p.estimateTotal)}<span className="ml-1 text-[9px] text-muted-foreground">(est.)</span></>
                           : p.costs.grandTotal > 0 ? fmt(p.costs.grandTotal) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-center">
                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild onClick={e => e.stopPropagation()}>
                           <Link to={`/project-planning/${p.id}`}><ExternalLink className="h-3.5 w-3.5" /></Link>
                         </Button>
@@ -926,12 +926,12 @@ export default function ProjectCostDashboard() {
               {allProjectsSummary.length > 0 && (
                 <tfoot>
                   <tr className="bg-secondary/40 border-t-2 border-border font-semibold">
-                    <td colSpan={4} className="px-4 py-3 text-muted-foreground">Totals</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalReg, 0))}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalOT, 0))}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalSpec, 0))}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-orange-400">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalEquipment, 0))}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-primary">{fmt(totalGrandRevenue)}<span className="ml-1 text-[9px] text-muted-foreground">(est.)</span></td>
+                    <td colSpan={4} className="px-3 sm:px-4 py-2.5 sm:py-3 text-muted-foreground">Totals</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs whitespace-nowrap">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalReg, 0))}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs whitespace-nowrap">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalOT, 0))}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs whitespace-nowrap">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalSpec, 0))}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs text-orange-400 whitespace-nowrap">{fmt(allProjectsSummary.reduce((s, p) => s + p.costs.totalEquipment, 0))}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-mono text-xs text-primary whitespace-nowrap">{fmt(totalGrandRevenue)}<span className="ml-1 text-[9px] text-muted-foreground">(est.)</span></td>
                     <td />
                   </tr>
                 </tfoot>
