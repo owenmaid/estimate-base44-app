@@ -7,6 +7,7 @@ import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
 import { Package, CalendarRange, BarChart3 } from 'lucide-react';
 
 const COL_WIDTH = 50; // px per day column
+const GROUP_ORDER = ['Service Group', 'Equipment Group', 'Manpower Group', 'Totals Group'];
 
 export default function DetailedProjectGantt() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -45,7 +46,7 @@ export default function DetailedProjectGantt() {
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
-  const { dates, rows } = useMemo(() => {
+  const { dates, groups } = useMemo(() => {
     if (!selectedProject || !selectedProject.start_date || !selectedProject.end_date) {
       return { dates: [], rows: [] };
     }
@@ -82,12 +83,23 @@ export default function DetailedProjectGantt() {
       return a.firstDate - b.firstDate;
     });
 
-    return { dates: allDates, rows: sorted };
+    // Group rows by their inventory item_group
+    const groupsMap = {};
+    sorted.forEach(r => {
+      const g = r.invItem?.item_group || 'Uncategorized';
+      (groupsMap[g] = groupsMap[g] || []).push(r);
+    });
+    const groups = [
+      ...GROUP_ORDER.filter(g => groupsMap[g]).map(g => ({ name: g, rows: groupsMap[g] })),
+      ...(groupsMap['Uncategorized'] ? [{ name: 'Uncategorized', rows: groupsMap['Uncategorized'] }] : [])
+    ];
+
+    return { dates: allDates, groups };
   }, [selectedProject, inventory]);
 
   const hasDateRange = selectedProject?.start_date && selectedProject?.end_date;
 
-  const showGantt = selectedProjectId && hasDateRange && rows.length > 0;
+  const showGantt = selectedProjectId && hasDateRange && groups.length > 0;
 
   return (
     <div className="space-y-0">
@@ -188,7 +200,7 @@ export default function DetailedProjectGantt() {
         <EmptyState icon={BarChart3} message="Select a project above to view its inventory timeline." />
       ) : !hasDateRange ? (
         <EmptyState icon={CalendarRange} message="This project has no start/end date range set." />
-      ) : rows.length === 0 ? (
+      ) : groups.length === 0 ? (
         <EmptyState icon={Package} message="No inventory items assigned to this project." />
       ) : (
         <Card className="overflow-hidden rounded-t-none">
@@ -199,31 +211,38 @@ export default function DetailedProjectGantt() {
           >
             <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <tbody>
-                {rows.map(({ row, firstDate, activeMask, invItem }, ri) => {
-                  return (
-                    <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
-                      <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10 w-60">
-                        <div className="font-medium truncate" title={row.label}>{row.label}</div>
-                        {invItem?.sku && <div className="text-muted-foreground text-[10px]">{invItem.sku}</div>}
+                {groups.map(group => (
+                  <React.Fragment key={group.name}>
+                    <tr className="border-b border-border bg-secondary/40">
+                      <td colSpan={dates.length + 1} className="px-4 py-1.5 font-semibold text-[11px] uppercase tracking-wide text-secondary-foreground sticky left-0 z-20">
+                        {group.name} <span className="ml-1 text-muted-foreground font-normal normal-case tracking-normal">({group.rows.length})</span>
                       </td>
-                      {dates.map((d, ci) => {
-                        const active = activeMask[ci];
-                        const runStart = active && (ci === 0 || !activeMask[ci - 1]);
-                        const runEnd = active && (ci === dates.length - 1 || !activeMask[ci + 1]);
-                        const weekend = isWeekend(d);
-                        return (
-                          <td key={ci} className={`py-2.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
-                            {active && (
-                              <div
-                                className={`absolute top-1 bottom-1 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
-                              />
-                            )}
-                          </td>
-                        );
-                      })}
                     </tr>
-                  );
-                })}
+                    {group.rows.map(({ row, firstDate, activeMask, invItem }, ri) => (
+                      <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
+                        <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10 w-60">
+                          <div className="font-medium truncate" title={row.label}>{row.label}</div>
+                          {invItem?.sku && <div className="text-muted-foreground text-[10px]">{invItem.sku}</div>}
+                        </td>
+                        {dates.map((d, ci) => {
+                          const active = activeMask[ci];
+                          const runStart = active && (ci === 0 || !activeMask[ci - 1]);
+                          const runEnd = active && (ci === dates.length - 1 || !activeMask[ci + 1]);
+                          const weekend = isWeekend(d);
+                          return (
+                            <td key={ci} className={`py-2.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
+                              {active && (
+                                <div
+                                  className={`absolute top-1 bottom-1 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
+                                />
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
               </tbody>
             </table>
           </CardContent>
@@ -231,9 +250,9 @@ export default function DetailedProjectGantt() {
       )}
 
       {/* Summary */}
-      {selectedProjectId && rows.length > 0 && (
+      {selectedProjectId && groups.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          {rows.length} inventory {rows.length === 1 ? 'item' : 'items'} · {dates.length} days · {rows.filter(r => r.firstDate).length} active
+          {groups.reduce((n, g) => n + g.rows.length, 0)} inventory items · {dates.length} days · {groups.reduce((n, g) => n + g.rows.filter(r => r.firstDate).length, 0)} active
         </p>
       )}
       </div>
