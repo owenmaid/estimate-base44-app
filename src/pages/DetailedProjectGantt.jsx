@@ -86,41 +86,58 @@ export default function DetailedProjectGantt() {
 
   const hasDateRange = selectedProject?.start_date && selectedProject?.end_date;
 
+  const showGantt = selectedProjectId && hasDateRange && rows.length > 0;
+
   return (
-    <div className="p-4 sm:p-6 space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Detailed Project Gantt</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Inventory line items across the project timeline</p>
+    <div className="space-y-0">
+      {/* Sticky header: title + project selector + top scrollbar */}
+      <div className="sticky top-0 z-30 bg-background border-b border-border px-4 sm:px-6 pt-4 pb-3 space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold">Detailed Project Gantt</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Inventory line items across the project timeline</p>
+        </div>
+
+        {/* Project selector */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="flex-1 max-w-md">
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Select Project</label>
+                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a project..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedProject && hasDateRange && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+                  <CalendarRange className="h-4 w-4 shrink-0" />
+                  {format(parseISO(selectedProject.start_date), 'MMM d, yyyy')} — {format(parseISO(selectedProject.end_date), 'MMM d, yyyy')}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top scrollbar synced with table below */}
+        {showGantt && (
+          <div
+            ref={topScrollRef}
+            onScroll={handleTopScroll}
+            className="overflow-x-auto overflow-y-hidden"
+          >
+            <div style={{ width: `${260 + dates.length * COL_WIDTH}px`, height: '1px' }} />
+          </div>
+        )}
       </div>
 
-      {/* Project selector */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-            <div className="flex-1 max-w-md">
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Select Project</label>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedProject && hasDateRange && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-                <CalendarRange className="h-4 w-4 shrink-0" />
-                {format(parseISO(selectedProject.start_date), 'MMM d, yyyy')} — {format(parseISO(selectedProject.end_date), 'MMM d, yyyy')}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* Scrollable body */}
+      <div className="px-4 sm:px-6 pb-4 space-y-4">
       {/* Gantt */}
       {!selectedProjectId ? (
         <EmptyState icon={BarChart3} message="Select a project above to view its inventory timeline." />
@@ -129,15 +146,6 @@ export default function DetailedProjectGantt() {
       ) : rows.length === 0 ? (
         <EmptyState icon={Package} message="No inventory items assigned to this project." />
       ) : (
-        <React.Fragment>
-        {/* Top scrollbar synced with table below */}
-        <div
-          ref={topScrollRef}
-          onScroll={handleTopScroll}
-          className="overflow-x-auto overflow-y-hidden"
-        >
-          <div style={{ width: `${260 + dates.length * COL_WIDTH}px`, height: '1px' }} />
-        </div>
         <Card className="overflow-hidden">
           <CardContent
             ref={tableScrollRef}
@@ -207,7 +215,6 @@ export default function DetailedProjectGantt() {
             </table>
           </CardContent>
         </Card>
-        </React.Fragment>
       )}
 
       {/* Summary */}
@@ -216,6 +223,7 @@ export default function DetailedProjectGantt() {
           {rows.length} inventory {rows.length === 1 ? 'item' : 'items'} · {dates.length} days · {rows.filter(r => r.firstDate).length} active
         </p>
       )}
+      </div>
     </div>
   );
 }
