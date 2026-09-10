@@ -212,10 +212,10 @@ export default function DetailedProjectGantt() {
                         const isBarEnd = ci === endCol;
                         const weekend = isWeekend(d);
                         return (
-                          <td key={ci} className={`py-2.5 px-0.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
+                          <td key={ci} className={`py-2.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
                             {inBar && (
                               <div
-                                className={`relative z-10 h-6 bg-primary/35 ${isBarStart ? 'rounded-l-full ml-1' : ''} ${isBarEnd ? 'rounded-r-full mr-1' : ''}`}
+                                className={`absolute top-1/2 -translate-y-1/2 left-0 right-0 h-6 bg-primary/35 z-10 ${isBarStart ? 'rounded-l-full' : ''} ${isBarEnd ? 'rounded-r-full' : ''}`}
                               />
                             )}
                           </td>
