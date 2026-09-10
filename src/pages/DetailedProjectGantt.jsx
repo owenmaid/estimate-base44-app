@@ -226,15 +226,11 @@ export default function DetailedProjectGantt() {
                         </td>
                         {dates.map((d, ci) => {
                           const active = activeMask[ci];
-                          const runStart = active && (ci === 0 || !activeMask[ci - 1]);
-                          const runEnd = active && (ci === dates.length - 1 || !activeMask[ci + 1]);
                           const weekend = isWeekend(d);
                           return (
-                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`}>
+                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`} style={{ width: `${COL_WIDTH}px` }}>
                               {active && (
-                                <div
-                                  className={`absolute top-0 bottom-0 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
-                                />
+                                <div className="absolute top-0 bottom-0 left-[2px] right-[2px] rounded-full bg-primary/35 z-10" />
                               )}
                             </td>
                           );
