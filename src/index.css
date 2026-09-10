@@ -118,21 +118,21 @@ html.light-mode {
 :root { color-scheme: dark; }
 html.light-mode { color-scheme: light; }
 
-/* App shell: prevent accidental text selection and browser rubber-banding */
-.app-shell {
-  -webkit-user-select: none;
-  user-select: none;
-  overscroll-behavior: none;
-}
-
-/* Re-enable text selection inside form fields and content areas */
-.app-shell input,
-.app-shell textarea,
-.app-shell select,
-.app-shell [contenteditable],
-.app-shell .select-text {
-  -webkit-user-select: text;
-  user-select: text;
+/* App shell: prevent accidental text selection and browser rubber-banding (mobile only) */
+@media (max-width: 1023px) {
+  .app-shell {
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+  .app-shell input,
+  .app-shell textarea,
+  .app-shell select,
+  .app-shell [contenteditable],
+  .app-shell .select-text {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 /* Bottom padding for content so it isn't hidden behind the mobile tab bar */
