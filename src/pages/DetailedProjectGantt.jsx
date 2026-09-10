@@ -220,7 +220,7 @@ export default function DetailedProjectGantt() {
                     </tr>
                     {group.rows.map(({ row, firstDate, activeMask, invItem }, ri) => (
                       <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
-                        <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10 w-60">
+                        <td className="px-4 py-1.5 sticky left-0 bg-inherit z-10 w-60">
                           <div className="font-medium truncate" title={row.label}>{row.label}</div>
                           {invItem?.sku && <div className="text-muted-foreground text-[10px]">{invItem.sku}</div>}
                         </td>
@@ -230,10 +230,10 @@ export default function DetailedProjectGantt() {
                           const runEnd = active && (ci === dates.length - 1 || !activeMask[ci + 1]);
                           const weekend = isWeekend(d);
                           return (
-                            <td key={ci} className={`py-2.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
+                            <td key={ci} className={`py-1.5 relative ${weekend ? 'bg-secondary/20' : ''}`}>
                               {active && (
                                 <div
-                                  className={`absolute top-1 bottom-1 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
+                                  className={`absolute top-0.5 bottom-0.5 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
                                 />
                               )}
                             </td>
