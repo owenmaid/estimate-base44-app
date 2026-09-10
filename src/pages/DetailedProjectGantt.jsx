@@ -156,7 +156,7 @@ export default function DetailedProjectGantt() {
               onScroll={(e) => syncScroll(e.target)}
               className="overflow-x-auto gantt-table-scroll"
             >
-            <table className="w-full text-xs border-collapse table-fixed" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
+            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <thead>
                 {/* Month row */}
                 <tr className="border-b border-border bg-muted/20">
@@ -209,7 +209,7 @@ export default function DetailedProjectGantt() {
             onScroll={(e) => syncScroll(e.target)}
             className="p-0 overflow-x-auto gantt-table-scroll"
           >
-            <table className="w-full text-xs border-collapse table-fixed" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
+            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
               <tbody>
                 {groups.map(group => (
                   <React.Fragment key={group.name}>
@@ -230,7 +230,7 @@ export default function DetailedProjectGantt() {
                           const runEnd = active && (ci === dates.length - 1 || !activeMask[ci + 1]);
                           const weekend = isWeekend(d);
                           return (
-                            <td key={ci} style={{ width: `${COL_WIDTH}px` }} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`}>
+                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`}>
                               {active && (
                                 <div
                                   className={`absolute top-0 bottom-0 left-0 right-0 bg-primary/35 z-10 ${runStart ? 'rounded-l-full' : ''} ${runEnd ? 'rounded-r-full' : ''}`}
