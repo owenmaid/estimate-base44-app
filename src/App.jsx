@@ -30,6 +30,7 @@ const CreateEstimatePanel = lazy(() => import('@/pages/CreateEstimatePanel'));
 const ProjectCostDashboard = lazy(() => import('@/pages/ProjectCostDashboard'));
 const LineItemComparison = lazy(() => import('@/pages/LineItemComparison'));
 const ItemCostComparison = lazy(() => import('@/pages/ItemCostComparison'));
+const DetailedProjectGantt = lazy(() => import('@/pages/DetailedProjectGantt'));
 const PageNotFound = lazy(() => import('./lib/PageNotFound'));
 
 const RouteLoadingFallback = () => (
@@ -93,6 +94,7 @@ const AuthenticatedApp = () => {
         <Route path="/project-cost-dashboard" element={<ProjectCostDashboard />} />
         <Route path="/line-item-comparison" element={<LineItemComparison />} />
         <Route path="/item-cost-comparison" element={<ItemCostComparison />} />
+        <Route path="/detailed-project-gantt" element={<DetailedProjectGantt />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

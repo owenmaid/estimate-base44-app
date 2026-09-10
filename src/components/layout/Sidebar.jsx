@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart, GitCompare, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart, GitCompare, TrendingUp, CalendarRange } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
@@ -18,6 +18,7 @@ const bottomSections = [
   [
     { label: 'Calendar', path: '/calendar', icon: Calendar },
     { label: 'Gantt Chart', path: '/gantt', icon: BarChart2 },
+    { label: 'Detailed Gantt', path: '/detailed-project-gantt', icon: CalendarRange },
   ],
   [
     { label: 'Projects', path: '/projects', icon: FolderKanban },
