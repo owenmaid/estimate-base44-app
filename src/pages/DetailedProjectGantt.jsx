@@ -86,15 +86,27 @@ export default function DetailedProjectGantt() {
       return a.firstDate - b.firstDate;
     });
 
-    // Group rows by their inventory item_group
-    const groupsMap = {};
+    // Split out Conventional items (sub_group_01) — they always render at the bottom.
+    const conventional = [];
+    const remaining = [];
     sorted.forEach(r => {
+      if (r.invItem && (r.invItem.sub_group_01 || '').toUpperCase() === 'CONVENTIONAL') {
+        conventional.push(r);
+      } else {
+        remaining.push(r);
+      }
+    });
+
+    // Group remaining rows by their inventory item_group
+    const groupsMap = {};
+    remaining.forEach(r => {
       const g = r.invItem?.item_group || 'Uncategorized';
       (groupsMap[g] = groupsMap[g] || []).push(r);
     });
     const groups = [
       ...GROUP_ORDER.filter(g => groupsMap[g]).map(g => ({ name: g, rows: groupsMap[g] })),
-      ...(groupsMap['Uncategorized'] ? [{ name: 'Uncategorized', rows: groupsMap['Uncategorized'] }] : [])
+      ...(groupsMap['Uncategorized'] ? [{ name: 'Uncategorized', rows: groupsMap['Uncategorized'] }] : []),
+      ...(conventional.length ? [{ name: 'Conventional', rows: conventional }] : [])
     ];
 
     return { dates: allDates, groups, colWidth };
