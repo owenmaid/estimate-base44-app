@@ -209,6 +209,17 @@ export default function DetailedProjectGantt() {
           </CardContent>
         </Card>
 
+        {/* Color legend */}
+        {showGantt && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-blue-500/40" />Conventional</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-green-500/40" />Ventilation (Manpower)</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-green-300/50" />Ventilation</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-red-500/40" />Manpower</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-primary/35" />Other</span>
+          </div>
+        )}
+
         {/* Top scrollbar synced with table below */}
         {showGantt && (
           <div
