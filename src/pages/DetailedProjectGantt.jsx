@@ -75,7 +75,8 @@ export default function DetailedProjectGantt() {
         return active;
       });
       const invItem = inventory.find(i => i.id === row.item_id);
-      return { row, firstDate, lastDate, activeMask, invItem };
+      const isVentilation = (invItem?.sub_group_01 || '').toUpperCase() === 'VENTILATION';
+      return { row, firstDate, lastDate, activeMask, invItem, isVentilation };
     });
 
     // Sort: assigned items chronologically by first active date, unassigned at end
@@ -272,7 +273,7 @@ export default function DetailedProjectGantt() {
                         {group.name} <span className="ml-1 text-muted-foreground font-normal normal-case tracking-normal">({group.rows.length})</span>
                       </td>
                     </tr>
-                    {group.rows.map(({ row, firstDate, activeMask, invItem }, ri) => (
+                    {group.rows.map(({ row, firstDate, activeMask, invItem, isVentilation }, ri) => (
                       <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
                         <td className="px-4 py-[3px] sticky left-0 bg-inherit z-10 w-60">
                           <div className="font-medium truncate" title={row.label}>{row.label}</div>
@@ -284,7 +285,7 @@ export default function DetailedProjectGantt() {
                           return (
                             <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-sky-400/15' : ''}`} style={{ width: `${colWidth}px` }}>
                               {active && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-primary/35 z-10" style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }} />
+                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded z-10 ${isVentilation ? 'bg-green-500/40' : 'bg-primary/35'}`} style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }} />
                               )}
                             </td>
                           );
