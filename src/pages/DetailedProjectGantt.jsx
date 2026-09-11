@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
 import { Package, CalendarRange, BarChart3 } from 'lucide-react';
 
-const COL_WIDTH = 50; // px per day column
+const COL_WIDTH = 24; // px per day column
 const GROUP_ORDER = ['Manpower Group', 'Equipment Group', 'Service Group', 'Totals Group'];
 
 export default function DetailedProjectGantt() {
@@ -230,7 +230,7 @@ export default function DetailedProjectGantt() {
                           return (
                             <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`} style={{ width: `${COL_WIDTH}px` }}>
                               {active && (
-                                <div className="absolute inset-y-[1px] left-1/2 -translate-x-1/2 h-[calc(100%-2px)] aspect-square rounded bg-primary/35 z-10" />
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-primary/35 z-10" style={{ width: `${COL_WIDTH - 2}px`, height: `${COL_WIDTH - 2}px` }} />
                               )}
                             </td>
                           );
