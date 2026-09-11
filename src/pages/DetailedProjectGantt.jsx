@@ -78,22 +78,21 @@ export default function DetailedProjectGantt() {
     const rowData = equipmentRows.map(row => {
       let firstDate = null;
       let lastDate = null;
-      const activeMask = allDates.map(d => {
+      const values = allDates.map(d => {
         const dateStr = format(d, 'yyyy-MM-dd');
         const key = `${row.id}_${dateStr}`;
         const val = Number(grid[key] || 0);
-        const active = val > 0;
-        if (active) {
+        if (val > 0) {
           if (!firstDate) firstDate = d;
           lastDate = d;
         }
-        return active;
+        return val;
       });
       const invItem = inventory.find(i => i.id === row.item_id);
       const isVentilation = (invItem?.sub_group_01 || '').toUpperCase() === 'VENTILATION';
       const isManpowerItem = (invItem?.item_group || '').toUpperCase() === 'MANPOWER GROUP';
       const isConventional = (invItem?.sub_group_01 || '').toUpperCase() === 'CONVENTIONAL';
-      return { row, firstDate, lastDate, activeMask, invItem, isVentilation, isManpowerItem, isConventional };
+      return { row, firstDate, lastDate, values, invItem, isVentilation, isManpowerItem, isConventional };
     });
 
     // Sort: assigned items chronologically by first active date, unassigned at end
@@ -139,12 +138,12 @@ export default function DetailedProjectGantt() {
     const header = ['Group', 'Inventory Item', 'SKU', ...dates.map(d => format(d, 'yyyy-MM-dd'))];
     const rows = [];
     groups.forEach(group => {
-      group.rows.forEach(({ row, activeMask, invItem }) => {
+      group.rows.forEach(({ row, values, invItem }) => {
         rows.push([
           group.name,
           row.label || '',
           invItem?.sku || '',
-          ...activeMask.map(a => (a ? 'X' : ''))
+          ...values.map(v => (v > 0 ? v : ''))
         ]);
       });
     });
@@ -301,19 +300,22 @@ export default function DetailedProjectGantt() {
                         {group.name} <span className="ml-1 text-muted-foreground font-normal normal-case tracking-normal">({group.rows.length})</span>
                       </td>
                     </tr>
-                    {group.rows.map(({ row, firstDate, activeMask, invItem, isVentilation, isManpowerItem, isConventional }, ri) => (
+                    {group.rows.map(({ row, firstDate, values, invItem, isVentilation, isManpowerItem, isConventional }, ri) => (
                       <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
                         <td className="px-4 py-[3px] sticky left-0 bg-inherit z-10 w-60">
                           <div className="font-medium truncate" title={row.label}>{row.label}</div>
                           {invItem?.sku && <div className="text-muted-foreground text-[10px]">{invItem.sku}</div>}
                         </td>
                         {dates.map((d, ci) => {
-                          const active = activeMask[ci];
+                          const val = values[ci];
+                          const active = val > 0;
                           const weekend = isWeekend(d);
                           return (
                             <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-sky-400/15' : ''}`} style={{ width: `${colWidth}px` }}>
                               {active && (
-                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded z-10 ${isConventional ? 'bg-blue-500/40' : isVentilation ? (isManpowerItem ? 'bg-green-500/40' : 'bg-green-300/50') : isManpowerItem ? 'bg-red-500/40' : 'bg-primary/35'}`} style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }} />
+                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded z-10 flex items-center justify-center ${isConventional ? 'bg-blue-500/40' : isVentilation ? (isManpowerItem ? 'bg-green-500/40' : 'bg-green-300/50') : isManpowerItem ? 'bg-red-500/40' : 'bg-primary/35'}`} style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }}>
+                                  <span className="text-white font-medium leading-none truncate px-0.5" style={{ fontSize: `${Math.min(colWidth * 0.32, 9)}px` }}>{val}</span>
+                                </div>
                               )}
                             </td>
                           );
