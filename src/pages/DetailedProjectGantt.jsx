@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
@@ -10,6 +10,7 @@ const GROUP_ORDER = ['Manpower Group', 'Equipment Group', 'Service Group', 'Tota
 
 export default function DetailedProjectGantt() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const queryClient = useQueryClient();
   const topScrollRef = useRef(null);
   const headerScrollRef = useRef(null);
   const tableScrollRef = useRef(null);
@@ -42,6 +43,20 @@ export default function DetailedProjectGantt() {
     queryKey: ['inventory'],
     queryFn: () => base44.entities.InventoryItem.list(),
   });
+
+  // Real-time: refetch when projects or inventory change so the Gantt stays in sync
+  useEffect(() => {
+    const unsubProjects = base44.entities.Project.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    });
+    const unsubInventory = base44.entities.InventoryItem.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    });
+    return () => {
+      if (typeof unsubProjects === 'function') unsubProjects();
+      if (typeof unsubInventory === 'function') unsubInventory();
+    };
+  }, [queryClient]);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
