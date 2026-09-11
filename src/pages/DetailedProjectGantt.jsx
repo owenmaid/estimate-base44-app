@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
 import { Package, CalendarRange, BarChart3 } from 'lucide-react';
 
-const COL_WIDTH = 24; // px per day column
 const GROUP_ORDER = ['Manpower Group', 'Equipment Group', 'Service Group', 'Totals Group'];
 
 export default function DetailedProjectGantt() {
@@ -46,13 +45,17 @@ export default function DetailedProjectGantt() {
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
-  const { dates, groups } = useMemo(() => {
+  const { dates, groups, colWidth = 24 } = useMemo(() => {
     if (!selectedProject || !selectedProject.start_date || !selectedProject.end_date) {
-      return { dates: [], rows: [] };
+      return { dates: [], groups: [], colWidth: 24 };
     }
     const start = parseISO(selectedProject.start_date);
     const end = parseISO(selectedProject.end_date);
     const allDates = eachDayOfInterval({ start, end });
+
+    // Wider day columns for short projects so blocks expand and gaps shrink;
+    // capped so long projects stay compact. Block height is capped separately to keep rows short.
+    const colWidth = Math.max(24, Math.min(80, Math.floor((1100 - 260) / Math.max(allDates.length, 1))));
 
     const equipmentRows = selectedProject.equipment_rows || [];
     const grid = selectedProject.equipment_grid || {};
@@ -94,7 +97,7 @@ export default function DetailedProjectGantt() {
       ...(groupsMap['Uncategorized'] ? [{ name: 'Uncategorized', rows: groupsMap['Uncategorized'] }] : [])
     ];
 
-    return { dates: allDates, groups };
+    return { dates: allDates, groups, colWidth };
   }, [selectedProject, inventory]);
 
   const hasDateRange = selectedProject?.start_date && selectedProject?.end_date;
@@ -144,7 +147,7 @@ export default function DetailedProjectGantt() {
             onScroll={(e) => syncScroll(e.target)}
             className="overflow-x-auto overflow-y-hidden"
           >
-            <div style={{ width: `${260 + dates.length * COL_WIDTH}px`, height: '1px' }} />
+            <div style={{ width: `${260 + dates.length * colWidth}px`, height: '1px' }} />
           </div>
         )}
 
@@ -156,7 +159,7 @@ export default function DetailedProjectGantt() {
               onScroll={(e) => syncScroll(e.target)}
               className="overflow-x-auto gantt-table-scroll"
             >
-            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
+            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * colWidth}px` }}>
               <thead>
                 {/* Month row */}
                 <tr className="border-b border-border bg-muted/20">
@@ -167,7 +170,7 @@ export default function DetailedProjectGantt() {
                     const showMonth = i === 0 || d.getMonth() !== dates[i - 1].getMonth();
                     const showYear = i === 0 || d.getFullYear() !== dates[i - 1].getFullYear();
                     return (
-                      <th key={`m-${i}`} className="text-center px-0.5 py-1 font-medium text-muted-foreground text-[10px] whitespace-nowrap" style={{ width: `${COL_WIDTH}px` }}>
+                      <th key={`m-${i}`} className="text-center px-0.5 py-1 font-medium text-muted-foreground text-[10px] whitespace-nowrap" style={{ width: `${colWidth}px` }}>
                         {showMonth ? (showYear ? format(d, 'MMM yy') : format(d, 'MMM')) : ''}
                       </th>
                     );
@@ -179,7 +182,7 @@ export default function DetailedProjectGantt() {
                   {dates.map((d, i) => {
                     const weekend = isWeekend(d);
                     return (
-                      <th key={`d-${i}`} className={`text-center px-0.5 py-1.5 font-medium ${weekend ? 'text-muted-foreground/40' : 'text-muted-foreground'}`} style={{ width: `${COL_WIDTH}px` }}>
+                      <th key={`d-${i}`} className={`text-center px-0.5 py-1.5 font-medium ${weekend ? 'text-muted-foreground/40' : 'text-muted-foreground'}`} style={{ width: `${colWidth}px` }}>
                         <div className="text-[9px]">{format(d, 'EEE').substring(0, 1)}</div>
                         <div className="font-bold">{format(d, 'd')}</div>
                       </th>
@@ -209,7 +212,7 @@ export default function DetailedProjectGantt() {
             onScroll={(e) => syncScroll(e.target)}
             className="p-0 overflow-x-auto gantt-table-scroll"
           >
-            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * COL_WIDTH}px` }}>
+            <table className="w-full text-xs border-collapse" style={{ minWidth: `${260 + dates.length * colWidth}px` }}>
               <tbody>
                 {groups.map(group => (
                   <React.Fragment key={group.name}>
@@ -228,9 +231,9 @@ export default function DetailedProjectGantt() {
                           const active = activeMask[ci];
                           const weekend = isWeekend(d);
                           return (
-                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`} style={{ width: `${COL_WIDTH}px` }}>
+                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`} style={{ width: `${colWidth}px` }}>
                               {active && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-primary/35 z-10" style={{ width: `${COL_WIDTH - 2}px`, height: `${COL_WIDTH - 2}px` }} />
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-primary/35 z-10" style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }} />
                               )}
                             </td>
                           );
