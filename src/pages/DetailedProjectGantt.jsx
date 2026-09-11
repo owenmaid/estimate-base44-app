@@ -282,7 +282,7 @@ export default function DetailedProjectGantt() {
                           const active = activeMask[ci];
                           const weekend = isWeekend(d);
                           return (
-                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`} style={{ width: `${colWidth}px` }}>
+                            <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-sky-400/15' : ''}`} style={{ width: `${colWidth}px` }}>
                               {active && (
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-primary/35 z-10" style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }} />
                               )}
