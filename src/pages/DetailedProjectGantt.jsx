@@ -134,24 +134,6 @@ export default function DetailedProjectGantt() {
 
   const showGantt = selectedProjectId && hasDateRange && groups.length > 0;
 
-  // Cost breakdown by inventory group — active days × item regular rate
-  const costSummary = useMemo(() => {
-    const summary = {};
-    groups.forEach(group => {
-      summary[group.name] = group.rows.reduce((sum, { activeMask, invItem }) => {
-        const activeDays = activeMask.filter(Boolean).length;
-        const rate = invItem?.reg_value || invItem?.unit_cost || 0;
-        return sum + activeDays * rate;
-      }, 0);
-    });
-    return summary;
-  }, [groups]);
-
-  const formatCurrency = (value) => new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(value || 0);
-
-  const SUMMARY_GROUPS = ['Manpower Group', 'Equipment Group', 'Service Group'];
-  const grandTotal = SUMMARY_GROUPS.reduce((sum, g) => sum + (costSummary[g] || 0), 0);
-
   const exportSpreadsheet = () => {
     if (!showGantt) return;
     const header = ['Group', 'Inventory Item', 'SKU', ...dates.map(d => format(d, 'yyyy-MM-dd'))];
@@ -285,37 +267,6 @@ export default function DetailedProjectGantt() {
 
       {/* Scrollable body */}
       <div className="px-4 sm:px-6 pb-4 space-y-4">
-      {/* Cost summary by group */}
-      {showGantt && (
-        <Card>
-          <CardContent className="pt-4">
-            <h2 className="text-sm font-semibold mb-3">Cost Summary by Group</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="py-2 pr-6 font-medium">Inventory Group</th>
-                    <th className="py-2 px-6 font-medium text-right">Total Cost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {SUMMARY_GROUPS.map(g => (
-                    <tr key={g} className="border-b border-border/50">
-                      <td className="py-2 pr-6 font-medium">{g.replace(' Group', '')}</td>
-                      <td className="py-2 px-6 text-right tabular-nums">{formatCurrency(costSummary[g] || 0)}</td>
-                    </tr>
-                  ))}
-                  <tr className="font-semibold">
-                    <td className="py-2 pr-6">Total</td>
-                    <td className="py-2 px-6 text-right tabular-nums">{formatCurrency(grandTotal)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Gantt */}
       {!selectedProjectId ? (
         <EmptyState icon={BarChart3} message="Select a project above to view its inventory timeline." />
