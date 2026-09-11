@@ -301,7 +301,7 @@ export default function DetailedProjectGantt() {
                       </td>
                     </tr>
                     {group.rows.map(({ row, firstDate, values, invItem, isVentilation, isManpowerItem, isConventional }, ri) => (
-                      <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-muted/20 transition-colors`}>
+                      <tr key={row.id} className={`border-b border-border/50 ${ri % 2 === 0 ? '' : 'bg-muted/10'} hover:bg-white/40 transition-colors`}>
                         <td className="px-4 py-[3px] sticky left-0 bg-inherit z-10 w-60">
                           <div className="font-medium truncate" title={row.label}>{row.label}</div>
                           {invItem?.sku && <div className="text-muted-foreground text-[10px]">{invItem.sku}</div>}
