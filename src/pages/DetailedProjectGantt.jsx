@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
-import { Package, CalendarRange, BarChart3 } from 'lucide-react';
+import { Package, CalendarRange, BarChart3, Download } from 'lucide-react';
 
 const GROUP_ORDER = ['Manpower Group', 'Equipment Group', 'Service Group', 'Totals Group'];
 
@@ -116,6 +116,36 @@ export default function DetailedProjectGantt() {
 
   const showGantt = selectedProjectId && hasDateRange && groups.length > 0;
 
+  const exportSpreadsheet = () => {
+    if (!showGantt) return;
+    const header = ['Group', 'Inventory Item', 'SKU', ...dates.map(d => format(d, 'yyyy-MM-dd'))];
+    const rows = [];
+    groups.forEach(group => {
+      group.rows.forEach(({ row, activeMask, invItem }) => {
+        rows.push([
+          group.name,
+          row.label || '',
+          invItem?.sku || '',
+          ...activeMask.map(a => (a ? 'X' : ''))
+        ]);
+      });
+    });
+    const csv = [header, ...rows]
+      .map(r => r.map(cell => {
+        const s = String(cell ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeName = (selectedProject?.name || 'project').replace(/[^a-z0-9]+/gi, '_');
+    a.download = `${safeName}_gantt.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-0">
       {/* Sticky header: title + project selector + top scrollbar */}
@@ -148,6 +178,15 @@ export default function DetailedProjectGantt() {
                   {format(parseISO(selectedProject.start_date), 'MMM d, yyyy')} — {format(parseISO(selectedProject.end_date), 'MMM d, yyyy')}
                 </div>
               )}
+              <button
+                type="button"
+                onClick={exportSpreadsheet}
+                disabled={!showGantt}
+                className="inline-flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
             </div>
           </CardContent>
         </Card>
