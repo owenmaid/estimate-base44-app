@@ -230,7 +230,7 @@ export default function DetailedProjectGantt() {
                           return (
                             <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-secondary/20' : ''}`} style={{ width: `${COL_WIDTH}px` }}>
                               {active && (
-                                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 h-full aspect-square rounded bg-primary/35 z-10" />
+                                <div className="absolute inset-y-[1px] left-1/2 -translate-x-1/2 h-[calc(100%-2px)] aspect-square rounded bg-primary/35 z-10" />
                               )}
                             </td>
                           );
