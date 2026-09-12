@@ -15,6 +15,7 @@ export default function DetailedProjectGantt() {
   const headerScrollRef = useRef(null);
   const tableScrollRef = useRef(null);
   const [syncing, setSyncing] = useState(false);
+  const [hoveredBlock, setHoveredBlock] = useState(null); // { rowId, colIndex }
 
   // Sync horizontal scroll across top scrollbar, date header, and body table
   const syncScroll = (source) => {
@@ -313,8 +314,18 @@ export default function DetailedProjectGantt() {
                           return (
                             <td key={ci} className={`py-[3px] relative ${weekend ? 'bg-sky-400/15' : ''}`} style={{ width: `${colWidth}px` }}>
                               {active && (
-                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded z-10 flex items-center justify-center ${isConventional ? 'bg-blue-500/40' : isVentilation ? (isManpowerItem ? 'bg-green-500/40' : 'bg-green-300/50') : isManpowerItem ? 'bg-red-500/40' : 'bg-primary/35'}`} style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }}>
+                                <div
+                                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded z-10 flex items-center justify-center ${isConventional ? 'bg-blue-500/40' : isVentilation ? (isManpowerItem ? 'bg-green-500/40' : 'bg-green-300/50') : isManpowerItem ? 'bg-red-500/40' : 'bg-primary/35'}`}
+                                  style={{ width: `${colWidth - 2}px`, height: `${Math.min(colWidth - 2, 20)}px` }}
+                                  onMouseEnter={() => setHoveredBlock({ rowId: row.id, colIndex: ci })}
+                                  onMouseLeave={() => setHoveredBlock(null)}
+                                >
                                   <span className="text-white font-medium leading-none truncate px-0.5" style={{ fontSize: `${Math.min(colWidth * 0.32, 9)}px` }}>{val}</span>
+                                  {hoveredBlock && hoveredBlock.rowId === row.id && hoveredBlock.colIndex === ci && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-black/80 text-white text-[10px] whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                                      Σ = {values.slice(0, ci + 1).reduce((s, v) => s + (v > 0 ? v : 0), 0)}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </td>
