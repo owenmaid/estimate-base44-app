@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,7 +42,7 @@ export default function CRM() {
   });
 
   // Real-time refresh
-  React.useEffect(() => {
+  useEffect(() => {
     const unsub = base44.entities.Contact.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     });
