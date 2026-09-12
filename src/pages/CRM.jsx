@@ -41,7 +41,6 @@ export default function CRM() {
     queryFn: () => base44.entities.Estimate.list(),
   });
 
-  // Real-time refresh
   useEffect(() => {
     const unsub = base44.entities.Contact.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
@@ -113,7 +112,6 @@ export default function CRM() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Contacts & Leads</h1>
@@ -124,7 +122,6 @@ export default function CRM() {
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users} label="Total Contacts" value={stats.total} color="text-primary" />
         <StatCard icon={TrendingUp} label="Leads" value={stats.leads} color="text-blue-400" />
@@ -132,7 +129,6 @@ export default function CRM() {
         <StatCard icon={CheckCircle2} label="Customers" value={stats.customers} color="text-green-400" />
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -158,7 +154,6 @@ export default function CRM() {
         </Select>
       </div>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
