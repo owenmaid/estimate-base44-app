@@ -70,7 +70,7 @@
         "role": "admin"
       }
     },
-    "read": {},
+    "read": null,
     "update": {
       "user_condition": {
         "role": "admin"
