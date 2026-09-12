@@ -441,7 +441,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={200} className="sm:!h-[240px]">
                 <LineChart
                   data={projects.map(p => ({ name: p.name, value: projectEquipmentCost(p, inventoryItems) }))}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+                  margin={{ top: 4, right: 4, left: 50, bottom: 4 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={60} interval="preserveStartEnd" />
