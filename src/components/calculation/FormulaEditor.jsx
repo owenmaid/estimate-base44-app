@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Save, FlaskConical, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import FormulaVariableRow from './FormulaVariableRow';
 import { nanoid } from '@/lib/nanoid';
+import { safeEvalMath } from '@/lib/safeMathEval';
 
 const APPLIES_TO_OPTIONS = [
   { value: 'subtotal', label: 'Subtotal' },
@@ -66,13 +67,8 @@ export default function FormulaEditor({ formula, onSave, onDelete, onToggle, isN
   const evaluatePreview = () => {
     try {
       const scope = {};
-      draft.variables.forEach(v => { scope[v.name] = v.value; });
-      // Safe evaluation: replace var names with values
-      let expr = draft.formula_expression;
-      Object.entries(scope).forEach(([k, v]) => {
-        expr = expr.replace(new RegExp(`\\b${k}\\b`, 'g'), v);
-      });
-      const result = Function(`"use strict"; return (${expr})`)();
+      draft.variables.forEach(v => { if (v.name) scope[v.name] = v.value; });
+      const result = safeEvalMath(draft.formula_expression, scope);
       setPreview(typeof result === 'number' ? result : null);
     } catch {
       setPreview(null);

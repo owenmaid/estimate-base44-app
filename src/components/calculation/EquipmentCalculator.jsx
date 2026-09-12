@@ -8,15 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Calculator, Package, Zap, Save, FolderOpen } from 'lucide-react';
 import { calculateEstimateSummary, roundMoney } from '@/lib/calculations';
+import { safeEvalMath } from '@/lib/safeMathEval';
 
-// Safely evaluate a formula expression with given variable scope
+// Safely evaluate a formula expression with given variable scope.
+// Uses a restricted arithmetic parser — no dynamic code execution.
 function evalFormula(expression, variables) {
   try {
-    let expr = expression;
-    variables.forEach(v => {
-      expr = expr.replace(new RegExp(`\\b${v.name}\\b`, 'g'), v.value);
+    const scope = {};
+    (variables || []).forEach(v => {
+      if (v.name) scope[v.name] = v.value;
     });
-    const result = Function(`"use strict"; return (${expr})`)();
+    const result = safeEvalMath(expression, scope);
     return typeof result === 'number' && isFinite(result) ? result : 1;
   } catch {
     return 1;
