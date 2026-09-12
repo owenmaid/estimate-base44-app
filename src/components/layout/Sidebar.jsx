@@ -67,6 +67,7 @@ export default function Sidebar({ open, onClose }) {
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map(item => {
             const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
+            const isHighlighted = item.label === 'Create Estimate Panel';
             return (
               <Link
                 key={item.path}
@@ -76,7 +77,9 @@ export default function Sidebar({ open, onClose }) {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    : isHighlighted
+                      ? "bg-white/25 text-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4" />
