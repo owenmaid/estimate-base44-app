@@ -130,6 +130,13 @@ export default function DetailedProjectGantt() {
     return { dates: allDates, groups, colWidth };
   }, [selectedProject, inventory]);
 
+  const dailyTotals = useMemo(() => {
+    if (!dates.length) return [];
+    return dates.map((_, ci) =>
+      groups.reduce((sum, g) => sum + g.rows.reduce((s, r) => s + (r.values[ci] > 0 ? r.values[ci] : 0), 0), 0)
+    );
+  }, [dates, groups]);
+
   const hasDateRange = selectedProject?.start_date && selectedProject?.end_date;
 
   const showGantt = selectedProjectId && hasDateRange && groups.length > 0;
@@ -335,6 +342,21 @@ export default function DetailedProjectGantt() {
                     ))}
                   </React.Fragment>
                 ))}
+                {/* Daily totals summary row */}
+                <tr className="border-t-2 border-border bg-muted/40 font-semibold">
+                  <td className="px-4 py-1.5 sticky left-0 bg-muted/40 z-20 w-60 text-[11px] uppercase tracking-wide">
+                    Daily Total
+                  </td>
+                  {dates.map((d, ci) => {
+                    const total = dailyTotals[ci];
+                    const weekend = isWeekend(d);
+                    return (
+                      <td key={ci} className={`text-center py-1.5 text-[11px] ${weekend ? 'bg-sky-400/15' : ''}`} style={{ width: `${colWidth}px` }}>
+                        {total > 0 ? total : ''}
+                      </td>
+                    );
+                  })}
+                </tr>
               </tbody>
             </table>
           </CardContent>
