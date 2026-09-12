@@ -74,7 +74,7 @@ export default function Sidebar({ open, onClose }) {
                 to={item.path}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  "flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : isHighlighted
@@ -102,7 +102,7 @@ export default function Sidebar({ open, onClose }) {
                     to={item.path}
                     onClick={onClose}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                      "flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                       isActive
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : isProjects
