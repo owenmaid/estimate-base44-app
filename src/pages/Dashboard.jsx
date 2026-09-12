@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FilePlus, FileText, DollarSign, CheckCircle, Clock, FolderKanban, TrendingUp, CalendarClock, AlertCircle, Pencil, XCircle, Send, AlarmClock } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { computeCol14 } from '@/lib/computeCol14';
 
@@ -172,6 +172,19 @@ export default function Dashboard() {
       (e.project_name && projectNames.has(e.project_name))
     ).length;
   }, [estimates, projects]);
+
+  // Actual project cost vs estimated budget — active projects only
+  const actualVsEstimated = useMemo(() => {
+    return projects
+      .filter(p => p.status === 'active')
+      .map(p => {
+        const actual = projectEquipmentCost(p, inventoryItems);
+        const est = estimateByProject.byNumber[p.project_number] || estimateByProject.byName[p.name];
+        const budget = est?.total || 0;
+        return { name: p.name, actual, budget };
+      })
+      .filter(d => d.actual > 0 || d.budget > 0);
+  }, [projects, inventoryItems, estimateByProject]);
 
   // Upcoming deadlines: projects with a due date in the next 60 days, not completed
   const today = new Date();
@@ -453,6 +466,39 @@ export default function Dashboard() {
                   />
                   <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} />
                 </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actual Cost vs Estimated Budget */}
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base" style={SERIF}>Actual Cost vs Estimated Budget</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Active projects only</p>
+          </CardHeader>
+          <CardContent>
+            {actualVsEstimated.length === 0 ? (
+              <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+                No active projects with cost or budget data
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={actualVsEstimated} margin={{ top: 4, right: 4, left: 50, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={60} interval={0} />
+                  <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={v => [`$${Number(v).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, '']}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="budget" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} name="Estimated Budget" />
+                  <Bar dataKey="actual" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Actual Cost" />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
