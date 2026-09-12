@@ -91,7 +91,7 @@ export default function Sidebar({ open, onClose }) {
             <div key={sIdx} className={cn("space-y-1 py-2", sIdx < bottomSections.length - 1 && "border-b border-border")}>
               {section.map(item => {
                 const isActive = location.pathname.startsWith(item.path);
-                const isProjects = item.label === 'Projects';
+                const isProjects = item.label === 'Projects' || item.label === 'Project Details Setup';
                 return (
                   <Link
                     key={item.path}
