@@ -407,7 +407,7 @@ export default function ProjectPlanning() {
             </div>
             <div>
               <Label>Project Number</Label>
-              <Input value={form.project_number} onChange={e => setForm(p => ({ ...p, project_number: e.target.value }))} placeholder="e.g. PR27001" />
+              <Input className="bg-white/25" value={form.project_number} onChange={e => setForm(p => ({ ...p, project_number: e.target.value }))} placeholder="e.g. PR27001" />
             </div>
             <div>
               <Label>Client</Label>
