@@ -786,6 +786,7 @@ const addEquipmentRow = () => {
               variant="outline"
               onClick={fetchStatHolidays}
               disabled={!startDate || !endDate || loadingHolidays}
+              className="bg-white/25"
             >
               {loadingHolidays ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Search className="h-4 w-4 mr-1.5" />}
               Find Stat Holidays
