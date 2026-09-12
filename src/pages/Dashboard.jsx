@@ -38,7 +38,6 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
-const SERIF = { fontFamily: "'Playfair Display', Georgia, serif" };
 
 // Warm stat card for the Petro-Chemical Tint dashboard.
 function WarmStatCard({ title, value, icon: Icon, accent }) {
@@ -51,7 +50,7 @@ function WarmStatCard({ title, value, icon: Icon, accent }) {
           <Icon className={`h-5 w-5 sm:h-8 sm:w-8 ${accent}`} />
         </span>
       </div>
-      <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums" style={SERIF}>{value}</span>
+      <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums">{value}</span>
     </div>
   );
 }
@@ -205,7 +204,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={SERIF}>Executive Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Executive Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">Full business overview</p>
         </div>
         <div className="flex gap-2">
@@ -228,7 +227,7 @@ export default function Dashboard() {
           </svg>
           <div className="relative">
             <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground">Total Estimate Value</p>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none">
               ${estimateStats.totalValue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-2">across {estimateStats.total} estimate{estimateStats.total === 1 ? '' : 's'}</p>
@@ -245,7 +244,7 @@ export default function Dashboard() {
               </span>
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{estimateStats.total}</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums block">{estimateStats.total}</span>
               <span className="text-xs text-muted-foreground mt-1">estimate{estimateStats.total === 1 ? '' : 's'} created</span>
             </div>
           </div>
@@ -259,7 +258,7 @@ export default function Dashboard() {
               </span>
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>{linkedEstimatesCount}</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground leading-tight tabular-nums block">{linkedEstimatesCount}</span>
               <span className="text-xs text-muted-foreground mt-1">converted / linked</span>
             </div>
           </div>
@@ -267,7 +266,7 @@ export default function Dashboard() {
 
         <Card className="h-full flex flex-col sm:col-span-2 lg:col-span-1">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2" style={SERIF}>
+            <CardTitle className="text-base flex items-center gap-2">
               <CalendarClock className="h-6 w-6 sm:h-8 sm:w-8 text-primary" /> Upcoming Deadlines
             </CardTitle>
             {overdue.length > 0 && (
@@ -320,7 +319,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <div>
-                <span className="text-lg sm:text-2xl font-bold text-foreground leading-tight tabular-nums block" style={SERIF}>
+                <span className="text-lg sm:text-2xl font-bold text-foreground leading-tight tabular-nums block">
                   ${c.value.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
                 </span>
                 <span className="text-xs text-muted-foreground mt-1">{c.count} estimate{c.count === 1 ? '' : 's'}</span>
@@ -334,7 +333,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
-            <CardTitle className="text-base" style={SERIF}>Estimates by Status</CardTitle>
+            <CardTitle className="text-base">Estimates by Status</CardTitle>
             <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1">
               <Button size="sm" variant={estimateChartMode === 'value' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('value')}>Totals</Button>
               <Button size="sm" variant={estimateChartMode === 'count' ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setEstimateChartMode('count')}>Quantity</Button>
@@ -382,7 +381,7 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="pb-2 pt-4 px-5">
-            <CardTitle className="text-base" style={SERIF}>Revenue by Month</CardTitle>
+            <CardTitle className="text-base">Revenue by Month</CardTitle>
           </CardHeader>
           <CardContent className="px-5 pb-4">
             {revenueByMonth.length === 0 ? (
@@ -418,7 +417,7 @@ export default function Dashboard() {
           </svg>
           <div className="relative">
             <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground">Total Revenue</p>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none" style={SERIF}>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mt-1 leading-none">
               ${projectStats.totalRevenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground mt-2">across {projectStats.total} project{projectStats.total === 1 ? '' : 's'}</p>
@@ -430,7 +429,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base" style={SERIF}>Project Values</CardTitle>
+            <CardTitle className="text-base">Project Values</CardTitle>
           </CardHeader>
           <CardContent>
             {projects.length === 0 ? (
@@ -462,7 +461,7 @@ export default function Dashboard() {
       {/* Band 3: Projects Overview */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold" style={SERIF}>Projects Overview</h2>
+          <h2 className="text-lg font-semibold">Projects Overview</h2>
           <Link to="/projects" className="text-sm text-primary hover:underline font-medium">View all</Link>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { computeCol14 } from '@/lib/computeCol14';
 import { Search, TrendingDown, TrendingUp, Minus, X } from 'lucide-react';
 
-const SERIF = { fontFamily: "'Playfair Display', Georgia, serif" };
 
 const GROUP_STYLES = {
   'Manpower Group': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
@@ -123,7 +122,7 @@ export default function ItemCostComparison() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" style={SERIF}>Item Cost Comparison</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Item Cost Comparison</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Compare per-item costs across projects side-by-side to spot price trends
           </p>
@@ -134,7 +133,7 @@ export default function ItemCostComparison() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base" style={SERIF}>Projects to Compare</CardTitle>
+            <CardTitle className="text-base">Projects to Compare</CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs">{activeProjectIds.length} selected</Badge>
               {selectedProjectIds.length > 0 && (
@@ -173,7 +172,7 @@ export default function ItemCostComparison() {
       {/* Comparison table */}
       <Card>
         <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <CardTitle className="text-base" style={SERIF}>Cost Breakdown by Item</CardTitle>
+          <CardTitle className="text-base">Cost Breakdown by Item</CardTitle>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
