@@ -91,6 +91,7 @@ export default function Sidebar({ open, onClose }) {
             <div key={sIdx} className={cn("space-y-1 py-2", sIdx < bottomSections.length - 1 && "border-b border-border")}>
               {section.map(item => {
                 const isActive = location.pathname.startsWith(item.path);
+                const isProjects = item.label === 'Projects';
                 return (
                   <Link
                     key={item.path}
@@ -100,7 +101,9 @@ export default function Sidebar({ open, onClose }) {
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                       isActive
                         ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        : isProjects
+                          ? "bg-white/25 text-foreground"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     )}
                   >
                     <item.icon className="h-4 w-4" />
