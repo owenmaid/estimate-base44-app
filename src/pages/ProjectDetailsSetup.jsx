@@ -1115,7 +1115,7 @@ const addEquipmentRow = () => {
               <select
                 value={newEquipmentCategory}
                 onChange={e => { setNewEquipmentCategory(e.target.value); setNewEquipmentItemId(''); }}
-                className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
+                className="px-2 py-1 border border-border rounded bg-white/25 text-foreground text-sm"
               >
                 <option value="">Select category...</option>
                 {[...new Set(equipmentInventory.map(i => i.category).filter(Boolean))].sort().map(cat => (
@@ -1125,7 +1125,7 @@ const addEquipmentRow = () => {
               <select
                 value={newEquipmentItemId}
                 onChange={e => setNewEquipmentItemId(e.target.value)}
-                className="px-2 py-1 border border-border rounded bg-secondary text-foreground text-sm"
+                className="px-2 py-1 border border-border rounded bg-white/25 text-foreground text-sm"
                 disabled={!newEquipmentCategory}
               >
                 <option value="">Select item...</option>
