@@ -92,7 +92,7 @@ export default function Sidebar({ open, onClose }) {
         {/* Bottom nav items — 4 divided sections */}
         <div className="px-3 py-2 border-t border-border">
           {bottomSections.map((section, sIdx) => (
-            <div key={sIdx} className={cn("space-y-1 py-2", sIdx < bottomSections.length - 1 && "border-b border-border")}>
+            <div key={sIdx} className={cn("space-y-1 py-1", sIdx < bottomSections.length - 1 && "border-b border-border")}>
               {section.map(item => {
                 const isActive = location.pathname.startsWith(item.path);
                 const isProjects = item.label === 'Projects' || item.label === 'Project Details Setup';
