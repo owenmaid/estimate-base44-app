@@ -1,0 +1,117 @@
+{
+  "name": "Contact",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Contact or lead full name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company or organization name"
+    },
+    "position": {
+      "type": "string",
+      "description": "Job title or role"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "lead",
+        "contacted",
+        "qualified",
+        "customer",
+        "inactive"
+      ],
+      "default": "lead",
+      "description": "Current stage in the sales pipeline"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the lead came from (e.g. referral, website, cold call)"
+    },
+    "linked_project_ids": {
+      "type": "array",
+      "description": "IDs of linked projects",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "linked_estimate_ids": {
+      "type": "array",
+      "description": "IDs of linked estimates",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form notes about the contact"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Custom tags for categorization",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "last_contact_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of last interaction with this contact"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

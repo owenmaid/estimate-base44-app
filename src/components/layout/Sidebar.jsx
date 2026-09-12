@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart, GitCompare, TrendingUp, CalendarRange } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart, GitCompare, TrendingUp, CalendarRange, ContactRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
@@ -29,6 +29,7 @@ const bottomSections = [
   ],
   [
     { label: 'Manpower and Equipment Estimation', path: '/calculation-routing', icon: GitBranch },
+    { label: 'Contacts & Leads', path: '/crm', icon: ContactRound },
     { label: 'Resources', path: '/resources', icon: Users },
   ],
   [

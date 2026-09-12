@@ -31,6 +31,7 @@ const ProjectCostDashboard = lazy(() => import('@/pages/ProjectCostDashboard'));
 const LineItemComparison = lazy(() => import('@/pages/LineItemComparison'));
 const ItemCostComparison = lazy(() => import('@/pages/ItemCostComparison'));
 const DetailedProjectGantt = lazy(() => import('@/pages/DetailedProjectGantt'));
+const CRM = lazy(() => import('@/pages/CRM'));
 const PageNotFound = lazy(() => import('./lib/PageNotFound'));
 
 const RouteLoadingFallback = () => (
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
         <Route path="/line-item-comparison" element={<LineItemComparison />} />
         <Route path="/item-cost-comparison" element={<ItemCostComparison />} />
         <Route path="/detailed-project-gantt" element={<DetailedProjectGantt />} />
+        <Route path="/crm" element={<CRM />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
