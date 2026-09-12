@@ -876,6 +876,7 @@ const addEquipmentRow = () => {
                 <Button 
                   size="sm" 
                   variant="outline"
+                  className="bg-white/25"
                   onClick={() => {
                     const newTypeGrid = { ...typeGrid };
                     dates.forEach(d => {
