@@ -5,6 +5,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import CRM from '@/pages/CRM';
 import AppLayout from '@/components/layout/AppLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { ThemeProvider } from '@/lib/ThemeContext';
@@ -31,7 +32,6 @@ const ProjectCostDashboard = lazy(() => import('@/pages/ProjectCostDashboard'));
 const LineItemComparison = lazy(() => import('@/pages/LineItemComparison'));
 const ItemCostComparison = lazy(() => import('@/pages/ItemCostComparison'));
 const DetailedProjectGantt = lazy(() => import('@/pages/DetailedProjectGantt'));
-const CRM = lazy(() => import('@/pages/CRM').catch(() => new Promise(r => setTimeout(r, 200)).then(() => import('@/pages/CRM'))));
 const PageNotFound = lazy(() => import('./lib/PageNotFound'));
 
 const RouteLoadingFallback = () => (
