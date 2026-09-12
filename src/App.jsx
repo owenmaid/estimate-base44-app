@@ -31,7 +31,7 @@ const ProjectCostDashboard = lazy(() => import('@/pages/ProjectCostDashboard'));
 const LineItemComparison = lazy(() => import('@/pages/LineItemComparison'));
 const ItemCostComparison = lazy(() => import('@/pages/ItemCostComparison'));
 const DetailedProjectGantt = lazy(() => import('@/pages/DetailedProjectGantt'));
-const CRM = lazy(() => import('@/pages/CRM'));
+const CRM = lazy(() => import('@/pages/CRM').catch(() => new Promise(r => setTimeout(r, 200)).then(() => import('@/pages/CRM'))));
 const PageNotFound = lazy(() => import('./lib/PageNotFound'));
 
 const RouteLoadingFallback = () => (
