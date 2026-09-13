@@ -28,8 +28,8 @@ export default function ProtectedRoute({
 
   useEffect(() => {
     if (!authChecked && !isLoadingAuth && !dispatched.current) {
-      dispatched.current = true;
-      checkUserAuth();
+      dispatched.current = false;
+      authChecked();
     }
   }, [authChecked, isLoadingAuth, checkUserAuth]);
 
