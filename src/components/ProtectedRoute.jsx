@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -9,11 +9,26 @@ const DefaultFallback = () => (
   </div>
 );
 
-export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
+export default function ProtectedRoute({
+  fallback = <DefaultFallback />,
+  unauthenticatedElement = <Navigate to="/login" replace />,
+  unauthorizedElement = <Navigate to="/" replace />,
+  roles = null, // e.g. ['admin'] — null means "any authenticated user"
+}) {
+  const {
+    isAuthenticated,
+    isLoadingAuth,
+    authChecked,
+    authError,
+    checkUserAuth,
+    user,
+  } = useAuth();
+
+  const dispatched = useRef(false);
 
   useEffect(() => {
-    if (!authChecked && !isLoadingAuth) {
+    if (!authChecked && !isLoadingAuth && !dispatched.current) {
+      dispatched.current = true;
       checkUserAuth();
     }
   }, [authChecked, isLoadingAuth, checkUserAuth]);
@@ -31,6 +46,14 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
 
   if (!isAuthenticated) {
     return unauthenticatedElement;
+  }
+
+  if (roles) {
+    const userRole = user?.role;
+    const allowed = Array.isArray(roles) ? roles : [roles];
+    if (!userRole || !allowed.includes(userRole)) {
+      return unauthorizedElement;
+    }
   }
 
   return <Outlet />;
