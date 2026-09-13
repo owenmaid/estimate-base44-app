@@ -1,112 +1,127 @@
 /**
- * Safely evaluate a mathematical expression with variable substitution.
+ * Safe arithmetic evaluator for admin-authored formula strings.
  *
- * Only supports numbers, named variables, + - * / operators, parentheses,
- * and unary minus. There is NO access to JavaScript globals, object property
- * access, function calls, or any other executable code — the input is parsed
- * as a pure arithmetic AST and evaluated numerically.
+ * Security model:
+ *  - Closed grammar: only numbers, identifiers, + - * / and parentheses.
+ *    Any other character throws during tokenization.
+ *  - No dynamic execution: no eval, no Function, no property access,
+ *    no call syntax. A hostile string cannot become JavaScript.
+ *  - Values are computed inline during the recursive descent; no AST is
+ *    retained. (Previous comment claimed an AST — it does not build one.)
+ *  - Fails closed: every error path throws. Callers must catch.
  *
- * @param {string} expression - The math expression to evaluate.
- * @param {Object<string, number>} [scope] - Variable name → numeric value mapping.
- * @returns {number} The computed result.
- * @throws {Error} If the expression is invalid or contains unsupported syntax.
+ * Availability guards:
+ *  - MAX_EXPRESSION_LENGTH caps tokenizer work.
+ *  - MAX_DEPTH caps recursion so deeply nested or long unary chains
+ *    raise a catchable Error instead of a RangeError.
  */
-export function safeEvalMath(expression, scope = {}) {
-  if (typeof expression !== 'string' || expression.trim() === '') {
-    throw new Error('Empty expression');
-  }
-  const tokens = tokenize(expression);
-  const parser = new Parser(tokens, scope);
-  const result = parser.parseExpression();
-  parser.expectEnd();
-  if (typeof result !== 'number' || !isFinite(result)) {
-    throw new Error('Non-finite result');
-  }
-  return result;
-}
 
-// ── Tokenizer ──────────────────────────────────────────────────────────────
+const MAX_EXPRESSION_LENGTH = 1000;
+const MAX_DEPTH = 64;
 
-const TOKEN_TYPES = {
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+const TOKEN = {
   NUMBER: 'NUMBER',
   IDENT: 'IDENT',
-  PLUS: 'PLUS',
-  MINUS: 'MINUS',
-  STAR: 'STAR',
-  SLASH: 'SLASH',
+  OP: 'OP',
   LPAREN: 'LPAREN',
   RPAREN: 'RPAREN',
-  EOF: 'EOF',
 };
 
 function tokenize(input) {
   const tokens = [];
   let i = 0;
-  const len = input.length;
 
-  while (i < len) {
+  while (i < input.length) {
     const ch = input[i];
 
-    // Skip whitespace
-    if (/\s/.test(ch)) {
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') {
       i++;
       continue;
     }
 
-    // Numbers: digits and decimal point (e.g. 42, 3.14, .5)
-    if (/[0-9.]/.test(ch)) {
-      let num = '';
-      let dotCount = 0;
-      while (i < len && /[0-9.]/.test(input[i])) {
-        if (input[i] === '.') {
-          dotCount++;
-          if (dotCount > 1) throw new Error('Invalid number format');
+    if (ch >= '0' && ch <= '9') {
+      let start = i;
+      let seenDot = false;
+      while (i < input.length) {
+        const c = input[i];
+        if (c >= '0' && c <= '9') {
+          i++;
+        } else if (c === '.' && !seenDot) {
+          seenDot = true;
+          i++;
+        } else {
+          break;
         }
-        num += input[i];
-        i++;
       }
-      const val = parseFloat(num);
-      if (isNaN(val)) throw new Error('Invalid number: ' + num);
-      tokens.push({ type: TOKEN_TYPES.NUMBER, value: val });
+      const raw = input.slice(start, i);
+      const value = Number(raw);
+      if (!Number.isFinite(value)) {
+        throw new Error(`Invalid number: '${raw}'`);
+      }
+      tokens.push({ type: TOKEN.NUMBER, value });
       continue;
     }
 
-    // Identifiers: letter/underscore followed by letters/digits/underscores
-    if (/[a-zA-Z_]/.test(ch)) {
-      let ident = '';
-      while (i < len && /[a-zA-Z0-9_]/.test(input[i])) {
-        ident += input[i];
-        i++;
+    // Leading-dot numbers: .5
+    if (ch === '.') {
+      let start = i;
+      i++;
+      if (!(input[i] >= '0' && input[i] <= '9')) {
+        throw new Error("Invalid character: '.'");
       }
-      tokens.push({ type: TOKEN_TYPES.IDENT, value: ident });
+      while (i < input.length && input[i] >= '0' && input[i] <= '9') i++;
+      tokens.push({ type: TOKEN.NUMBER, value: Number(input.slice(start, i)) });
       continue;
     }
 
-    // Operators and parentheses
-    switch (ch) {
-      case '+': tokens.push({ type: TOKEN_TYPES.PLUS }); break;
-      case '-': tokens.push({ type: TOKEN_TYPES.MINUS }); break;
-      case '*': tokens.push({ type: TOKEN_TYPES.STAR }); break;
-      case '/': tokens.push({ type: TOKEN_TYPES.SLASH }); break;
-      case '(': tokens.push({ type: TOKEN_TYPES.LPAREN }); break;
-      case ')': tokens.push({ type: TOKEN_TYPES.RPAREN }); break;
-      default:
-        throw new Error(`Unexpected character: '${ch}'`);
+    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_') {
+      let start = i;
+      while (i < input.length) {
+        const c = input[i];
+        const isWord =
+          (c >= 'a' && c <= 'z') ||
+          (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') ||
+          c === '_';
+        if (!isWord) break;
+        i++;
+      }
+      tokens.push({ type: TOKEN.IDENT, value: input.slice(start, i) });
+      continue;
     }
-    i++;
+
+    if (ch === '+' || ch === '-' || ch === '*' || ch === '/') {
+      tokens.push({ type: TOKEN.OP, value: ch });
+      i++;
+      continue;
+    }
+
+    if (ch === '(') {
+      tokens.push({ type: TOKEN.LPAREN, value: ch });
+      i++;
+      continue;
+    }
+
+    if (ch === ')') {
+      tokens.push({ type: TOKEN.RPAREN, value: ch });
+      i++;
+      continue;
+    }
+
+    throw new Error(`Invalid character: '${ch}'`);
   }
 
-  tokens.push({ type: TOKEN_TYPES.EOF });
   return tokens;
 }
-
-// ── Recursive-descent parser / evaluator ───────────────────────────────────
 
 class Parser {
   constructor(tokens, scope) {
     this.tokens = tokens;
-    this.pos = 0;
     this.scope = scope;
+    this.pos = 0;
+    this.depth = 0;
   }
 
   peek() {
@@ -117,26 +132,26 @@ class Parser {
     return this.tokens[this.pos++];
   }
 
-  expectEnd() {
-    if (this.peek().type !== TOKEN_TYPES.EOF) {
-      throw new Error('Unexpected trailing tokens');
+  enter() {
+    if (++this.depth > MAX_DEPTH) {
+      throw new Error('Expression too deeply nested');
     }
+  }
+
+  exit() {
+    this.depth--;
   }
 
   // expression := term (('+' | '-') term)*
   parseExpression() {
     let left = this.parseTerm();
     while (true) {
-      const t = this.peek().type;
-      if (t === TOKEN_TYPES.PLUS) {
-        this.next();
-        left = left + this.parseTerm();
-      } else if (t === TOKEN_TYPES.MINUS) {
-        this.next();
-        left = left - this.parseTerm();
-      } else {
-        break;
-      }
+      const tok = this.peek();
+      if (!tok || tok.type !== TOKEN.OP) break;
+      if (tok.value !== '+' && tok.value !== '-') break;
+      this.next();
+      const right = this.parseTerm();
+      left = tok.value === '+' ? left + right : left - right;
     }
     return left;
   }
@@ -145,66 +160,131 @@ class Parser {
   parseTerm() {
     let left = this.parseFactor();
     while (true) {
-      const t = this.peek().type;
-      if (t === TOKEN_TYPES.STAR) {
-        this.next();
-        left = left * this.parseFactor();
-      } else if (t === TOKEN_TYPES.SLASH) {
-        this.next();
-        const right = this.parseFactor();
-        if (right === 0) throw new Error('Division by zero');
-        left = left / right;
+      const tok = this.peek();
+      if (!tok || tok.type !== TOKEN.OP) break;
+      if (tok.value !== '*' && tok.value !== '/') break;
+      this.next();
+      const right = this.parseFactor();
+      if (tok.value === '*') {
+        left = left * right;
       } else {
-        break;
+        if (right === 0) {
+          throw new Error('Division by zero');
+        }
+        left = left / right;
       }
     }
     return left;
   }
 
-  // factor := ('-' | '+') factor | primary
+  // factor := ('+' | '-') factor | primary
   parseFactor() {
-    const t = this.peek().type;
-    if (t === TOKEN_TYPES.MINUS) {
-      this.next();
-      return -this.parseFactor();
+    this.enter();
+    try {
+      const tok = this.peek();
+      if (tok && tok.type === TOKEN.OP && (tok.value === '+' || tok.value === '-')) {
+        this.next();
+        const value = this.parseFactor();
+        return tok.value === '-' ? -value : value;
+      }
+      return this.parsePrimary();
+    } finally {
+      this.exit();
     }
-    if (t === TOKEN_TYPES.PLUS) {
-      this.next();
-      return this.parseFactor();
-    }
-    return this.parsePrimary();
   }
 
-  // primary := number | identifier | '(' expression ')'
+  // primary := NUMBER | IDENT | '(' expression ')'
   parsePrimary() {
-    const tok = this.peek();
+    this.enter();
+    try {
+      const tok = this.next();
 
-    if (tok.type === TOKEN_TYPES.NUMBER) {
-      this.next();
-      return tok.value;
-    }
-
-    if (tok.type === TOKEN_TYPES.IDENT) {
-      this.next();
-      const name = tok.value;
-      if (!(name in this.scope)) {
-        throw new Error(`Unknown variable: '${name}'`);
+      if (!tok) {
+        throw new Error('Unexpected end of expression');
       }
-      const val = Number(this.scope[name]);
-      if (isNaN(val)) throw new Error(`Non-numeric value for variable: '${name}'`);
-      return val;
-    }
 
-    if (tok.type === TOKEN_TYPES.LPAREN) {
-      this.next();
-      const result = this.parseExpression();
-      if (this.peek().type !== TOKEN_TYPES.RPAREN) {
-        throw new Error('Expected closing parenthesis');
+      if (tok.type === TOKEN.NUMBER) {
+        return tok.value;
       }
-      this.next();
-      return result;
-    }
 
-    throw new Error('Unexpected end of expression');
+      if (tok.type === TOKEN.IDENT) {
+        if (!hasOwn(this.scope, tok.value)) {
+          throw new Error(`Unknown variable: '${tok.value}'`);
+        }
+        const raw = this.scope[tok.value];
+        const value = Number(raw);
+        if (!Number.isFinite(value)) {
+          throw new Error(`Non-numeric value for variable: '${tok.value}'`);
+        }
+        return value;
+      }
+
+      if (tok.type === TOKEN.LPAREN) {
+        const value = this.parseExpression();
+        const closing = this.next();
+        if (!closing || closing.type !== TOKEN.RPAREN) {
+          throw new Error('Missing closing parenthesis');
+        }
+        return value;
+      }
+
+      throw new Error(`Unexpected token: '${tok.value}'`);
+    } finally {
+      this.exit();
+    }
   }
 }
+
+/**
+ * Evaluate an arithmetic expression against a variable scope.
+ *
+ * @param {string} expression  Formula string, e.g. "(base + extra) * rate"
+ * @param {object} variables   Flat map of variable name to numeric value.
+ * @returns {number}           Finite number.
+ * @throws {Error}             On any invalid input. Never returns NaN.
+ */
+export function safeEvalMath(expression, variables = {}) {
+  if (typeof expression !== 'string') {
+    throw new Error('Expression must be a string');
+  }
+
+  const trimmed = expression.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error('Expression is empty');
+  }
+
+  if (trimmed.length > MAX_EXPRESSION_LENGTH) {
+    throw new Error('Expression too long');
+  }
+
+  // Prototype-free scope: nothing to walk even if a lookup slipped through.
+  const scope = Object.create(null);
+  if (variables && typeof variables === 'object') {
+    for (const key of Object.keys(variables)) {
+      scope[key] = variables[key];
+    }
+  }
+
+  const tokens = tokenize(trimmed);
+
+  if (tokens.length === 0) {
+    throw new Error('Expression is empty');
+  }
+
+  const parser = new Parser(tokens, scope);
+  const result = parser.parseExpression();
+
+  if (parser.pos !== tokens.length) {
+    const leftover = tokens[parser.pos];
+    throw new Error(`Unexpected token: '${leftover.value}'`);
+  }
+
+  if (!Number.isFinite(result)) {
+    throw new Error('Expression did not produce a finite number');
+  }
+
+  return result;
+}
+
+export default safeEvalMath;
