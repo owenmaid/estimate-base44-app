@@ -4,76 +4,43 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Formula name"
-    },
-    "description": {
-      "type": "string",
-      "description": "What this formula does"
-    },
-    "is_active": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether this formula is applied in Manpower Estimation"
-    },
-    "variables": {
-      "type": "array",
-      "description": "List of named multiplier variables",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "value": {
-            "type": "number"
-          },
-          "description": {
-            "type": "string"
-          }
-        }
-      }
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "Human-readable label for this formula."
     },
     "formula_expression": {
       "type": "string",
-      "description": "The formula string using variable names, e.g. base_cost * complexity * risk"
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^[0-9a-zA-Z_+\\-*/(). \\t]+$",
+      "description": "Arithmetic expression. Evaluated by safeEvalMath only."
     },
-    "applies_to": {
+    "variables": {
+      "type": "object",
+      "description": "Variable name to default numeric value.",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "maxProperties": 50
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
       "type": "string",
-      "enum": [
-        "subtotal",
-        "reg_cost",
-        "ot_cost",
-        "total"
-      ],
-      "default": "subtotal",
-      "description": "Which cost component this formula multiplies"
+      "maxLength": 2000
     }
   },
   "required": [
-    "name"
+    "name",
+    "formula_expression"
   ],
+  "additionalProperties": false,
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
     "read": null,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+    "write": {
+      "created_by_role": "admin"
     }
   }
 }
