@@ -226,7 +226,12 @@ export function useProjectTasks(id) {
   const assignResource = (rowLabel, assignee, inventoryItem, quantity) => {
     const existing = taskList.find(t => (t.name || '').toLowerCase() === (rowLabel || '').toLowerCase());
     if (existing) {
-      updateTaskField(existing.id, 'assignee', assignee);
+      setTaskList(prev => {
+        const next = prev.map(t => t.id !== existing.id ? t : calcTask({
+          ...t, assignee, ...(quantity != null ? { quantity } : {})
+        }));
+        saveTaskList(next); return next;
+      });
     } else {
       const raw = {
         id: createNumericId(),
