@@ -160,7 +160,7 @@ export default function GanttPage() {
                       {/* Project label */}
                       <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10">
                         <div className="flex items-center gap-2">
-                          <Link to={`/project-planning/${project.id}`} className="font-medium truncate hover:text-primary transition-colors max-w-[130px]">
+                          <Link to={`/project-planning?id=${project.id}`} className="font-medium truncate hover:text-primary transition-colors max-w-[130px]">
                             {project.name}
                           </Link>
                           <Badge className={`text-[10px] border shrink-0 ${STATUS_STYLES[project.status]}`}>

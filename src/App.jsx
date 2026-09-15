@@ -16,6 +16,7 @@ const CreateEstimate = lazy(() => import('@/pages/CreateEstimate'));
 const EstimateDetail = lazy(() => import('@/pages/EstimateDetail'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const ProjectPlanning = lazy(() => import('@/pages/ProjectPlanning'));
+const ProjectList = lazy(() => import('@/pages/ProjectList'));
 const ProjectBoard = lazy(() => import('@/pages/ProjectBoard'));
 const ProjectTemplates = lazy(() => import('@/pages/ProjectTemplates'));
 const Inventory = lazy(() => import('@/pages/Inventory'));
@@ -79,7 +80,8 @@ const AuthenticatedApp = () => {
         <Route path="/estimates/new" element={<CreateEstimate />} />
         <Route path="/estimates/:id" element={<EstimateDetail />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/project-planning/:id" element={<ProjectPlanning />} />
+        <Route path="/project-planning" element={<ProjectPlanning />} />
+        <Route path="/project-list" element={<ProjectList />} />
         <Route path="/project-board" element={<ProjectBoard />} />
         <Route path="/project-templates" element={<ProjectTemplates />} />
         <Route path="/inventory" element={<Inventory />} />

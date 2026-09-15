@@ -145,7 +145,7 @@ export default function ProjectBoard() {
                                   {project.due && (
                                     <span className="text-xs text-muted-foreground">Due {project.due}</span>
                                   )}
-                                  <Link to={`/project-planning/${project.id}`} className="ml-auto">
+                                  <Link to={`/project-planning?id=${project.id}`} className="ml-auto">
                                     <button className="text-muted-foreground hover:text-primary transition-colors">
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>

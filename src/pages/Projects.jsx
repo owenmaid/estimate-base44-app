@@ -211,7 +211,7 @@ export default function Projects() {
                         <td className="px-4 py-3 text-muted-foreground">{project.client || '—'}</td>
                         <td className="px-4 py-3 text-right font-semibold text-primary" colSpan={3}>{fmt(total)}</td>
                         <td className="px-4 py-3 text-right">
-                          <Link to={`/project-planning/${project.id}`}>
+                          <Link to={`/project-planning?id=${project.id}`}>
                             <Button variant="ghost" size="sm">
                               <Pencil className="h-3.5 w-3.5 mr-1.5" /> Open
                             </Button>

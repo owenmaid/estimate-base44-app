@@ -501,7 +501,7 @@ export default function Dashboard() {
                         return (
                           <tr key={p.id} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
                             <td className="px-3 py-2.5 sm:px-4 sm:py-3">
-                              <Link to={`/project-planning/${p.id}`} className="font-medium text-foreground hover:text-primary">
+                              <Link to={`/project-planning?id=${p.id}`} className="font-medium text-foreground hover:text-primary">
                                 {p.name}
                               </Link>
                             </td>
