@@ -130,13 +130,44 @@ export default function ProjectPlanning() {
     return set;
   }, [inventoryItems]);
 
+  // Categories that belong to Manpower Group inventory items (broader manpower detection)
+  const manpowerCategories = useMemo(() => {
+    const set = new Set();
+    inventoryItems.forEach(i => {
+      if (i.item_group?.toUpperCase() === 'MANPOWER GROUP' && i.category) {
+        set.add(i.category.toUpperCase());
+      }
+    });
+    return set;
+  }, [inventoryItems]);
+
   const isManpowerTask = (task) => {
     // Primary: match by inventory item group lookup
     if (manpowerInventoryNames.has((task.name || '').toLowerCase())) return true;
+    // Match by category belonging to a Manpower Group item
+    if (manpowerCategories.has((task.type || '').toUpperCase())) return true;
     // Fallback: by task type category
     const t = (task.type || '').toUpperCase();
     return t === 'DIRECT LABOUR' || t === 'INDIRECT LABOUR';
   };
+
+  // Manpower labels that are scheduled in the Project Details Setup grid
+  // (equipment_rows whose inventory item is Manpower Group AND has ≥1 non-zero scheduled value)
+  const scheduledManpowerLabels = useMemo(() => {
+    if (!project) return new Set();
+    const rows = project.equipment_rows || [];
+    const grid = project.equipment_grid || {};
+    const set = new Set();
+    rows.forEach(row => {
+      const inv = inventoryByName[(row.label || '').toLowerCase()];
+      if (!inv || inv.item_group?.toUpperCase() !== 'MANPOWER GROUP') return;
+      const hasScheduled = Object.entries(grid).some(([key, val]) =>
+        key.startsWith(`${row.id}_`) && val !== '' && val != null && Number(val) !== 0
+      );
+      if (hasScheduled) set.add((row.label || '').toLowerCase());
+    });
+    return set;
+  }, [project, inventoryByName]);
 
   // Tasks filtered by the selected view (e.g. manpower excluding CONVENTIONAL)
   const viewTasks = useMemo(() => {
@@ -150,7 +181,7 @@ export default function ProjectPlanning() {
       });
     }
     return taskList;
-  }, [taskList, viewFilter, inventoryByName, manpowerInventoryNames]);
+  }, [taskList, viewFilter, inventoryByName, manpowerInventoryNames, manpowerCategories]);
 
   const taskGroupKey = (task) => {
     if (groupBy === 'category') return task.type || 'Uncategorized';
@@ -440,9 +471,9 @@ export default function ProjectPlanning() {
             </SelectContent>
           </Select>
           {isManpowerTask(task) && (
-            task.assignee
-              ? <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 whitespace-nowrap">Applied</span>
-              : <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 whitespace-nowrap">No resource</span>
+            scheduledManpowerLabels.has((task.name || '').toLowerCase())
+              ? <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 whitespace-nowrap">Scheduled</span>
+              : <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 whitespace-nowrap">Not scheduled</span>
           )}
         </div>
       </td>
