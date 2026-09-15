@@ -48,6 +48,10 @@ export default function ProjectList() {
     const rows = project.equipment_rows || [];
     const eGrid = project.equipment_grid || {};
     const tGrid = project.type_grid || {};
+    // Hide scheduled rows that already have a line item with a resource (assignee) applied
+    const taskedWithResources = new Set(
+      taskList.filter(t => t.assignee).map(t => (t.name || '').toLowerCase())
+    );
     return rows.map(row => {
       const result = calculateScheduleRow(row, eGrid, tGrid, inventoryItems);
       if (!result) return null;
@@ -56,8 +60,8 @@ export default function ProjectList() {
         isManpower: result.isManpower, col1: result.col1, regCost: result.regularCost,
         otCost: result.overtimeCost, specialCost: result.specialCost, rowTotal: result.totalCost,
       };
-    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
-  }, [project, inventoryItems]);
+    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0) && !taskedWithResources.has((row.label || '').toLowerCase()));
+  }, [project, inventoryItems, taskList]);
 
   const renderTaskRow = (task) => (
     <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">
