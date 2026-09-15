@@ -30,7 +30,7 @@ const bottomSections = [
   [
     { label: 'Manpower and Equipment Estimation', path: '/calculation-routing', icon: GitBranch },
     { label: 'Contacts & Leads', path: '/crm', icon: ContactRound },
-    { label: 'Resources', path: '/resources', icon: Users },
+    { label: 'Manpower Resources', path: '/resources', icon: Users },
   ],
   [
     { label: 'Control Page', path: '/control-page', icon: SlidersHorizontal },
