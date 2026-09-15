@@ -221,6 +221,26 @@ export function useProjectTasks(id) {
     });
   };
 
+  const assignResource = (rowLabel, assignee, inventoryItem) => {
+    const existing = taskList.find(t => (t.name || '').toLowerCase() === (rowLabel || '').toLowerCase());
+    if (existing) {
+      updateTaskField(existing.id, 'assignee', assignee);
+    } else {
+      const raw = {
+        id: createNumericId(),
+        name: rowLabel.trim(),
+        type: inventoryItem?.category || null,
+        assignee: assignee || null,
+        done: false,
+        quantity: 1,
+        cost: inventoryItem?.unit_cost != null ? String(inventoryItem.unit_cost) : '',
+        markup: 0,
+        tax_pct: 0,
+      };
+      setTaskList(prev => { const next = [...prev, calcTask(raw)]; saveTaskList(next); return next; });
+    }
+  };
+
   const doneTasks = taskList.filter(t => t.done).length;
   const progress = taskList.length > 0 ? Math.round((doneTasks / taskList.length) * 100) : (form?.progress || 0);
 
@@ -232,7 +252,7 @@ export function useProjectTasks(id) {
     groupBy, setGroupBy, groupedTasks, GROUP_OPTIONS,
     newTaskName, setNewTaskName, newTaskType, newTaskInventoryItem, newAssignee, setNewAssignee,
     newQty, setNewQty, newCost, setNewCost, newMarkup, setNewMarkup, newTaxPct, setNewTaxPct,
-    newCalc, addTask, toggleTask, removeTask, updateTaskField,
+    newCalc, addTask, toggleTask, removeTask, updateTaskField, assignResource,
     isManpowerTask, scheduledManpowerLabels,
     labourItems, inventoryCategories, filteredInventoryItems,
     handleNewTaskTypeChange, handleInventoryItemSelect,

@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, Lock } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Trash2, Lock } from 'lucide-react';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { calculateScheduleRow } from '@/lib/calculations';
 
@@ -33,12 +33,9 @@ export default function ProjectList() {
 
   const {
     isLoading, form, taskList, groupBy, setGroupBy, groupedTasks, GROUP_OPTIONS,
-    newTaskName, setNewTaskName, newTaskType, newTaskInventoryItem, newAssignee, setNewAssignee,
-    newQty, setNewQty, newCost, setNewCost, newMarkup, setNewMarkup, newTaxPct, setNewTaxPct,
-    newCalc, addTask, toggleTask, removeTask, updateTaskField,
+    toggleTask, removeTask, updateTaskField, assignResource,
     isManpowerTask, scheduledManpowerLabels,
-    labourItems, inventoryCategories, filteredInventoryItems,
-    handleNewTaskTypeChange, handleInventoryItemSelect,
+    labourItems,
     doneTasks, progress,
     project, inventoryItems,
   } = useProjectTasks(id);
@@ -48,19 +45,18 @@ export default function ProjectList() {
     const rows = project.equipment_rows || [];
     const eGrid = project.equipment_grid || {};
     const tGrid = project.type_grid || {};
-    // Hide scheduled rows that already have a line item with a resource (assignee) applied
-    const taskedWithResources = new Set(
-      taskList.filter(t => t.assignee).map(t => (t.name || '').toLowerCase())
-    );
     return rows.map(row => {
       const result = calculateScheduleRow(row, eGrid, tGrid, inventoryItems);
       if (!result) return null;
+      const matchingTask = taskList.find(t => (t.name || '').toLowerCase() === (row.label || '').toLowerCase());
+      const assignee = matchingTask?.assignee || '';
       return {
         id: row.id, label: row.label, category: result.inventoryItem.category || '—',
         isManpower: result.isManpower, col1: result.col1, regCost: result.regularCost,
         otCost: result.overtimeCost, specialCost: result.specialCost, rowTotal: result.totalCost,
+        inventoryItem: result.inventoryItem, assignee, applied: !!assignee,
       };
-    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0) && !taskedWithResources.has((row.label || '').toLowerCase()));
+    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
   }, [project, inventoryItems, taskList]);
 
   const renderTaskRow = (task) => (
@@ -156,84 +152,6 @@ export default function ProjectList() {
         </div>
       </div>
 
-      {/* Add Line Item — Resource Allocation Fields */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Plus className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold">Add Line Item</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Type</label>
-            <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Type..." /></SelectTrigger>
-              <SelectContent>
-                {inventoryCategories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Item</label>
-            <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={newTaskType ? 'Select...' : '—'} /></SelectTrigger>
-              <SelectContent className="max-h-60 overflow-y-auto">
-                {filteredInventoryItems.length === 0 ? (
-                  <div className="px-3 py-3 text-xs text-muted-foreground text-center">No items</div>
-                ) : filteredInventoryItems.map(item => (
-                  <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <label className="text-xs text-muted-foreground">Description</label>
-            <input
-              className="w-full bg-transparent text-xs border-b border-border focus:border-primary px-1 h-8"
-              placeholder="Description..."
-              value={newTaskName}
-              onChange={e => setNewTaskName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addTask()}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Assignee</label>
-            <Select value={newAssignee} onValueChange={setNewAssignee}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Assignee..." /></SelectTrigger>
-              <SelectContent className="max-h-60 overflow-y-auto">
-                {labourItems.map(item => (
-                  <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Qty</label>
-            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newQty ?? ''} onChange={e => setNewQty(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Cost</label>
-            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newCost ?? ''} onChange={e => setNewCost(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Markup %</label>
-            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newMarkup ?? ''} onChange={e => setNewMarkup(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Tax %</label>
-            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newTaxPct ?? ''} onChange={e => setNewTaxPct(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Total</label>
-            <div className="h-8 flex items-center justify-end text-xs font-medium px-1 border-b border-transparent">{fmt(newCalc.total)}</div>
-          </div>
-          <div className="flex items-end">
-            <Button className="h-8 w-full" onClick={addTask}><Plus className="h-4 w-4 mr-1" /> Add</Button>
-          </div>
-        </div>
-      </div>
-
       {/* Scheduled items from Project Details Setup */}
       {equipmentSetupRows.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -249,6 +167,8 @@ export default function ProjectList() {
                   <th className="text-left pb-2 pr-2">Row Label</th>
                   <th className="text-left pb-2 pr-2">Category</th>
                   <th className="text-left pb-2 pr-2">Group</th>
+                  <th className="text-left pb-2 pr-2 min-w-[160px]">Resource</th>
+                  <th className="text-left pb-2 pr-2">Status</th>
                   <th className="text-right pb-2 pr-2">Count</th>
                   <th className="text-right pb-2 pr-2">Reg Cost</th>
                   <th className="text-right pb-2 pr-2">OT Cost</th>
@@ -266,6 +186,22 @@ export default function ProjectList() {
                         {row.isManpower ? 'Manpower' : 'Equipment'}
                       </span>
                     </td>
+                    <td className="py-1.5 pr-2">
+                      <Select value={row.assignee || ''} onValueChange={v => assignResource(row.label, v, row.inventoryItem)}>
+                        <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assign..." /></SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {labourItems.map(item => (
+                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      {row.applied
+                        ? <span className="px-2 py-0.5 rounded text-xs bg-green-500/15 text-green-400 whitespace-nowrap">Applied</span>
+                        : <span className="px-2 py-0.5 rounded text-xs bg-amber-500/15 text-amber-400 whitespace-nowrap">Pending</span>
+                      }
+                    </td>
                     <td className="py-1.5 pr-2 text-right text-muted-foreground">{row.col1}</td>
                     <td className="py-1.5 pr-2 text-right">{row.regCost != null && row.regCost > 0 ? `$${row.regCost.toFixed(2)}` : '—'}</td>
                     <td className="py-1.5 pr-2 text-right">{row.otCost != null && row.otCost > 0 ? `$${row.otCost.toFixed(2)}` : '—'}</td>
@@ -282,7 +218,7 @@ export default function ProjectList() {
                   }), { reg: 0, ot: 0, spec: 0, total: 0 });
                   return (
                     <tr className="border-t-2 border-border font-semibold">
-                      <td colSpan={4} className="pt-2 pr-2 text-right text-muted-foreground">Totals</td>
+                      <td colSpan={6} className="pt-2 pr-2 text-right text-muted-foreground">Totals</td>
                       <td className="pt-2 pr-2 text-right">${totals.reg.toFixed(2)}</td>
                       <td className="pt-2 pr-2 text-right">${totals.ot.toFixed(2)}</td>
                       <td className="pt-2 pr-2 text-right">${totals.spec.toFixed(2)}</td>
@@ -320,7 +256,7 @@ export default function ProjectList() {
             {taskList.length === 0 && (
               <tr>
                 <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
-                  No line items yet. Fill in the row above and click +
+                  No line items yet. Apply a resource to a scheduled item above.
                 </td>
               </tr>
             )}
