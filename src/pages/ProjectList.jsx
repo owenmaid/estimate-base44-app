@@ -156,6 +156,84 @@ export default function ProjectList() {
         </div>
       </div>
 
+      {/* Add Line Item — Resource Allocation Fields */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Plus className="h-4 w-4 text-primary" />
+          <h2 className="text-base font-semibold">Add Line Item</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Type</label>
+            <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Type..." /></SelectTrigger>
+              <SelectContent>
+                {inventoryCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Item</label>
+            <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={newTaskType ? 'Select...' : '—'} /></SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                {filteredInventoryItems.length === 0 ? (
+                  <div className="px-3 py-3 text-xs text-muted-foreground text-center">No items</div>
+                ) : filteredInventoryItems.map(item => (
+                  <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-xs text-muted-foreground">Description</label>
+            <input
+              className="w-full bg-transparent text-xs border-b border-border focus:border-primary px-1 h-8"
+              placeholder="Description..."
+              value={newTaskName}
+              onChange={e => setNewTaskName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addTask()}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Assignee</label>
+            <Select value={newAssignee} onValueChange={setNewAssignee}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Assignee..." /></SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                {labourItems.map(item => (
+                  <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Qty</label>
+            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newQty ?? ''} onChange={e => setNewQty(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Cost</label>
+            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newCost ?? ''} onChange={e => setNewCost(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Markup %</label>
+            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newMarkup ?? ''} onChange={e => setNewMarkup(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Tax %</label>
+            <input type="number" min="0" step="any" className="w-full bg-transparent text-xs text-right border-b border-border focus:border-primary px-1 h-8" value={newTaxPct ?? ''} onChange={e => setNewTaxPct(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Total</label>
+            <div className="h-8 flex items-center justify-end text-xs font-medium px-1 border-b border-transparent">{fmt(newCalc.total)}</div>
+          </div>
+          <div className="flex items-end">
+            <Button className="h-8 w-full" onClick={addTask}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+          </div>
+        </div>
+      </div>
+
       {/* Scheduled items from Project Details Setup */}
       {equipmentSetupRows.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -239,62 +317,6 @@ export default function ProjectList() {
             </tr>
           </thead>
           <tbody>
-            {/* New item input row */}
-            <tr className="border-b border-border/50 bg-muted/20">
-              <td className="py-2 pr-1"><Plus className="h-3.5 w-3.5 text-muted-foreground" /></td>
-              <td className="py-1 pr-2 whitespace-nowrap">
-                <Select value={newTaskType} onValueChange={handleNewTaskTypeChange}>
-                  <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Type..." /></SelectTrigger>
-                  <SelectContent>
-                    {inventoryCategories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </td>
-              <td className="py-1 pr-2 whitespace-nowrap">
-                <Select value={newTaskInventoryItem} onValueChange={handleInventoryItemSelect} disabled={!newTaskType}>
-                  <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder={newTaskType ? 'Select item...' : '—'} /></SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {filteredInventoryItems.length === 0 ? (
-                      <div className="px-3 py-3 text-xs text-muted-foreground text-center">No items</div>
-                    ) : filteredInventoryItems.map(item => (
-                      <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </td>
-              <td className="py-1 pr-2 whitespace-nowrap">
-                <input
-                  className="w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5"
-                  placeholder="Description..."
-                  value={newTaskName}
-                  onChange={e => setNewTaskName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addTask()}
-                />
-              </td>
-              <td className="py-1 pr-2">
-                <Select value={newAssignee} onValueChange={setNewAssignee}>
-                  <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assignee..." /></SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {labourItems.map(item => (
-                      <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </td>
-              <td className="py-1 pr-1">{numInput(newQty, e => setNewQty(e.target.value))}</td>
-              <td className="py-1 pr-1">{numInput(newCost, e => setNewCost(e.target.value))}</td>
-              <td className="py-1 pr-1">{numInput(newMarkup, e => setNewMarkup(e.target.value))}</td>
-              <td className="py-1 pr-1">{numInput(newTaxPct, e => setNewTaxPct(e.target.value))}</td>
-              <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(newCalc.tax_amount)}</td>
-              <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(newCalc.subtotal)}</td>
-              <td className="py-1 text-right font-medium">{fmt(newCalc.total)}</td>
-              <td className="py-1 pl-1">
-                <Button size="icon" className="h-6 w-6" onClick={addTask}><Plus className="h-3 w-3" /></Button>
-              </td>
-            </tr>
-
             {taskList.length === 0 && (
               <tr>
                 <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
