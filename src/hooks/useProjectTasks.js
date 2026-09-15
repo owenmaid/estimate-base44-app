@@ -223,7 +223,7 @@ export function useProjectTasks(id) {
     });
   };
 
-  const assignResource = (rowLabel, assignee, inventoryItem) => {
+  const assignResource = (rowLabel, assignee, inventoryItem, quantity) => {
     const existing = taskList.find(t => (t.name || '').toLowerCase() === (rowLabel || '').toLowerCase());
     if (existing) {
       updateTaskField(existing.id, 'assignee', assignee);
@@ -234,7 +234,7 @@ export function useProjectTasks(id) {
         type: inventoryItem?.category || null,
         assignee: assignee || null,
         done: false,
-        quantity: 1,
+        quantity: quantity != null ? quantity : 1,
         cost: inventoryItem?.unit_cost != null ? String(inventoryItem.unit_cost) : '',
         markup: 0,
         tax_pct: 0,

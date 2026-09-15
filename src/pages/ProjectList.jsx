@@ -187,7 +187,7 @@ export default function ProjectList() {
                       </span>
                     </td>
                     <td className="py-1.5 pr-2">
-                      <Select value={row.assignee || ''} onValueChange={v => assignResource(row.label, v, row.inventoryItem)}>
+                      <Select value={row.assignee || ''} onValueChange={v => assignResource(row.label, v, row.inventoryItem, row.col1)}>
                         <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assign..." /></SelectTrigger>
                         <SelectContent className="max-h-60 overflow-y-auto">
                           {labourItems.map(item => (
