@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search, Info } from 'lucide-react';
+import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import ProjectModal from '@/components/projects/ProjectModal';
+import ProjectManpowerItems from '@/components/projects/ProjectManpowerItems';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { computeCol14 } from '@/lib/computeCol14';
@@ -50,6 +51,7 @@ const STATUS_LABELS = {
 export default function Projects() {
   const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [expandedProjectId, setExpandedProjectId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: projects = [], isLoading } = useQuery({
@@ -178,27 +180,52 @@ export default function Projects() {
                 }).map(project => {
                   const total = computeSetupTotal(project, inventoryItems);
                   const fmt = (n) => n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' });
+                  const isExpanded = expandedProjectId === project.id;
+                  const manpowerCount = (project.task_list || []).filter(t => {
+                    const ty = (t.type || '').toUpperCase();
+                    return ty === 'DIRECT LABOUR' || ty === 'INDIRECT LABOUR';
+                  }).length;
                   return (
-                    <tr key={project.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{project.project_number || '—'}</td>
-                      <td className="px-4 py-3 font-medium">{project.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{project.start_date || '—'}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{project.end_date || '—'}</td>
-                      <td className="px-4 py-3">
-                        <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
-                          {STATUS_LABELS[project.status]}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{project.client || '—'}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-primary" colSpan={3}>{fmt(total)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <Link to={`/project-planning/${project.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Open
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
+                    <React.Fragment key={project.id}>
+                      <tr className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{project.project_number || '—'}</td>
+                        <td className="px-4 py-3 font-medium">
+                          <button
+                            onClick={() => setExpandedProjectId(isExpanded ? null : project.id)}
+                            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+                          >
+                            {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            {project.name}
+                            {manpowerCount > 0 && (
+                              <span className="ml-1 text-xs text-muted-foreground font-normal">({manpowerCount} manpower)</span>
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{project.start_date || '—'}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{project.end_date || '—'}</td>
+                        <td className="px-4 py-3">
+                          <Badge className={`text-xs border ${STATUS_STYLES[project.status]}`}>
+                            {STATUS_LABELS[project.status]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{project.client || '—'}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-primary" colSpan={3}>{fmt(total)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Link to={`/project-planning/${project.id}`}>
+                            <Button variant="ghost" size="sm">
+                              <Pencil className="h-3.5 w-3.5 mr-1.5" /> Open
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={10} className="p-0">
+                            <ProjectManpowerItems project={project} />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
