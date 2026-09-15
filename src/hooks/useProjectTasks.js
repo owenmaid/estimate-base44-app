@@ -61,9 +61,10 @@ export function useProjectTasks(id) {
     queryFn: () => base44.entities.InventoryItem.list('name'),
   });
 
-  const labourItems = inventoryItems.filter(i =>
-    i.category?.toUpperCase() === 'DIRECT LABOUR' || i.category?.toUpperCase() === 'INDIRECT LABOUR'
-  );
+  const labourItems = inventoryItems.filter(i => {
+    const cat = (i.category || '').toUpperCase();
+    return cat === 'DIRECT LABOUR' || cat === 'INDIRECT LABOUR' || cat.includes('VENTILATION');
+  });
 
   const inventoryCategories = [...new Set(inventoryItems.map(i => i.category).filter(Boolean))].sort();
 
