@@ -70,7 +70,7 @@ export default function ProjectPlanning() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [groupBy, setGroupBy] = useState('none');
-  const [viewFilter, setViewFilter] = useState('all');
+  const [viewFilter, setViewFilter] = useState('manpower_excl_conventional');
 
   // New item form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -416,14 +416,21 @@ export default function ProjectPlanning() {
         />
       </td>
       <td className="py-1 pr-2">
-        <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
-          <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assignee..." /></SelectTrigger>
-          <SelectContent className="max-h-60 overflow-y-auto">
-            {labourItems.map(item => (
-              <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
+            <SelectTrigger className="h-7 text-xs px-1.5 flex-1"><SelectValue placeholder="Assignee..." /></SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              {labourItems.map(item => (
+                <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isManpowerTask(task) && (
+            task.assignee
+              ? <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 whitespace-nowrap">Applied</span>
+              : <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 whitespace-nowrap">No resource</span>
+          )}
+        </div>
       </td>
       <td className="py-1 pr-1">{numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}</td>
       <td className="py-1 pr-1">{numInput(task.cost ?? '', e => updateTaskField(task.id, 'cost', e.target.value))}</td>
@@ -683,7 +690,7 @@ export default function ProjectPlanning() {
                   <th className="text-left pb-2 pr-2 min-w-[140px] whitespace-nowrap">Type</th>
                   <th className="text-left pb-2 pr-2 min-w-[200px] whitespace-nowrap">Item</th>
                   <th className="text-left pb-2 pr-2 min-w-[260px] whitespace-nowrap">Description</th>
-                  <th className="text-left pb-2 pr-2 w-28">Assignee</th>
+                  <th className="text-left pb-2 pr-2 w-44">Assignee</th>
                   <th className="text-right pb-2 pr-1 w-16">Qty</th>
                   <th className="text-right pb-2 pr-1 w-20">Cost</th>
                   <th className="text-right pb-2 pr-1 w-16">Markup %</th>
