@@ -199,7 +199,7 @@ export default function ResourceAllocation() {
   }, [inventoryItems]);
 
   const filtered = useMemo(() => {
-    if (!selectedMember) return memberMap;
+    if (!selectedMember || selectedMember === 'all') return memberMap;
     return memberMap.filter(m => m.name.toLowerCase() === selectedMember.toLowerCase());
   }, [memberMap, selectedMember]);
 
@@ -265,13 +265,10 @@ export default function ResourceAllocation() {
             <SelectValue placeholder="Select a manpower resource..." />
           </SelectTrigger>
           <SelectContent className="max-h-72 overflow-y-auto">
-            {manpowerOptions.length === 0 ? (
-              <div className="px-3 py-3 text-xs text-muted-foreground text-center">No manpower items</div>
-            ) : (
-              manpowerOptions.map(item => (
-                <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-              ))
-            )}
+            <SelectItem value="all">All</SelectItem>
+            {manpowerOptions.map(item => (
+              <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
