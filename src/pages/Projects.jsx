@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search } from 'lucide-react';
+import { Plus, FolderKanban, Calendar, BarChart2, CheckCircle2, Clock, AlertCircle, Pencil, Kanban, Search, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,6 +100,12 @@ export default function Projects() {
             <Plus className="h-4 w-4 mr-1.5" /> New Project
           </Button>
         </div>
+      </div>
+
+      {/* Manpower Resources guidance */}
+      <div className="flex items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+        <Info className="h-4 w-4 shrink-0 text-primary" />
+        <span>Select a project below to update the Manpower Resources</span>
       </div>
 
       {/* Stats row */}
