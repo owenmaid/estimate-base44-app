@@ -3,8 +3,9 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, Lock } from 'lucide-react';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
+import { calculateScheduleRow } from '@/lib/calculations';
 
 const STATUS_STYLES = {
   active: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -39,7 +40,24 @@ export default function ProjectList() {
     labourItems, inventoryCategories, filteredInventoryItems,
     handleNewTaskTypeChange, handleInventoryItemSelect,
     doneTasks, progress,
+    project, inventoryItems,
   } = useProjectTasks(id);
+
+  const equipmentSetupRows = useMemo(() => {
+    if (!project) return [];
+    const rows = project.equipment_rows || [];
+    const eGrid = project.equipment_grid || {};
+    const tGrid = project.type_grid || {};
+    return rows.map(row => {
+      const result = calculateScheduleRow(row, eGrid, tGrid, inventoryItems);
+      if (!result) return null;
+      return {
+        id: row.id, label: row.label, category: result.inventoryItem.category || '—',
+        isManpower: result.isManpower, col1: result.col1, regCost: result.regularCost,
+        otCost: result.overtimeCost, specialCost: result.specialCost, rowTotal: result.totalCost,
+      };
+    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
+  }, [project, inventoryItems]);
 
   const renderTaskRow = (task) => (
     <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">
@@ -133,6 +151,68 @@ export default function ProjectList() {
           </div>
         </div>
       </div>
+
+      {/* Scheduled items from Project Details Setup */}
+      {equipmentSetupRows.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-base font-semibold">Scheduled Line Items</h2>
+            <span className="text-xs text-muted-foreground">(from Project Details Setup — read-only)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs min-w-[600px]">
+              <thead>
+                <tr className="text-muted-foreground border-b border-border">
+                  <th className="text-left pb-2 pr-2">Row Label</th>
+                  <th className="text-left pb-2 pr-2">Category</th>
+                  <th className="text-left pb-2 pr-2">Group</th>
+                  <th className="text-right pb-2 pr-2">Count</th>
+                  <th className="text-right pb-2 pr-2">Reg Cost</th>
+                  <th className="text-right pb-2 pr-2">OT Cost</th>
+                  <th className="text-right pb-2 pr-2">Special Cost</th>
+                  <th className="text-right pb-2">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentSetupRows.map((row, idx) => (
+                  <tr key={row.id} className={`border-b border-border/30 ${idx % 2 === 0 ? '' : 'bg-muted/10'}`}>
+                    <td className="py-1.5 pr-2 font-medium text-foreground">{row.label}</td>
+                    <td className="py-1.5 pr-2 text-muted-foreground">{row.category}</td>
+                    <td className="py-1.5 pr-2">
+                      <span className={`px-1.5 py-0.5 rounded text-xs ${row.isManpower ? 'bg-blue-500/15 text-blue-400' : 'bg-muted text-muted-foreground'}`}>
+                        {row.isManpower ? 'Manpower' : 'Equipment'}
+                      </span>
+                    </td>
+                    <td className="py-1.5 pr-2 text-right text-muted-foreground">{row.col1}</td>
+                    <td className="py-1.5 pr-2 text-right">{row.regCost != null && row.regCost > 0 ? `$${row.regCost.toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 pr-2 text-right">{row.otCost != null && row.otCost > 0 ? `$${row.otCost.toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 pr-2 text-right">{row.specialCost != null && row.specialCost > 0 ? `$${row.specialCost.toFixed(2)}` : '—'}</td>
+                    <td className="py-1.5 text-right font-semibold text-primary">{row.rowTotal > 0 ? `$${row.rowTotal.toFixed(2)}` : '—'}</td>
+                  </tr>
+                ))}
+                {(() => {
+                  const totals = equipmentSetupRows.reduce((acc, r) => ({
+                    reg: acc.reg + (r.regCost || 0),
+                    ot: acc.ot + (r.otCost || 0),
+                    spec: acc.spec + (r.specialCost || 0),
+                    total: acc.total + (r.rowTotal || 0),
+                  }), { reg: 0, ot: 0, spec: 0, total: 0 });
+                  return (
+                    <tr className="border-t-2 border-border font-semibold">
+                      <td colSpan={4} className="pt-2 pr-2 text-right text-muted-foreground">Totals</td>
+                      <td className="pt-2 pr-2 text-right">${totals.reg.toFixed(2)}</td>
+                      <td className="pt-2 pr-2 text-right">${totals.ot.toFixed(2)}</td>
+                      <td className="pt-2 pr-2 text-right">${totals.spec.toFixed(2)}</td>
+                      <td className="pt-2 text-right font-bold text-primary text-sm">${totals.total.toFixed(2)}</td>
+                    </tr>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Task list table */}
       <div className="overflow-x-auto">
