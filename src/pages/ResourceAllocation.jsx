@@ -90,8 +90,8 @@ function MemberRow({ member }) {
       {expanded && (
         <div className="border-t border-border bg-muted/10 divide-y divide-border/50">
           {member.projectBreakdown.map(({ project, tasks }) => (
-            <div key={project.id} className="px-5 py-3">
-              <div className="flex items-center gap-2 mb-2">
+            <div key={project.id} className="px-5 py-0.5">
+              <div className="flex items-center gap-2 mb-0.5">
                 <Link to={`/project-planning/${project.id}`} className="text-sm font-medium hover:text-primary transition-colors">
                   {project.name}
                 </Link>
@@ -102,7 +102,7 @@ function MemberRow({ member }) {
                   <span className="text-xs text-muted-foreground">· {project.client}</span>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 ml-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 ml-2">
                 {tasks.map(task => (
                   <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                     {task.done
