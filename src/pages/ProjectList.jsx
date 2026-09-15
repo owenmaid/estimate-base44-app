@@ -56,7 +56,7 @@ export default function ProjectList() {
         otCost: result.overtimeCost, specialCost: result.specialCost, rowTotal: result.totalCost,
         inventoryItem: result.inventoryItem, assignee, applied: !!assignee,
       };
-    }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
+    }).filter(row => row && row.isManpower && (row.col1 > 0 || row.rowTotal > 0));
   }, [project, inventoryItems, taskList]);
 
   const renderTaskRow = (task) => (
