@@ -70,6 +70,7 @@ export default function ProjectPlanning() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [groupBy, setGroupBy] = useState('none');
+  const [viewFilter, setViewFilter] = useState('all');
 
   // New item form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -113,6 +114,30 @@ export default function ProjectPlanning() {
     { value: 'sub_group_02', label: 'Sub Group 02' },
   ];
 
+  const VIEW_OPTIONS = [
+    { value: 'all', label: 'All items' },
+    { value: 'manpower_excl_conventional', label: 'Manpower (excl. Conventional)' },
+  ];
+
+  const isManpowerTask = (task) => {
+    const t = (task.type || '').toUpperCase();
+    return t === 'DIRECT LABOUR' || t === 'INDIRECT LABOUR';
+  };
+
+  // Tasks filtered by the selected view (e.g. manpower excluding CONVENTIONAL)
+  const viewTasks = useMemo(() => {
+    if (viewFilter === 'all') return taskList;
+    if (viewFilter === 'manpower_excl_conventional') {
+      return taskList.filter(task => {
+        if (!isManpowerTask(task)) return false;
+        const inv = inventoryByName[(task.name || '').toLowerCase()];
+        const sg = (inv && inv.sub_group_01 || '').trim().toUpperCase();
+        return sg !== 'CONVENTIONAL';
+      });
+    }
+    return taskList;
+  }, [taskList, viewFilter, inventoryByName]);
+
   const taskGroupKey = (task) => {
     if (groupBy === 'category') return task.type || 'Uncategorized';
     if (groupBy === 'sub_group_01' || groupBy === 'sub_group_02') {
@@ -127,7 +152,7 @@ export default function ProjectPlanning() {
     if (groupBy === 'none') return null;
     const groups = [];
     const seen = {};
-    taskList.forEach(task => {
+    viewTasks.forEach(task => {
       const key = taskGroupKey(task);
       if (!seen[key]) {
         seen[key] = { key, tasks: [] };
@@ -136,7 +161,7 @@ export default function ProjectPlanning() {
       seen[key].tasks.push(task);
     });
     return groups;
-  }, [taskList, groupBy, inventoryByName]);
+  }, [viewTasks, groupBy, inventoryByName]);
 
   const filteredInventoryItems = newTaskType
     ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
@@ -620,6 +645,19 @@ export default function ProjectPlanning() {
                 {doneTasks}/{taskList.length} line items done
               </Badge>
               <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">View</span>
+                <Select value={viewFilter} onValueChange={setViewFilter}>
+                  <SelectTrigger className="h-8 w-56 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VIEW_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground whitespace-nowrap">Group by</span>
                 <Select value={groupBy} onValueChange={setGroupBy}>
                   <SelectTrigger className="h-8 w-44 text-xs">
@@ -713,10 +751,17 @@ export default function ProjectPlanning() {
                   </td>
                 </tr>
 
-                {taskList.length === 0 && (
+                {viewTasks.length === 0 && taskList.length === 0 && (
                   <tr>
                     <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
                       No line items yet. Fill in the row above and click +
+                    </td>
+                  </tr>
+                )}
+                {viewTasks.length === 0 && taskList.length > 0 && (
+                  <tr>
+                    <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
+                      No items match the selected view.
                     </td>
                   </tr>
                 )}
@@ -731,11 +776,11 @@ export default function ProjectPlanning() {
                         {group.tasks.map(task => renderTaskRow(task))}
                       </React.Fragment>
                     ))
-                  : taskList.map(task => renderTaskRow(task))
+                  : viewTasks.map(task => renderTaskRow(task))
                 }
 
-                {taskList.length > 0 && (() => {
-                  const totals = taskList.reduce((acc, t) => ({
+                {viewTasks.length > 0 && (() => {
+                  const totals = viewTasks.reduce((acc, t) => ({
                     subtotal: acc.subtotal + (t.subtotal || 0),
                     tax_amount: acc.tax_amount + (t.tax_amount || 0),
                     total: acc.total + (t.total || 0),
