@@ -69,6 +69,7 @@ export default function ProjectPlanning() {
   const [taskList, setTaskList] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [groupBy, setGroupBy] = useState('none');
 
   // New item form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -95,6 +96,47 @@ export default function ProjectPlanning() {
   );
 
   const inventoryCategories = [...new Set(inventoryItems.map(i => i.category).filter(Boolean))].sort();
+
+  // Lookup inventory item by name (case-insensitive) to resolve sub-groups for grouping
+  const inventoryByName = useMemo(() => {
+    const map = {};
+    inventoryItems.forEach(i => {
+      if (i.name) map[i.name.toLowerCase()] = i;
+    });
+    return map;
+  }, [inventoryItems]);
+
+  const GROUP_OPTIONS = [
+    { value: 'none', label: 'No grouping' },
+    { value: 'category', label: 'Category' },
+    { value: 'sub_group_01', label: 'Sub Group 01' },
+    { value: 'sub_group_02', label: 'Sub Group 02' },
+  ];
+
+  const taskGroupKey = (task) => {
+    if (groupBy === 'category') return task.type || 'Uncategorized';
+    if (groupBy === 'sub_group_01' || groupBy === 'sub_group_02') {
+      const inv = inventoryByName[(task.name || '').toLowerCase()];
+      return (inv && inv[groupBy]) || 'Uncategorized';
+    }
+    return 'All';
+  };
+
+  // Group tasks when a grouping is selected (preserves order of first appearance)
+  const groupedTasks = useMemo(() => {
+    if (groupBy === 'none') return null;
+    const groups = [];
+    const seen = {};
+    taskList.forEach(task => {
+      const key = taskGroupKey(task);
+      if (!seen[key]) {
+        seen[key] = { key, tasks: [] };
+        groups.push(seen[key]);
+      }
+      seen[key].tasks.push(task);
+    });
+    return groups;
+  }, [taskList, groupBy, inventoryByName]);
 
   const filteredInventoryItems = newTaskType
     ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
@@ -330,6 +372,49 @@ export default function ProjectPlanning() {
 
   const fmt = (n) => (n != null && !isNaN(n)) ? parseFloat(n).toFixed(2) : '—';
 
+  const renderTaskRow = (task) => (
+    <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">
+      <td className="py-2 pr-1">
+        <button onClick={() => toggleTask(task.id)} className="flex-shrink-0">
+          {task.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
+        </button>
+      </td>
+      <td className="py-1 pr-2 whitespace-nowrap">
+        {task.type && <span className="bg-muted px-1.5 py-0.5 rounded text-xs">{task.type}</span>}
+      </td>
+      <td className="py-1 pr-2 text-xs text-muted-foreground whitespace-nowrap">{task.name}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">
+        <input
+          className={`w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 ${task.done ? 'line-through text-muted-foreground' : ''}`}
+          value={task.name}
+          onChange={e => updateTaskField(task.id, 'name', e.target.value)}
+        />
+      </td>
+      <td className="py-1 pr-2">
+        <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
+          <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assignee..." /></SelectTrigger>
+          <SelectContent className="max-h-60 overflow-y-auto">
+            {labourItems.map(item => (
+              <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </td>
+      <td className="py-1 pr-1">{numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}</td>
+      <td className="py-1 pr-1">{numInput(task.cost ?? '', e => updateTaskField(task.id, 'cost', e.target.value))}</td>
+      <td className="py-1 pr-1">{numInput(task.markup ?? '', e => updateTaskField(task.id, 'markup', e.target.value))}</td>
+      <td className="py-1 pr-1">{numInput(task.tax_pct ?? '', e => updateTaskField(task.id, 'tax_pct', e.target.value))}</td>
+      <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.tax_amount)}</td>
+      <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.subtotal)}</td>
+      <td className="py-1 text-right font-medium">{fmt(task.total)}</td>
+      <td className="py-1 pl-1">
+        <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
@@ -534,6 +619,19 @@ export default function ProjectPlanning() {
               <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
                 {doneTasks}/{taskList.length} line items done
               </Badge>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Group by</span>
+                <Select value={groupBy} onValueChange={setGroupBy}>
+                  <SelectTrigger className="h-8 w-44 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GROUP_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)}>
                 <X className="h-5 w-5" />
               </Button>
@@ -622,48 +720,19 @@ export default function ProjectPlanning() {
                     </td>
                   </tr>
                 )}
-                {taskList.map(task => (
-                  <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">
-                    <td className="py-2 pr-1">
-                      <button onClick={() => toggleTask(task.id)} className="flex-shrink-0">
-                        {task.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
-                      </button>
-                    </td>
-                    <td className="py-1 pr-2 whitespace-nowrap">
-                      {task.type && <span className="bg-muted px-1.5 py-0.5 rounded text-xs">{task.type}</span>}
-                    </td>
-                    <td className="py-1 pr-2 text-xs text-muted-foreground whitespace-nowrap">{task.name}</td>
-                    <td className="py-1 pr-2 whitespace-nowrap">
-                      <input
-                        className={`w-full bg-transparent text-xs outline-none border-b border-transparent focus:border-border px-0.5 ${task.done ? 'line-through text-muted-foreground' : ''}`}
-                        value={task.name}
-                        onChange={e => updateTaskField(task.id, 'name', e.target.value)}
-                      />
-                    </td>
-                    <td className="py-1 pr-2">
-                      <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
-                        <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assignee..." /></SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
-                          {labourItems.map(item => (
-                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="py-1 pr-1">{numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}</td>
-                    <td className="py-1 pr-1">{numInput(task.cost ?? '', e => updateTaskField(task.id, 'cost', e.target.value))}</td>
-                    <td className="py-1 pr-1">{numInput(task.markup ?? '', e => updateTaskField(task.id, 'markup', e.target.value))}</td>
-                    <td className="py-1 pr-1">{numInput(task.tax_pct ?? '', e => updateTaskField(task.id, 'tax_pct', e.target.value))}</td>
-                    <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.tax_amount)}</td>
-                    <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.subtotal)}</td>
-                    <td className="py-1 text-right font-medium">{fmt(task.total)}</td>
-                    <td className="py-1 pl-1">
-                      <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {groupedTasks
+                  ? groupedTasks.map(group => (
+                      <React.Fragment key={group.key}>
+                        <tr className="bg-primary/10 border-b border-border">
+                          <td colSpan={14} className="py-2 px-3 text-xs font-semibold text-primary">
+                            {group.key} <span className="text-muted-foreground font-normal ml-1">({group.tasks.length})</span>
+                          </td>
+                        </tr>
+                        {group.tasks.map(task => renderTaskRow(task))}
+                      </React.Fragment>
+                    ))
+                  : taskList.map(task => renderTaskRow(task))
+                }
 
                 {taskList.length > 0 && (() => {
                   const totals = taskList.reduce((acc, t) => ({
