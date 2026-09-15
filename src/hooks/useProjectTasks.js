@@ -63,8 +63,8 @@ export function useProjectTasks(id) {
 
   const labourItems = inventoryItems.filter(i => {
     if (i.item_group?.toUpperCase() !== 'MANPOWER GROUP') return false;
-    const cat = (i.category || '').toUpperCase();
-    return cat === 'VENTILATION' || cat === 'DCSM';
+    const sg = (i.sub_group_01 || '').toUpperCase();
+    return sg === 'VENTILATION' || sg === 'DCSM';
   });
 
   const inventoryCategories = [...new Set(inventoryItems.map(i => i.category).filter(Boolean))].sort();
