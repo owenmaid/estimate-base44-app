@@ -3,9 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
-import { Users, Search, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { Users, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight, Package } from 'lucide-react';
 
 const DEFAULT_CAPACITY = 10; // fallback if no manpower SKU found
 
@@ -125,7 +125,7 @@ function MemberRow({ member }) {
 }
 
 export default function ResourceAllocation() {
-  const [search, setSearch] = useState('');
+  const [selectedMember, setSelectedMember] = useState('');
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -183,11 +183,25 @@ export default function ResourceAllocation() {
     }).sort((a, b) => (b.used / b.capacity) - (a.used / a.capacity));
   }, [projects, manpowerLookup]);
 
+  // Manpower inventory items for the dropdown (exclude CONVENTIONAL group)
+  const manpowerOptions = useMemo(() => {
+    const isConventional = (i) => {
+      const fields = [i.item_group, i.sub_group_01, i.sub_group_02].filter(Boolean).join(' ').toLowerCase();
+      return fields.includes('conventional');
+    };
+    return inventoryItems
+      .filter(i => {
+        const isManpower = i.item_group?.toLowerCase() === 'manpower group' ||
+          ['direct labour', 'indirect labour'].includes(i.category?.toLowerCase());
+        return isManpower && !isConventional(i);
+      })
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [inventoryItems]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return memberMap;
-    const q = search.toLowerCase();
-    return memberMap.filter(m => m.name.toLowerCase().includes(q));
-  }, [memberMap, search]);
+    if (!selectedMember) return memberMap;
+    return memberMap.filter(m => m.name.toLowerCase() === selectedMember.toLowerCase());
+  }, [memberMap, selectedMember]);
 
   const isLoading = loadingProjects || loadingInventory;
 
@@ -244,15 +258,22 @@ export default function ResourceAllocation() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search team member..."
-          className="pl-9"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      {/* Filter dropdown */}
+      <div className="max-w-sm">
+        <Select value={selectedMember} onValueChange={setSelectedMember}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a manpower resource..." />
+          </SelectTrigger>
+          <SelectContent className="max-h-72 overflow-y-auto">
+            {manpowerOptions.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-muted-foreground text-center">No manpower items</div>
+            ) : (
+              manpowerOptions.map(item => (
+                <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Workload legend */}
@@ -276,7 +297,7 @@ export default function ResourceAllocation() {
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No team members match "{search}".</p>
+        <p className="text-muted-foreground text-sm">No team members match the selected resource.</p>
       ) : (
         <div className="space-y-3">
           {filtered.map(member => (
