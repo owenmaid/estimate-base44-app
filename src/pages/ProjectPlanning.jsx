@@ -119,7 +119,21 @@ export default function ProjectPlanning() {
     { value: 'manpower_excl_conventional', label: 'Manpower (excl. Conventional)' },
   ];
 
+  // Set of inventory item names belonging to the Manpower Group (reliable manpower detection)
+  const manpowerInventoryNames = useMemo(() => {
+    const set = new Set();
+    inventoryItems.forEach(i => {
+      if (i.item_group?.toUpperCase() === 'MANPOWER GROUP' && i.name) {
+        set.add(i.name.toLowerCase());
+      }
+    });
+    return set;
+  }, [inventoryItems]);
+
   const isManpowerTask = (task) => {
+    // Primary: match by inventory item group lookup
+    if (manpowerInventoryNames.has((task.name || '').toLowerCase())) return true;
+    // Fallback: by task type category
     const t = (task.type || '').toUpperCase();
     return t === 'DIRECT LABOUR' || t === 'INDIRECT LABOUR';
   };
@@ -136,7 +150,7 @@ export default function ProjectPlanning() {
       });
     }
     return taskList;
-  }, [taskList, viewFilter, inventoryByName]);
+  }, [taskList, viewFilter, inventoryByName, manpowerInventoryNames]);
 
   const taskGroupKey = (task) => {
     if (groupBy === 'category') return task.type || 'Uncategorized';
