@@ -347,7 +347,7 @@ export default function ProjectPlanning() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
-            <Maximize2 className="h-4 w-4 mr-1.5" /> Expand Items
+            <Maximize2 className="h-4 w-4 mr-1.5" /> Update Manpower Resources
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
