@@ -98,6 +98,13 @@ export function useProjectTasks(id) {
     return t === 'DIRECT LABOUR' || t === 'INDIRECT LABOUR';
   };
 
+  const isConventionalManpowerTask = (task) => {
+    const inv = inventoryByName[(task.name || '').toLowerCase()];
+    return !!inv && (inv.sub_group_01 || '').trim().toUpperCase() === 'CONVENTIONAL';
+  };
+
+  const visibleTaskList = useMemo(() => taskList.filter(t => !isConventionalManpowerTask(t)), [taskList, inventoryByName]);
+
   const scheduledManpowerLabels = useMemo(() => {
     if (!project) return new Set();
     const rows = project.equipment_rows || [];
@@ -127,13 +134,13 @@ export function useProjectTasks(id) {
     if (groupBy === 'none') return null;
     const groups = [];
     const seen = {};
-    taskList.forEach(task => {
+    visibleTaskList.forEach(task => {
       const key = taskGroupKey(task);
       if (!seen[key]) { seen[key] = { key, tasks: [] }; groups.push(seen[key]); }
       seen[key].tasks.push(task);
     });
     return groups;
-  }, [taskList, groupBy, inventoryByName]);
+  }, [visibleTaskList, groupBy, inventoryByName]);
 
   const filteredInventoryItems = newTaskType
     ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
@@ -264,8 +271,8 @@ export function useProjectTasks(id) {
     });
   };
 
-  const doneTasks = taskList.filter(t => t.done).length;
-  const progress = taskList.length > 0 ? Math.round((doneTasks / taskList.length) * 100) : (form?.progress || 0);
+  const doneTasks = visibleTaskList.filter(t => t.done).length;
+  const progress = visibleTaskList.length > 0 ? Math.round((doneTasks / visibleTaskList.length) * 100) : (form?.progress || 0);
 
   const newCalc = calcTask({ quantity: newQty, cost: newCost, markup: newMarkup, tax_pct: newTaxPct });
 
@@ -276,7 +283,7 @@ export function useProjectTasks(id) {
     newTaskName, setNewTaskName, newTaskType, newTaskInventoryItem, newAssignee, setNewAssignee,
     newQty, setNewQty, newCost, setNewCost, newMarkup, setNewMarkup, newTaxPct, setNewTaxPct,
     newCalc, addTask, toggleTask, removeTask, updateTaskField, assignResource, syncQuantities,
-    isManpowerTask, scheduledManpowerLabels,
+    isManpowerTask, scheduledManpowerLabels, visibleTaskList,
     labourItems, inventoryCategories, filteredInventoryItems,
     handleNewTaskTypeChange, handleInventoryItemSelect,
   };

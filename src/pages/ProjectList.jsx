@@ -38,7 +38,7 @@ export default function ProjectList() {
     labourItems,
     doneTasks, progress,
     project, inventoryItems,
-    syncQuantities,
+    syncQuantities, visibleTaskList,
   } = useProjectTasks(id);
 
   const equipmentSetupRows = useMemo(() => {
@@ -134,7 +134,7 @@ export default function ProjectList() {
         </div>
         <div className="flex items-center gap-3">
           <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
-            {doneTasks}/{taskList.length} line items done
+            {doneTasks}/{visibleTaskList.length} line items done
           </Badge>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground whitespace-nowrap">Group by</span>
@@ -246,7 +246,7 @@ export default function ProjectList() {
             </tr>
           </thead>
           <tbody>
-            {taskList.length === 0 && (
+            {visibleTaskList.length === 0 && (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
                   No line items yet. Apply a resource to a scheduled item above.
@@ -264,7 +264,7 @@ export default function ProjectList() {
                     {group.tasks.map(task => renderTaskRow(task))}
                   </React.Fragment>
                 ))
-              : taskList.map(task => renderTaskRow(task))
+              : visibleTaskList.map(task => renderTaskRow(task))
             }
 
 
