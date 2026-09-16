@@ -70,6 +70,17 @@ export default function ProjectPlanning() {
     }).filter(row => row && (row.col1 > 0 || row.rowTotal > 0));
   }, [project, inventoryItems]);
 
+  // ── Manpower summary grouped by type ───────────────────────────────────
+  const manpowerSummary = useMemo(() => {
+    const manpower = equipmentSetupRows.filter(r => r.isManpower && r.col1 > 0);
+    const groups = {};
+    manpower.forEach(r => {
+      const key = r.category || 'Uncategorized';
+      groups[key] = (groups[key] || 0) + r.col1;
+    });
+    return Object.entries(groups).sort((a, b) => b[1] - a[1]);
+  }, [equipmentSetupRows]);
+
   if (isLoading || !form) {
     return (
       <div className="p-6 flex items-center justify-center h-64">
@@ -141,6 +152,31 @@ export default function ProjectPlanning() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Manpower summary by type */}
+      {manpowerSummary.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Scheduled Manpower by Type</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {manpowerSummary.map(([type, count]) => (
+                <div key={type} className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">{type}</span>
+                  <span className="text-sm font-semibold text-primary">{count}</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2">
+                <span className="text-xs text-muted-foreground">Total</span>
+                <span className="text-sm font-bold text-primary">
+                  {manpowerSummary.reduce((sum, [, c]) => sum + c, 0)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
         {/* Project Details */}
