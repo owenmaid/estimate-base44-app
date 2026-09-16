@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { eachDayOfInterval, format, parseISO, isWeekend } from 'date-fns';
-import { Package, CalendarRange, BarChart3, Download } from 'lucide-react';
+import { Package, CalendarRange, BarChart3, Download, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useSidebar } from '@/lib/SidebarContext';
 
 const GROUP_ORDER = ['Manpower Group', 'Equipment Group', 'Service Group', 'Totals Group'];
 
@@ -16,6 +17,12 @@ export default function DetailedProjectGantt() {
   const tableScrollRef = useRef(null);
   const [syncing, setSyncing] = useState(false);
   const [hoveredBlock, setHoveredBlock] = useState(null); // { rowId, colIndex }
+  const { hidden: sidebarHidden, setHidden: setSidebarHidden } = useSidebar();
+
+  // Restore sidebar when leaving the page
+  useEffect(() => {
+    return () => setSidebarHidden(false);
+  }, [setSidebarHidden]);
 
   // Sync horizontal scroll across top scrollbar, date header, and body table
   const syncScroll = (source) => {
@@ -204,6 +211,15 @@ export default function DetailedProjectGantt() {
               >
                 <Download className="h-4 w-4" />
                 Export
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarHidden(!sidebarHidden)}
+                title={sidebarHidden ? 'Show side menu' : 'Hide side menu'}
+                className="inline-flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
+              >
+                {sidebarHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                {sidebarHidden ? 'Show Menu' : 'Hide Menu'}
               </button>
             </div>
           </CardContent>

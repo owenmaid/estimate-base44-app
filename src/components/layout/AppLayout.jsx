@@ -5,10 +5,12 @@ import Sidebar from './Sidebar';
 import BottomTabs from './BottomTabs';
 import BackButton from './BackButton';
 import { Toaster } from '@/components/ui/sonner';
+import { SidebarProvider, useSidebar } from '@/lib/SidebarContext';
 
-export default function AppLayout() {
+function AppLayoutInner() {
   const location = useLocation();
   const outlet = useOutlet();
+  const { hidden: sidebarHidden } = useSidebar();
 
   return (
     <>
@@ -19,9 +21,11 @@ export default function AppLayout() {
           paddingRight: 'env(safe-area-inset-right)',
         }}
       >
-        <div className="hidden lg:block shrink-0">
-          <Sidebar open={false} onClose={() => {}} />
-        </div>
+        {!sidebarHidden && (
+          <div className="hidden lg:block shrink-0">
+            <Sidebar open={false} onClose={() => {}} />
+          </div>
+        )}
         <div className="flex-1 flex flex-col overflow-hidden">
           <header
             className="lg:hidden flex items-center gap-2 px-4 border-b border-border bg-card shrink-0"
@@ -52,5 +56,13 @@ export default function AppLayout() {
       </div>
       <Toaster />
     </>
+  );
+}
+
+export default function AppLayout() {
+  return (
+    <SidebarProvider>
+      <AppLayoutInner />
+    </SidebarProvider>
   );
 }
