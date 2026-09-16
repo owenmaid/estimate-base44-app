@@ -104,12 +104,12 @@ function MemberRow({ member }) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 ml-2">
                 {tasks.map(task => (
-                  <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
                     {task.done
                       ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                       : <Circle className="h-3.5 w-3.5 shrink-0" />
                     }
-                    <span className={task.done ? 'line-through opacity-60' : ''}>{task.name}</span>
+                    <span className={`truncate ${task.done ? 'line-through opacity-60' : ''}`}>{task.name}</span>
                     {task.type && (
                       <span className="ml-auto bg-muted px-1.5 py-0.5 rounded text-[10px] shrink-0">{task.type}</span>
                     )}
