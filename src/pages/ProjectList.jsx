@@ -101,12 +101,6 @@ export default function ProjectList() {
           )}
         </div>
       </td>
-      <td className="py-1 pr-1">{numInput(task.quantity ?? '', e => updateTaskField(task.id, 'quantity', e.target.value))}</td>
-      <td className="py-1 pr-1">{numInput(task.cost ?? '', e => updateTaskField(task.id, 'cost', e.target.value))}</td>
-      <td className="py-1 pr-1">{numInput(task.markup ?? '', e => updateTaskField(task.id, 'markup', e.target.value))}</td>
-      <td className="py-1 pr-1">{numInput(task.tax_pct ?? '', e => updateTaskField(task.id, 'tax_pct', e.target.value))}</td>
-      <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.tax_amount)}</td>
-      <td className="py-1 pr-1 text-right text-muted-foreground">{fmt(task.subtotal)}</td>
       <td className="py-1 text-right font-medium">{fmt(task.total)}</td>
       <td className="py-1 pl-1">
         <button onClick={() => removeTask(task.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all">
@@ -249,12 +243,6 @@ export default function ProjectList() {
               <th className="text-left pb-2 pr-2 min-w-[200px] whitespace-nowrap">Item</th>
               <th className="text-left pb-2 pr-2 min-w-[260px] whitespace-nowrap">Description</th>
               <th className="text-left pb-2 pr-2 w-44">Assignee</th>
-              <th className="text-right pb-2 pr-1 w-16">Qty</th>
-              <th className="text-right pb-2 pr-1 w-20">Cost</th>
-              <th className="text-right pb-2 pr-1 w-16">Markup %</th>
-              <th className="text-right pb-2 pr-1 w-16">Tax %</th>
-              <th className="text-right pb-2 pr-1 w-20">Tax Amt</th>
-              <th className="text-right pb-2 pr-1 w-20">Subtotal</th>
               <th className="text-right pb-2 w-20">Total</th>
               <th className="w-6 pb-2"></th>
             </tr>
@@ -262,7 +250,7 @@ export default function ProjectList() {
           <tbody>
             {taskList.length === 0 && (
               <tr>
-                <td colSpan={12} className="text-center py-8 text-muted-foreground text-sm">
+                <td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
                   No line items yet. Apply a resource to a scheduled item above.
                 </td>
               </tr>
@@ -271,7 +259,7 @@ export default function ProjectList() {
               ? groupedTasks.map(group => (
                   <React.Fragment key={group.key}>
                     <tr className="bg-primary/10 border-b border-border">
-                      <td colSpan={14} className="py-2 px-3 text-xs font-semibold text-primary">
+                      <td colSpan={7} className="py-2 px-3 text-xs font-semibold text-primary">
                         {group.key} <span className="text-muted-foreground font-normal ml-1">({group.tasks.length})</span>
                       </td>
                     </tr>
