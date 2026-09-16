@@ -45,7 +45,6 @@ export function useProjectTasks(id) {
   const [form, setForm] = useState(null);
   const [taskList, setTaskList] = useState([]);
   const [groupBy, setGroupBy] = useState('none');
-  const [hideCompleted, setHideCompleted] = useState(false);
 
   // New item form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -106,11 +105,6 @@ export function useProjectTasks(id) {
 
   const visibleTaskList = useMemo(() => taskList.filter(t => !isConventionalManpowerTask(t)), [taskList, inventoryByName]);
 
-  const displayTaskList = useMemo(
-    () => hideCompleted ? visibleTaskList.filter(t => !t.done) : visibleTaskList,
-    [visibleTaskList, hideCompleted]
-  );
-
   const scheduledManpowerLabels = useMemo(() => {
     if (!project) return new Set();
     const rows = project.equipment_rows || [];
@@ -140,13 +134,13 @@ export function useProjectTasks(id) {
     if (groupBy === 'none') return null;
     const groups = [];
     const seen = {};
-    displayTaskList.forEach(task => {
+    visibleTaskList.forEach(task => {
       const key = taskGroupKey(task);
       if (!seen[key]) { seen[key] = { key, tasks: [] }; groups.push(seen[key]); }
       seen[key].tasks.push(task);
     });
     return groups;
-  }, [displayTaskList, groupBy, inventoryByName]);
+  }, [visibleTaskList, groupBy, inventoryByName]);
 
   const filteredInventoryItems = newTaskType
     ? inventoryItems.filter(i => i.category?.toLowerCase() === newTaskType.toLowerCase())
@@ -289,8 +283,7 @@ export function useProjectTasks(id) {
     newTaskName, setNewTaskName, newTaskType, newTaskInventoryItem, newAssignee, setNewAssignee,
     newQty, setNewQty, newCost, setNewCost, newMarkup, setNewMarkup, newTaxPct, setNewTaxPct,
     newCalc, addTask, toggleTask, removeTask, updateTaskField, assignResource, syncQuantities,
-    isManpowerTask, scheduledManpowerLabels, visibleTaskList, displayTaskList,
-    hideCompleted, setHideCompleted,
+    isManpowerTask, scheduledManpowerLabels, visibleTaskList,
     labourItems, inventoryCategories, filteredInventoryItems,
     handleNewTaskTypeChange, handleInventoryItemSelect,
   };
