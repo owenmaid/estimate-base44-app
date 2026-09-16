@@ -32,10 +32,6 @@ export default function ProjectManpowerItems({ project }) {
                 <th className="text-left py-1.5 pr-3 font-medium">Type</th>
                 <th className="text-left py-1.5 pr-3 font-medium">Assignee</th>
                 <th className="text-right py-1.5 pr-3 font-medium">Qty</th>
-                <th className="text-right py-1.5 pr-3 font-medium">Cost</th>
-                <th className="text-right py-1.5 pr-3 font-medium">Markup %</th>
-                <th className="text-right py-1.5 pr-3 font-medium">Subtotal</th>
-                <th className="text-right py-1.5 font-medium">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -45,23 +41,8 @@ export default function ProjectManpowerItems({ project }) {
                   <td className="py-1.5 pr-3 text-muted-foreground">{item.type || '—'}</td>
                   <td className="py-1.5 pr-3 text-muted-foreground">{item.assignee || '—'}</td>
                   <td className="py-1.5 pr-3 text-right text-muted-foreground">{item.quantity ?? '—'}</td>
-                  <td className="py-1.5 pr-3 text-right text-muted-foreground">{fmt(item.cost)}</td>
-                  <td className="py-1.5 pr-3 text-right text-muted-foreground">{item.markup ?? '—'}</td>
-                  <td className="py-1.5 pr-3 text-right text-muted-foreground">{fmt(item.subtotal)}</td>
-                  <td className="py-1.5 text-right font-semibold text-primary">{fmt(item.total)}</td>
                 </tr>
               ))}
-              {(() => {
-                const total = items.reduce((sum, t) => sum + (Number(t.total) || 0), 0);
-                return (
-                  <tr className="border-t-2 border-border font-semibold">
-                    <td colSpan={7} className="pt-2 pr-3 text-right text-muted-foreground">Manpower Total</td>
-                    <td className="pt-2 text-right text-primary">
-                      {total.toLocaleString('en-CA', { style: 'currency', currency: 'CAD' })}
-                    </td>
-                  </tr>
-                );
-              })()}
             </tbody>
           </table>
         </div>
