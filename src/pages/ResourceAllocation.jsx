@@ -95,16 +95,18 @@ function MemberRow({ member }) {
             member.projectBreakdown.forEach(({ project, tasks }) => {
               tasks.forEach(t => allTasks.push({ ...t, project }));
             });
-            // Group by type
+            // Group by keyword in name
+            const KEYWORDS = ['On-Site Admin', 'Superintendent', 'Lead DCSM', 'Lead Ventilation', 'Ventilation Tech', 'DCSM Operator'];
             const groups = {};
             allTasks.forEach(t => {
-              const key = t.type || 'Uncategorized';
+              const lower = (t.name || '').toLowerCase();
+              const key = KEYWORDS.find(k => lower.includes(k.toLowerCase())) || 'Other';
               if (!groups[key]) groups[key] = [];
               groups[key].push(t);
             });
             const orderedKeys = Object.keys(groups).sort((a, b) => {
-              if (a === 'Uncategorized') return 1;
-              if (b === 'Uncategorized') return -1;
+              if (a === 'Other') return 1;
+              if (b === 'Other') return -1;
               return a.localeCompare(b);
             });
             return orderedKeys.map(type => (
