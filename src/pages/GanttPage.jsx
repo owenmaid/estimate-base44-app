@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { FolderKanban } from 'lucide-react';
 import { addDays, format, startOfWeek, differenceInDays, parseISO, isValid, isSameDay } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const STATUS_COLORS = {
   active:    'bg-green-500',
@@ -24,13 +25,30 @@ const STATUS_STYLES = {
 
 const STATUS_LABELS = { active: 'Active', planning: 'Planning', on_hold: 'On Hold', completed: 'Completed' };
 
-const TOTAL_WEEKS = 16;
 // Total scrollable range: 52 weeks back to 52 weeks forward = 104 weeks
 const SCROLL_RANGE_WEEKS = 104;
 const SCROLL_ORIGIN_WEEKS = 52; // how many weeks before "today" the scroll starts
 
+const ZOOM_OPTIONS = [
+  { value: '16', label: '16 weeks', colWidth: 52 },
+  { value: '26', label: '26 weeks', colWidth: 36 },
+  { value: '52', label: '52 weeks', colWidth: 22 },
+];
+
 export default function GanttPage() {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [zoom, setZoom] = useState('16');
+  const zoomConfig = ZOOM_OPTIONS.find(z => z.value === zoom) || ZOOM_OPTIONS[0];
+  const TOTAL_WEEKS = Number(zoomConfig.value);
+  const colWidth = zoomConfig.colWidth;
+
+  const maxOffset = SCROLL_RANGE_WEEKS - SCROLL_ORIGIN_WEEKS - TOTAL_WEEKS;
+  const minOffset = -SCROLL_ORIGIN_WEEKS;
+
+  React.useEffect(() => {
+    if (weekOffset > maxOffset) setWeekOffset(maxOffset);
+    if (weekOffset < minOffset) setWeekOffset(minOffset);
+  }, [maxOffset, minOffset]);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
@@ -104,6 +122,16 @@ export default function GanttPage() {
           <span className="text-sm text-muted-foreground min-w-max">
             {format(weeks[0], 'MMM d')} – {format(addDays(weeks[TOTAL_WEEKS - 1], 6), 'MMM d, yyyy')}
           </span>
+          <Select value={zoom} onValueChange={setZoom}>
+            <SelectTrigger className="h-8 w-32 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ZOOM_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -114,8 +142,8 @@ export default function GanttPage() {
         </span>
         <input
           type="range"
-          min={-SCROLL_ORIGIN_WEEKS}
-          max={SCROLL_RANGE_WEEKS - SCROLL_ORIGIN_WEEKS - TOTAL_WEEKS}
+          min={minOffset}
+          max={maxOffset}
           value={weekOffset}
           onChange={e => setWeekOffset(Number(e.target.value))}
           className="flex-1 accent-primary cursor-pointer h-1.5"
@@ -138,16 +166,17 @@ export default function GanttPage() {
               <p className="text-muted-foreground text-xs">Add start and end dates to your projects in Project Planning.</p>
             </div>
           ) : (
-            <table className="w-full text-xs" style={{ minWidth: `${200 + TOTAL_WEEKS * 52}px` }}>
+            <table className="w-full text-xs" style={{ minWidth: `${200 + TOTAL_WEEKS * colWidth}px` }}>
               <thead>
                 <tr className="border-b border-border bg-muted/20">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground sticky left-0 bg-card z-10 w-52">Project</th>
                   {weeks.map((w, i) => (
                     <th
                       key={i}
-                      className={`text-center py-3 px-0.5 font-medium w-[52px] ${i === todayColIndex ? 'text-primary' : 'text-muted-foreground'}`}
+                      style={{ width: `${colWidth}px` }}
+                      className={`text-center py-3 px-0.5 font-medium ${i === todayColIndex ? 'text-primary' : 'text-muted-foreground'} ${colWidth < 30 ? 'text-[9px]' : ''}`}
                     >
-                      <div>{format(w, 'MMM d')}</div>
+                      <div>{format(w, colWidth < 30 ? 'M/d' : 'MMM d')}</div>
                     </th>
                   ))}
                 </tr>
