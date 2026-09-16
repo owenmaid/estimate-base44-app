@@ -72,7 +72,7 @@ export default function ProjectPlanning() {
 
   // ── Manpower summary grouped by type ───────────────────────────────────
   const manpowerSummary = useMemo(() => {
-    const manpower = equipmentSetupRows.filter(r => r.isManpower && r.col1 > 0);
+    const manpower = equipmentSetupRows.filter(r => r.isManpower && r.col1 > 0 && (r.category || '').toUpperCase() !== 'CONVENTIONAL COSTS');
     const groups = {};
     manpower.forEach(r => {
       const key = r.category || 'Uncategorized';
