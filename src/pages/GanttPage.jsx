@@ -64,7 +64,7 @@ export default function GanttPage() {
   // Build array of week-start dates
   const weeks = useMemo(() =>
     Array.from({ length: TOTAL_WEEKS }, (_, i) => addDays(anchorDate, i * 7)),
-    [anchorDate]
+    [anchorDate, TOTAL_WEEKS]
   );
 
   // Filter projects that have at least a start_date or end_date, and are active/planning/on_hold
