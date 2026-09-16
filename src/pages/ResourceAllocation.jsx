@@ -102,19 +102,36 @@ function MemberRow({ member }) {
                   <span className="text-xs text-muted-foreground">· {project.client}</span>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 ml-2">
-                {tasks.map(task => (
-                  <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                    {task.done
-                      ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      : <Circle className="h-3.5 w-3.5 shrink-0" />
-                    }
-                    <span className={`truncate ${task.done ? 'line-through opacity-60' : ''}`}>{task.name}</span>
-                    {task.type && (
-                      <span className="ml-auto bg-muted px-1.5 py-0.5 rounded text-[10px] shrink-0">{task.type}</span>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-1.5 ml-2">
+                {(() => {
+                  const groups = {};
+                  tasks.forEach(t => {
+                    const key = t.type || 'Uncategorized';
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(t);
+                  });
+                  const orderedKeys = Object.keys(groups).sort((a, b) => {
+                    if (a === 'Uncategorized') return 1;
+                    if (b === 'Uncategorized') return -1;
+                    return a.localeCompare(b);
+                  });
+                  return orderedKeys.map(type => (
+                    <div key={type}>
+                      <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-0.5">{type}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+                        {groups[type].map(task => (
+                          <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                            {task.done
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                              : <Circle className="h-3.5 w-3.5 shrink-0" />
+                            }
+                            <span className={`truncate ${task.done ? 'line-through opacity-60' : ''}`}>{task.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           ))}
