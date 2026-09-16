@@ -88,53 +88,48 @@ function MemberRow({ member }) {
       </button>
 
       {expanded && (
-        <div className="border-t border-border bg-muted/10 divide-y divide-border/50">
-          {member.projectBreakdown.map(({ project, tasks }) => (
-            <div key={project.id} className="px-5 py-1.5">
-              <div className="flex items-center gap-2 mb-1">
-                <Link to={`/project-planning/${project.id}`} className="text-sm font-medium hover:text-primary transition-colors">
-                  {project.name}
-                </Link>
-                <Badge className={`text-[10px] border ${STATUS_STYLES[project.status]}`}>
-                  {STATUS_LABELS[project.status]}
-                </Badge>
-                {project.client && (
-                  <span className="text-xs text-muted-foreground">· {project.client}</span>
-                )}
-              </div>
-              <div className="space-y-1.5 ml-2">
-                {(() => {
-                  const groups = {};
-                  tasks.forEach(t => {
-                    const key = t.type || 'Uncategorized';
-                    if (!groups[key]) groups[key] = [];
-                    groups[key].push(t);
-                  });
-                  const orderedKeys = Object.keys(groups).sort((a, b) => {
-                    if (a === 'Uncategorized') return 1;
-                    if (b === 'Uncategorized') return -1;
-                    return a.localeCompare(b);
-                  });
-                  return orderedKeys.map(type => (
-                    <div key={type}>
-                      <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-0.5">{type}</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-                        {groups[type].map(task => (
-                          <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                            {task.done
-                              ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                              : <Circle className="h-3.5 w-3.5 shrink-0" />
-                            }
-                            <span className={`truncate ${task.done ? 'line-through opacity-60' : ''}`}>{task.name}</span>
-                          </div>
-                        ))}
-                      </div>
+        <div className="border-t border-border bg-muted/10 px-5 py-2">
+          {(() => {
+            // Flatten all tasks across projects, tagged with their project
+            const allTasks = [];
+            member.projectBreakdown.forEach(({ project, tasks }) => {
+              tasks.forEach(t => allTasks.push({ ...t, project }));
+            });
+            // Group by type
+            const groups = {};
+            allTasks.forEach(t => {
+              const key = t.type || 'Uncategorized';
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(t);
+            });
+            const orderedKeys = Object.keys(groups).sort((a, b) => {
+              if (a === 'Uncategorized') return 1;
+              if (b === 'Uncategorized') return -1;
+              return a.localeCompare(b);
+            });
+            return orderedKeys.map(type => (
+              <div key={type} className="mb-2 last:mb-0">
+                <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-0.5">{type}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+                  {groups[type].map(task => (
+                    <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                      {task.done
+                        ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                        : <Circle className="h-3.5 w-3.5 shrink-0" />
+                      }
+                      <span className={`truncate ${task.done ? 'line-through opacity-60' : ''}`}>{task.name}</span>
+                      <Link
+                        to={`/project-planning/${task.project.id}`}
+                        className="ml-auto shrink-0 text-[10px] text-muted-foreground/60 hover:text-primary transition-colors"
+                      >
+                        {task.project.name}
+                      </Link>
                     </div>
-                  ));
-                })()}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       )}
     </div>
