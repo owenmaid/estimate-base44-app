@@ -87,7 +87,7 @@ export default function ProjectList() {
       <td className="py-1 pr-2 whitespace-nowrap">
         <div className="flex items-center gap-1.5">
           <Select value={task.assignee || ''} onValueChange={v => updateTaskField(task.id, 'assignee', v)}>
-            <SelectTrigger className="h-7 text-xs px-1.5 flex-1"><SelectValue placeholder="Assignee..." /></SelectTrigger>
+            <SelectTrigger className="h-7 text-xs px-1.5 flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
               {labourItems.map(item => (
                 <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
@@ -188,7 +188,7 @@ export default function ProjectList() {
                     </td>
                     <td className="py-1.5 pr-2">
                       <Select value={row.assignee || ''} onValueChange={v => assignResource(row.label, v, row.inventoryItem, row.col1)}>
-                        <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Assign..." /></SelectTrigger>
+                        <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="max-h-60 overflow-y-auto">
                           {labourItems.map(item => (
                             <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
