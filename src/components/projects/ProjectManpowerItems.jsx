@@ -43,6 +43,15 @@ export default function ProjectManpowerItems({ project }) {
                   <td className="py-1.5 pr-3 text-right text-muted-foreground">{item.quantity ?? '—'}</td>
                 </tr>
               ))}
+              {(() => {
+                const totalDays = items.reduce((sum, t) => sum + (Number(t.quantity) || 0), 0);
+                return (
+                  <tr className="border-t-2 border-border font-semibold">
+                    <td colSpan={3} className="pt-2 pr-3 text-right text-muted-foreground">Total Days</td>
+                    <td className="pt-2 pr-3 text-right text-primary">{totalDays}</td>
+                  </tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>
