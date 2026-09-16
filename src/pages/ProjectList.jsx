@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,7 @@ export default function ProjectList() {
     labourItems,
     doneTasks, progress,
     project, inventoryItems,
+    syncQuantities,
   } = useProjectTasks(id);
 
   const equipmentSetupRows = useMemo(() => {
@@ -58,6 +59,12 @@ export default function ProjectList() {
       };
     }).filter(row => row && row.isManpower && (row.col1 > 0 || row.rowTotal > 0));
   }, [project, inventoryItems, taskList]);
+
+  useEffect(() => {
+    if (equipmentSetupRows.length > 0) {
+      syncQuantities(equipmentSetupRows);
+    }
+  }, [equipmentSetupRows, syncQuantities]);
 
   const renderTaskRow = (task) => (
     <tr key={task.id} className="group border-b border-border/30 hover:bg-muted/20 transition-colors">

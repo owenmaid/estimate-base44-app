@@ -248,6 +248,22 @@ export function useProjectTasks(id) {
     }
   };
 
+  const syncQuantities = (scheduleRows) => {
+    setTaskList(prev => {
+      let changed = false;
+      const next = prev.map(t => {
+        const matchingRow = scheduleRows.find(r => (r.label || '').toLowerCase() === (t.name || '').toLowerCase());
+        if (matchingRow && matchingRow.col1 > 0 && toNum(t.quantity) !== matchingRow.col1) {
+          changed = true;
+          return calcTask({ ...t, quantity: matchingRow.col1 });
+        }
+        return t;
+      });
+      if (changed) saveTaskList(next);
+      return changed ? next : prev;
+    });
+  };
+
   const doneTasks = taskList.filter(t => t.done).length;
   const progress = taskList.length > 0 ? Math.round((doneTasks / taskList.length) * 100) : (form?.progress || 0);
 
@@ -259,7 +275,7 @@ export function useProjectTasks(id) {
     groupBy, setGroupBy, groupedTasks, GROUP_OPTIONS,
     newTaskName, setNewTaskName, newTaskType, newTaskInventoryItem, newAssignee, setNewAssignee,
     newQty, setNewQty, newCost, setNewCost, newMarkup, setNewMarkup, newTaxPct, setNewTaxPct,
-    newCalc, addTask, toggleTask, removeTask, updateTaskField, assignResource,
+    newCalc, addTask, toggleTask, removeTask, updateTaskField, assignResource, syncQuantities,
     isManpowerTask, scheduledManpowerLabels,
     labourItems, inventoryCategories, filteredInventoryItems,
     handleNewTaskTypeChange, handleInventoryItemSelect,
