@@ -154,7 +154,7 @@ export default function ProjectList() {
 
       {/* Scheduled items from Project Details Setup */}
       {equipmentSetupRows.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-base font-semibold">Scheduled Line Items</h2>
@@ -164,31 +164,31 @@ export default function ProjectList() {
             <table className="w-full text-xs min-w-[600px]">
               <thead>
                 <tr className="text-muted-foreground border-b border-border">
-                  <th className="text-left pb-2 pr-2">Row Label</th>
-                  <th className="text-left pb-2 pr-2">Category</th>
-                  <th className="text-left pb-2 pr-2">Group</th>
-                  <th className="text-left pb-2 pr-2 min-w-[160px]">Resource</th>
-                  <th className="text-left pb-2 pr-2">Status</th>
-                  <th className="text-right pb-2 pr-2">Count</th>
-                  <th className="text-right pb-2 pr-2">Reg Cost</th>
-                  <th className="text-right pb-2 pr-2">OT Cost</th>
-                  <th className="text-right pb-2 pr-2">Special Cost</th>
-                  <th className="text-right pb-2">Total</th>
+                  <th className="text-left pb-1.5 pr-2 whitespace-nowrap">Row Label</th>
+                  <th className="text-left pb-1.5 pr-2 whitespace-nowrap">Category</th>
+                  <th className="text-left pb-1.5 pr-2 whitespace-nowrap">Group</th>
+                  <th className="text-left pb-1.5 pr-2 min-w-[140px] whitespace-nowrap">Resource</th>
+                  <th className="text-left pb-1.5 pr-2 whitespace-nowrap">Status</th>
+                  <th className="text-right pb-1.5 pr-2 whitespace-nowrap">Count</th>
+                  <th className="text-right pb-1.5 pr-2 whitespace-nowrap">Reg Cost</th>
+                  <th className="text-right pb-1.5 pr-2 whitespace-nowrap">OT Cost</th>
+                  <th className="text-right pb-1.5 pr-2 whitespace-nowrap">Special Cost</th>
+                  <th className="text-right pb-1.5 whitespace-nowrap">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {equipmentSetupRows.map((row, idx) => (
                   <tr key={row.id} className={`border-b border-border/30 ${idx % 2 === 0 ? '' : 'bg-muted/10'}`}>
-                    <td className="py-1.5 pr-2 font-medium text-foreground">{row.label}</td>
-                    <td className="py-1.5 pr-2 text-muted-foreground">{row.category}</td>
-                    <td className="py-1.5 pr-2">
-                      <span className={`px-1.5 py-0.5 rounded text-xs ${row.isManpower ? 'bg-blue-500/15 text-blue-400' : 'bg-muted text-muted-foreground'}`}>
+                    <td className="py-1 pr-2 font-medium text-foreground whitespace-nowrap">{row.label}</td>
+                    <td className="py-1 pr-2 text-muted-foreground whitespace-nowrap">{row.category}</td>
+                    <td className="py-1 pr-2">
+                      <span className={`px-1.5 py-0.5 rounded text-xs whitespace-nowrap ${row.isManpower ? 'bg-blue-500/15 text-blue-400' : 'bg-muted text-muted-foreground'}`}>
                         {row.isManpower ? 'Manpower' : 'Equipment'}
                       </span>
                     </td>
-                    <td className="py-1.5 pr-2">
+                    <td className="py-1 pr-2">
                       <Select value={row.assignee || ''} onValueChange={v => assignResource(row.label, v, row.inventoryItem, row.col1)}>
-                        <SelectTrigger className="h-7 text-xs px-1.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectTrigger className="h-6 text-xs px-1.5"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="max-h-60 overflow-y-auto">
                           {labourItems.map(item => (
                             <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
@@ -196,17 +196,17 @@ export default function ProjectList() {
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="py-1.5 pr-2">
+                    <td className="py-1 pr-2">
                       {row.applied
-                        ? <span className="px-2 py-0.5 rounded text-xs bg-green-500/15 text-green-400 whitespace-nowrap">Applied</span>
-                        : <span className="px-2 py-0.5 rounded text-xs bg-amber-500/15 text-amber-400 whitespace-nowrap">Pending</span>
+                        ? <span className="px-1.5 py-0.5 rounded text-xs bg-green-500/15 text-green-400 whitespace-nowrap">Applied</span>
+                        : <span className="px-1.5 py-0.5 rounded text-xs bg-amber-500/15 text-amber-400 whitespace-nowrap">Pending</span>
                       }
                     </td>
-                    <td className="py-1.5 pr-2 text-right text-muted-foreground">{row.col1}</td>
-                    <td className="py-1.5 pr-2 text-right">{row.regCost != null && row.regCost > 0 ? `$${row.regCost.toFixed(2)}` : '—'}</td>
-                    <td className="py-1.5 pr-2 text-right">{row.otCost != null && row.otCost > 0 ? `$${row.otCost.toFixed(2)}` : '—'}</td>
-                    <td className="py-1.5 pr-2 text-right">{row.specialCost != null && row.specialCost > 0 ? `$${row.specialCost.toFixed(2)}` : '—'}</td>
-                    <td className="py-1.5 text-right font-semibold text-primary">{row.rowTotal > 0 ? `$${row.rowTotal.toFixed(2)}` : '—'}</td>
+                    <td className="py-1 pr-2 text-right text-muted-foreground whitespace-nowrap">{row.col1}</td>
+                    <td className="py-1 pr-2 text-right whitespace-nowrap">{row.regCost != null && row.regCost > 0 ? `$${row.regCost.toFixed(2)}` : '—'}</td>
+                    <td className="py-1 pr-2 text-right whitespace-nowrap">{row.otCost != null && row.otCost > 0 ? `$${row.otCost.toFixed(2)}` : '—'}</td>
+                    <td className="py-1 pr-2 text-right whitespace-nowrap">{row.specialCost != null && row.specialCost > 0 ? `$${row.specialCost.toFixed(2)}` : '—'}</td>
+                    <td className="py-1 text-right font-semibold text-primary whitespace-nowrap">{row.rowTotal > 0 ? `$${row.rowTotal.toFixed(2)}` : '—'}</td>
                   </tr>
                 ))}
                 {(() => {
