@@ -9,6 +9,21 @@ import { Users, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight, 
 
 const DEFAULT_CAPACITY = 10; // fallback if no manpower SKU found
 
+const KEYWORDS = ['On-Site Admin', 'Superintendent', 'Lead DCSM', 'Lead Ventilation', 'Ventilation Tech', 'DCSM Operator'];
+
+function getKeywordGroup(name) {
+  const lower = (name || '').toLowerCase();
+  return KEYWORDS.find(k => lower.includes(k.toLowerCase())) || 'Other';
+}
+
+function orderedGroupKeys(groups) {
+  return Object.keys(groups).sort((a, b) => {
+    if (a === 'Other') return 1;
+    if (b === 'Other') return -1;
+    return a.localeCompare(b);
+  });
+}
+
 const STATUS_STYLES = {
   active:    'bg-green-500/15 text-green-400 border-green-500/30',
   planning:  'bg-blue-500/15 text-blue-400 border-blue-500/30',
@@ -96,19 +111,13 @@ function MemberRow({ member }) {
               tasks.forEach(t => allTasks.push({ ...t, project }));
             });
             // Group by keyword in name
-            const KEYWORDS = ['On-Site Admin', 'Superintendent', 'Lead DCSM', 'Lead Ventilation', 'Ventilation Tech', 'DCSM Operator'];
             const groups = {};
             allTasks.forEach(t => {
-              const lower = (t.name || '').toLowerCase();
-              const key = KEYWORDS.find(k => lower.includes(k.toLowerCase())) || 'Other';
+              const key = getKeywordGroup(t.name);
               if (!groups[key]) groups[key] = [];
               groups[key].push(t);
             });
-            const orderedKeys = Object.keys(groups).sort((a, b) => {
-              if (a === 'Other') return 1;
-              if (b === 'Other') return -1;
-              return a.localeCompare(b);
-            });
+            const orderedKeys = orderedGroupKeys(groups);
             return orderedKeys.map(type => (
               <div key={type} className="mb-2 last:mb-0">
                 <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-0.5">{type}</p>
@@ -310,10 +319,29 @@ export default function ResourceAllocation() {
       ) : filtered.length === 0 ? (
         <p className="text-muted-foreground text-sm">No team members match the selected resource.</p>
       ) : (
-        <div className="space-y-3">
-          {filtered.map(member => (
-            <MemberRow key={member.name} member={member} />
-          ))}
+        <div className="space-y-4">
+          {(() => {
+            const groups = {};
+            filtered.forEach(member => {
+              const key = getKeywordGroup(member.name);
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(member);
+            });
+            return orderedGroupKeys(groups).map(key => (
+              <div key={key} className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <h3 className="text-xs font-semibold text-primary uppercase tracking-wide">{key}</h3>
+                  <span className="text-xs text-muted-foreground">({groups[key].length})</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+                <div className="space-y-3">
+                  {groups[key].map(member => (
+                    <MemberRow key={member.name} member={member} />
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       )}
     </div>
