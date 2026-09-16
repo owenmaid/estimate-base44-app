@@ -31,7 +31,7 @@ export default function ProjectManpowerItems({ project }) {
                 <th className="text-left py-1.5 pr-3 font-medium">Item</th>
                 <th className="text-left py-1.5 pr-3 font-medium">Type</th>
                 <th className="text-left py-1.5 pr-3 font-medium">Assignee</th>
-                <th className="text-right py-1.5 pr-3 font-medium">Qty</th>
+                <th className="text-right py-1.5 pr-3 font-medium">Days</th>
               </tr>
             </thead>
             <tbody>
