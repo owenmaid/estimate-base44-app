@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, CheckCircle2, Circle, Trash2, Lock } from 'lucide-react';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { calculateScheduleRow } from '@/lib/calculations';
@@ -38,7 +39,8 @@ export default function ProjectList() {
     labourItems,
     doneTasks, progress,
     project, inventoryItems,
-    syncQuantities, visibleTaskList,
+    syncQuantities, visibleTaskList, displayTaskList,
+    hideCompleted, setHideCompleted,
   } = useProjectTasks(id);
 
   const equipmentSetupRows = useMemo(() => {
@@ -136,6 +138,12 @@ export default function ProjectList() {
           <Badge className={`text-xs border ${STATUS_STYLES[form.status]}`}>
             {doneTasks}/{visibleTaskList.length} line items done
           </Badge>
+          <div className="flex items-center gap-2">
+            <Switch checked={hideCompleted} onCheckedChange={setHideCompleted} id="hide-completed" />
+            <label htmlFor="hide-completed" className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none">
+              Hide completed
+            </label>
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground whitespace-nowrap">Group by</span>
             <Select value={groupBy} onValueChange={setGroupBy}>
@@ -246,10 +254,12 @@ export default function ProjectList() {
             </tr>
           </thead>
           <tbody>
-            {visibleTaskList.length === 0 && (
+            {displayTaskList.length === 0 && (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
-                  No line items yet. Apply a resource to a scheduled item above.
+                  {hideCompleted
+                    ? 'All line items are completed. Toggle off "Hide completed" to see them.'
+                    : 'No line items yet. Apply a resource to a scheduled item above.'}
                 </td>
               </tr>
             )}
@@ -264,7 +274,7 @@ export default function ProjectList() {
                     {group.tasks.map(task => renderTaskRow(task))}
                   </React.Fragment>
                 ))
-              : visibleTaskList.map(task => renderTaskRow(task))
+              : displayTaskList.map(task => renderTaskRow(task))
             }
 
 
