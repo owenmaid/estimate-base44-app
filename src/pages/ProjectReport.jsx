@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileDown, FileText, Users, Package, DollarSign, ShieldAlert, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { generateProjectReportPDF } from '@/lib/generateProjectReportPDF';
 import { computeCol14 } from '@/lib/computeCol14';
+import { calculateScheduleRow } from '@/lib/calculations';
 
 const STATUS_STYLES = {
   active:    'bg-green-500/15 text-green-400 border-green-500/30',
@@ -93,6 +94,15 @@ export default function ProjectReport() {
     }).filter(r => r.cost > 0);
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
 
+    // Manpower total: sum of scheduled manpower counts (col1), excluding conventional costs
+    const manpowerTotal = (selectedProject.equipment_rows || []).reduce((sum, row) => {
+      const result = calculateScheduleRow(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
+      if (!result || !result.isManpower || result.col1 <= 0) return sum;
+      const cat = (result.inventoryItem?.category || '').toUpperCase();
+      if (cat === 'CONVENTIONAL COSTS') return sum;
+      return sum + result.col1;
+    }, 0);
+
     // Conflicts: check if this project's assignees are double-booked across OTHER projects
     const conflicts = [];
     const otherProjects = projects.filter(p => p.id !== selectedProject.id);
@@ -118,6 +128,7 @@ export default function ProjectReport() {
       totalManpowerItems: assignees.reduce((s, a) => s + a.tasks, 0),
       equipmentRows,
       totalEquipmentCost,
+      manpowerTotal,
       conflicts,
     };
   }, [selectedProject, projects, inventoryItems]);
@@ -233,7 +244,7 @@ export default function ProjectReport() {
           </Card>
 
           {/* Resource allocation summary tiles */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Card>
               <CardContent className="pt-5 pb-5 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
@@ -253,6 +264,17 @@ export default function ProjectReport() {
                 <div>
                   <p className="text-xs text-muted-foreground">Total Line Items</p>
                   <p className="text-xl font-bold">{summary.totalTasks}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 pb-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Project Manpower Total</p>
+                  <p className="text-xl font-bold">{summary.manpowerTotal}</p>
                 </div>
               </CardContent>
             </Card>
