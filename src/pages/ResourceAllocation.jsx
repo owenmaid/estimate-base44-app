@@ -451,7 +451,9 @@ export default function ResourceAllocation() {
               <div key={key} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
                   <h3 className="text-xs font-semibold text-primary uppercase tracking-wide">{key}</h3>
-                  <span className="text-xs text-muted-foreground">({groups[key].length})</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({groups[key].length} {groups[key].length === 1 ? 'resource' : 'resources'} · {groups[key].reduce((s, m) => s + m.used, 0)} line items)
+                  </span>
                   <div className="flex-1 h-px bg-border" />
                 </div>
                 <div className="space-y-3">
