@@ -6,8 +6,9 @@ import PalettePanel from '@/components/estimate-panel/PalettePanel';
 import EstimateCanvas from '@/components/estimate-panel/EstimateCanvas';
 import EstimateSearchBar from '@/components/estimate-panel/EstimateSearchBar';
 import { CloseEstimateDialog, SaveTemplateDialog } from '@/components/estimate-panel/EstimatePanelDialogs';
-import { X, Download, BookmarkPlus } from 'lucide-react';
+import { X, Download, BookmarkPlus, FileSpreadsheet } from 'lucide-react';
 import { generateEstimatePDF } from '@/lib/generateEstimatePDF';
+import { exportEstimateToExcel } from '@/lib/exportEstimateExcel';
 import { buildCol14Map, lookupCol14, computeCol14 } from '@/lib/computeCol14';
 import { calculateEstimateSummary, roundMoney } from '@/lib/calculations';
 import { createEstimateNumber, createStableId, getErrorMessage, validateEstimateData } from '@/lib/reliability';
@@ -992,6 +993,13 @@ export default function CreateEstimatePanel() {
             title="Download PDF"
           >
             <Download className="h-3.5 w-3.5" /> PDF
+          </button>
+          <button
+            onClick={() => exportEstimateToExcel({ clientInfo, sections: sectionsWithAggregate, subtotal, taxAmount, total, estimateNumber: activeEstimate?.estimate_number })}
+            className="text-xs px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1"
+            title="Export to Excel"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
           <EstimateSearchBar onLoad={loadEstimate} />
           <button
