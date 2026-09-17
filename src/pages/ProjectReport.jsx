@@ -94,13 +94,13 @@ export default function ProjectReport() {
     }).filter(r => r.cost > 0);
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
 
-    // Manpower total: sum of scheduled manpower counts (col1), excluding conventional costs
+    // Manpower total: sum of scheduled manpower row costs, excluding conventional costs
     const manpowerTotal = (selectedProject.equipment_rows || []).reduce((sum, row) => {
       const result = calculateScheduleRow(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
-      if (!result || !result.isManpower || result.col1 <= 0) return sum;
+      if (!result || !result.isManpower) return sum;
       const cat = (result.inventoryItem?.category || '').toUpperCase();
       if (cat === 'CONVENTIONAL COSTS') return sum;
-      return sum + result.col1;
+      return sum + (result.totalCost || 0);
     }, 0);
 
     // Conflicts: check if this project's assignees are double-booked across OTHER projects
@@ -274,7 +274,7 @@ export default function ProjectReport() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Project Manpower Total</p>
-                  <p className="text-xl font-bold">{summary.manpowerTotal}</p>
+                  <p className="text-xl font-bold">${summary.manpowerTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
                 </div>
               </CardContent>
             </Card>
