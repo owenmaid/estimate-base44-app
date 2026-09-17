@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileDown, FileText, Users, Package, DollarSign, ShieldAlert, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { FileDown, FileText, Users, DollarSign, ShieldAlert, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { generateProjectReportPDF } from '@/lib/generateProjectReportPDF';
 import { computeCol14 } from '@/lib/computeCol14';
 import { calculateScheduleRow } from '@/lib/calculations';
@@ -246,7 +246,7 @@ export default function ProjectReport() {
           </Card>
 
           {/* Resource allocation summary tiles */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Card>
               <CardContent className="pt-5 pb-5 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
@@ -255,17 +255,6 @@ export default function ProjectReport() {
                 <div>
                   <p className="text-xs text-muted-foreground">Assigned Resources</p>
                   <p className="text-xl font-bold">{summary.assignees.length}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-5 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                  <Package className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Line Items</p>
-                  <p className="text-xl font-bold">{summary.totalTasks}</p>
                 </div>
               </CardContent>
             </Card>
