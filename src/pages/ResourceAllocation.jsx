@@ -147,8 +147,73 @@ function MemberRow({ member }) {
   );
 }
 
+function ProjectRow({ projectData }) {
+  const [expanded, setExpanded] = useState(false);
+  const { project, assignees, taskCount, doneCount } = projectData;
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-1.5 sm:py-2 bg-card hover:bg-muted/30 transition-colors text-left"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm">{project.name}</span>
+            <Badge className={`${STATUS_STYLES[project.status] || ''} text-[10px] border`}>
+              {STATUS_LABELS[project.status] || project.status}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {assignees.length} resource{assignees.length !== 1 ? 's' : ''} · {doneCount}/{taskCount} line items done
+          </p>
+        </div>
+        {expanded
+          ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border bg-muted/10 px-5 py-2">
+          {(() => {
+            const groups = {};
+            assignees.forEach(a => {
+              const key = getKeywordGroup(a.name);
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(a);
+            });
+            return orderedGroupKeys(groups).map(type => (
+              <div key={type} className="mb-2 last:mb-0">
+                <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-0.5">{type}</p>
+                <div className="space-y-1.5">
+                  {groups[type].map(assignee => (
+                    <div key={assignee.name}>
+                      <p className="text-xs font-medium text-foreground">{assignee.name}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 ml-3">
+                        {assignee.tasks.map(task => (
+                          <div key={task.id} className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                            {task.done
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                              : <Circle className="h-3.5 w-3.5 shrink-0" />}
+                            <span className={`truncate ${task.done ? 'line-through opacity-60' : ''}`}>{task.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ResourceAllocation() {
   const [selectedMember, setSelectedMember] = useState('');
+  const [viewMode, setViewMode] = useState('resource');
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -226,6 +291,35 @@ export default function ResourceAllocation() {
     return memberMap.filter(m => m.name.toLowerCase() === selectedMember.toLowerCase());
   }, [memberMap, selectedMember]);
 
+  // Aggregate by project — each project with its assignees and their tasks
+  const projectMap = useMemo(() => {
+    const map = {};
+    projects.forEach(project => {
+      const tasks = (project.task_list || []).filter(t => t.assignee?.trim());
+      if (tasks.length === 0) return;
+      const assigneeMap = {};
+      tasks.forEach(task => {
+        const assignee = task.assignee.trim();
+        if (!assigneeMap[assignee]) assigneeMap[assignee] = { name: assignee, tasks: [] };
+        assigneeMap[assignee].tasks.push(task);
+      });
+      map[project.id] = {
+        project,
+        assignees: Object.values(assigneeMap),
+        taskCount: tasks.length,
+        doneCount: tasks.filter(t => t.done).length,
+      };
+    });
+    return Object.values(map).sort((a, b) => b.taskCount - a.taskCount);
+  }, [projects]);
+
+  const filteredProjects = useMemo(() => {
+    if (!selectedMember || selectedMember === 'all') return projectMap;
+    return projectMap.filter(pd =>
+      pd.assignees.some(a => a.name.toLowerCase() === selectedMember.toLowerCase())
+    );
+  }, [projectMap, selectedMember]);
+
   const isLoading = loadingProjects || loadingInventory;
 
   // Summary stats
@@ -281,19 +375,35 @@ export default function ResourceAllocation() {
         </div>
       )}
 
-      {/* Filter dropdown */}
-      <div className="max-w-sm">
-        <Select value={selectedMember} onValueChange={setSelectedMember}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a manpower resource..." />
-          </SelectTrigger>
-          <SelectContent className="max-h-72 overflow-y-auto">
-            <SelectItem value="all">All</SelectItem>
-            {manpowerOptions.map(item => (
-              <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Filter dropdown + view toggle */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="max-w-sm flex-1 min-w-[200px]">
+          <Select value={selectedMember} onValueChange={setSelectedMember}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a manpower resource..." />
+            </SelectTrigger>
+            <SelectContent className="max-h-72 overflow-y-auto">
+              <SelectItem value="all">All</SelectItem>
+              {manpowerOptions.map(item => (
+                <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center rounded-lg border border-border overflow-hidden">
+          <button
+            onClick={() => setViewMode('resource')}
+            className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'resource' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted/30'}`}
+          >
+            By Resource
+          </button>
+          <button
+            onClick={() => setViewMode('project')}
+            className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'project' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted/30'}`}
+          >
+            By Project
+          </button>
+        </div>
       </div>
 
       {/* Workload legend */}
@@ -316,6 +426,16 @@ export default function ResourceAllocation() {
             <p className="text-muted-foreground text-xs">Add assignee names to line items in Project Planning to track workload here.</p>
           </CardContent>
         </Card>
+      ) : viewMode === 'project' ? (
+        filteredProjects.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No projects match the selected resource.</p>
+        ) : (
+          <div className="space-y-3">
+            {filteredProjects.map(pd => (
+              <ProjectRow key={pd.project.id} projectData={pd} />
+            ))}
+          </div>
+        )
       ) : filtered.length === 0 ? (
         <p className="text-muted-foreground text-sm">No team members match the selected resource.</p>
       ) : (
