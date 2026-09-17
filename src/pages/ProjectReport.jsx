@@ -87,6 +87,28 @@ export default function ProjectReport() {
       projects: a.projects.size,
     })).sort((a, b) => b.tasks - a.tasks);
 
+    // Group line items by manpower group (task.type)
+    const groupMap = {};
+    tasks.forEach(t => {
+      const name = t.assignee?.trim();
+      if (!name) return;
+      const group = t.type || 'Uncategorized';
+      if (!groupMap[group]) groupMap[group] = {};
+      if (!groupMap[group][name]) groupMap[group][name] = { name, tasks: 0, done: 0, projects: new Set() };
+      groupMap[group][name].tasks++;
+      if (t.done) groupMap[group][name].done++;
+      groupMap[group][name].projects.add(selectedProject.name);
+    });
+    const personnelGroups = Object.keys(groupMap).sort().map(group => {
+      const rows = Object.values(groupMap[group]).map(r => ({ ...r, projects: r.projects.size })).sort((a, b) => b.tasks - a.tasks);
+      return {
+        group,
+        rows,
+        totalItems: rows.reduce((s, r) => s + r.tasks, 0),
+        totalDone: rows.reduce((s, r) => s + r.done, 0),
+      };
+    });
+
     // Equipment cost breakdown — DCSM and Ventilation equipment only
     const equipmentRows = (selectedProject.equipment_rows || []).map(row => {
       const cost = computeCol14(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
@@ -127,6 +149,7 @@ export default function ProjectReport() {
       doneTasks,
       progress,
       assignees,
+      personnelGroups,
       totalManpowerItems: assignees.reduce((s, a) => s + a.tasks, 0),
       equipmentRows,
       totalEquipmentCost,
@@ -324,28 +347,44 @@ export default function ProjectReport() {
                       </tr>
                     </thead>
                     <tbody>
-                      {summary.assignees.map(a => {
-                        const isComplete = a.done >= a.tasks && a.tasks > 0;
-                        return (
-                          <tr key={a.name} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
-                            <td className="px-4 py-2.5 font-medium truncate">{a.name}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">{a.tasks}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">{a.done}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums hidden sm:table-cell">{a.projects}</td>
-                            <td className="px-4 py-2.5 text-right">
-                              {isComplete ? (
-                                <span className="inline-flex items-center gap-1 text-xs text-green-400 font-medium">
-                                  <CheckCircle2 className="h-3.5 w-3.5" /> Complete
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-xs text-yellow-400 font-medium">
-                                  <Clock className="h-3.5 w-3.5" /> In Progress
-                                </span>
-                              )}
+                      {summary.personnelGroups.map(g => (
+                        <React.Fragment key={g.group}>
+                          <tr className="bg-primary/10 border-b border-primary/20">
+                            <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                              {g.group}
                             </td>
                           </tr>
-                        );
-                      })}
+                          {g.rows.map(a => {
+                            const isComplete = a.done >= a.tasks && a.tasks > 0;
+                            return (
+                              <tr key={`${g.group}-${a.name}`} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
+                                <td className="px-4 py-2.5 pl-8 font-medium truncate">{a.name}</td>
+                                <td className="px-4 py-2.5 text-right tabular-nums">{a.tasks}</td>
+                                <td className="px-4 py-2.5 text-right tabular-nums">{a.done}</td>
+                                <td className="px-4 py-2.5 text-right tabular-nums hidden sm:table-cell">{a.projects}</td>
+                                <td className="px-4 py-2.5 text-right">
+                                  {isComplete ? (
+                                    <span className="inline-flex items-center gap-1 text-xs text-green-400 font-medium">
+                                      <CheckCircle2 className="h-3.5 w-3.5" /> Complete
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-xs text-yellow-400 font-medium">
+                                      <Clock className="h-3.5 w-3.5" /> In Progress
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="border-b border-border bg-muted/20 font-medium">
+                            <td className="px-4 py-2 text-right text-muted-foreground uppercase text-[11px] tracking-wider">{g.group} Subtotal</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{g.totalItems}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{g.totalDone}</td>
+                            <td className="px-4 py-2 hidden sm:table-cell" />
+                            <td className="px-4 py-2" />
+                          </tr>
+                        </React.Fragment>
+                      ))}
                     </tbody>
                   </table>
                 </div>
