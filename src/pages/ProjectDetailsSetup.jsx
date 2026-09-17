@@ -39,6 +39,7 @@ export default function ProjectDetailsSetup() {
   const [newEquipmentCategory, setNewEquipmentCategory] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [showEquipmentResults, setShowEquipmentResults] = useState(false);
+  const [equipmentFilter, setEquipmentFilter] = useState(null);
   const equipmentSearchRef = useRef(null);
   const [statHolidays, setStatHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(false);
@@ -321,7 +322,7 @@ const addEquipmentRow = () => {
 
 
   const calculateEquipmentDayTotal = (dateStr) => {
-    return equipmentRows.reduce((sum, row) => {
+    return filteredEquipmentRows.reduce((sum, row) => {
       const val = equipmentGrid[`${row.id}_${dateStr}`];
       return sum + (val ? parseInt(val) : 0);
     }, 0);
@@ -351,16 +352,16 @@ const addEquipmentRow = () => {
       .slice(0, 20);
   }, [equipmentSearch, equipmentInventory]);
 
-  const addEquipmentByItem = (item) => {
-    const newId = Math.max(...equipmentRows.map(r => r.id), 0) + 1;
-    setEquipmentRows(prev => [...prev, {
-      id: newId,
-      label: item?.name || item?.sku || `Equipment ${newId}`,
-      item_id: item.id
-    }]);
+  const selectEquipmentFilter = (item) => {
+    setEquipmentFilter(item.id);
     setEquipmentSearch('');
     setShowEquipmentResults(false);
   };
+
+  const filteredEquipmentRows = useMemo(() => {
+    if (!equipmentFilter) return equipmentRows;
+    return equipmentRows.filter(r => String(r.item_id) === String(equipmentFilter));
+  }, [equipmentRows, equipmentFilter]);
 
   const PROVINCE_PATTERNS = [
     { code: 'AB', names: ['alberta'] },
@@ -705,6 +706,16 @@ const addEquipmentRow = () => {
                   onBlur={() => setTimeout(() => setShowEquipmentResults(false), 150)}
                   className="pl-7 pr-3 py-2 border border-border rounded-md bg-white/25 text-foreground text-sm w-full sm:w-56 outline-none focus:border-primary"
                 />
+                {equipmentFilter && (
+                  <button
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => setEquipmentFilter(null)}
+                    className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] leading-none shadow"
+                    title="Clear filter"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
               {showEquipmentResults && equipmentSearch.trim() && (
                 <div className="absolute top-full mt-1 w-72 bg-card border border-border rounded-md shadow-lg z-20 max-h-72 overflow-y-auto">
@@ -715,7 +726,7 @@ const addEquipmentRow = () => {
                       <button
                         key={item.id}
                         onMouseDown={e => e.preventDefault()}
-                        onClick={() => addEquipmentByItem(item)}
+                        onClick={() => selectEquipmentFilter(item)}
                         className="w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 text-sm"
                       >
                         <div className="font-medium text-foreground truncate">{item.name}</div>
@@ -1106,7 +1117,7 @@ const addEquipmentRow = () => {
                         <Droppable droppableId="equipment-rows">
                           {(provided) => (
                             <tbody ref={provided.innerRef} {...provided.droppableProps}>
-                        {equipmentRows.map((row, rIdx) => (
+                        {filteredEquipmentRows.map((row, rIdx) => (
                     <Draggable key={String(row.id)} draggableId={String(row.id)} index={rIdx}>
                       {(dragProvided, dragSnapshot) => (
                       <tr
