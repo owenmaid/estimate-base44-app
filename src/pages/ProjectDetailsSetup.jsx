@@ -336,22 +336,43 @@ const addEquipmentRow = () => {
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
-  const isAlbertaLocation = (loc) => {
+  const PROVINCE_PATTERNS = [
+    { code: 'AB', names: ['alberta'] },
+    { code: 'BC', names: ['british columbia', 'b.c.'] },
+    { code: 'MB', names: ['manitoba'] },
+    { code: 'NB', names: ['new brunswick'] },
+    { code: 'NL', names: ['newfoundland', 'newfoundland and labrador'] },
+    { code: 'NS', names: ['nova scotia'] },
+    { code: 'NT', names: ['northwest territories'] },
+    { code: 'NU', names: ['nunavut'] },
+    { code: 'ON', names: ['ontario'] },
+    { code: 'PE', names: ['prince edward island', 'p.e.i.'] },
+    { code: 'QC', names: ['quebec', 'québec'] },
+    { code: 'SK', names: ['saskatchewan'] },
+    { code: 'YT', names: ['yukon'] },
+  ];
+
+  const detectProvince = (loc) => {
     const s = (loc || '').trim().toLowerCase();
-    if (!s) return false;
-    if (s.includes('alberta')) return true;
-    // Match "AB" as a standalone token (e.g. "Edmonton, AB" or "Edmonton AB Canada")
-    return /\bab\b/.test(s);
+    if (!s) return null;
+    for (const p of PROVINCE_PATTERNS) {
+      if (new RegExp(`\\b${p.code.toLowerCase()}\\b`).test(s)) return p.code;
+      for (const name of p.names) {
+        if (s.includes(name)) return p.code;
+      }
+    }
+    return null;
   };
 
   const fetchStatHolidays = async () => {
     if (!startDate || !endDate) return;
-    if (!isAlbertaLocation(projectLocation)) {
-      toast.info('Statutory holidays are only fetched for projects located in Alberta, Canada. Update the Location field to include "Alberta" or "AB".');
+    const province = detectProvince(projectLocation);
+    if (!province) {
+      toast.info('Could not detect a Canadian province in the Location field. Please include a province (e.g. "Edmonton, AB" or "Toronto, Ontario").');
       return;
     }
     setLoadingHolidays(true);
-    const res = await base44.functions.invoke('getCanadaStatHolidays', { startDate, endDate, province: 'AB' });
+    const res = await base44.functions.invoke('getCanadaStatHolidays', { startDate, endDate, province });
     const holidays = res.data?.holidays || [];
     setStatHolidays(holidays);
     setLoadingHolidays(false);
