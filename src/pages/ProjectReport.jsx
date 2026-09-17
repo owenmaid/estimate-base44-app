@@ -87,11 +87,13 @@ export default function ProjectReport() {
       projects: a.projects.size,
     })).sort((a, b) => b.tasks - a.tasks);
 
-    // Equipment cost breakdown
+    // Equipment cost breakdown — DCSM and Ventilation equipment only
     const equipmentRows = (selectedProject.equipment_rows || []).map(row => {
       const cost = computeCol14(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
-      return { label: row.label || 'Unnamed', cost: cost || 0 };
-    }).filter(r => r.cost > 0);
+      const inv = rowInventoryEntry(row, inventoryItems);
+      const category = (inv?.category || '').toUpperCase();
+      return { label: row.label || 'Unnamed', cost: cost || 0, category };
+    }).filter(r => r.cost > 0 && (r.category === 'DCSM' || r.category === 'VENTILATION'));
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
 
     // Manpower total: sum of scheduled manpower row costs, excluding conventional costs
