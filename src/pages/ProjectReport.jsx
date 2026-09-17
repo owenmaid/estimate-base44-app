@@ -109,17 +109,23 @@ export default function ProjectReport() {
       };
     });
 
-    // Equipment cost breakdown — DCSM and Ventilation equipment only
+    // Equipment cost breakdown — DCSM, Ventilation equipment, and Logistics
     const equipmentRows = (selectedProject.equipment_rows || []).map(row => {
       const cost = computeCol14(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
       const inv = rowInventoryEntry(row, inventoryItems);
+      const sg1 = (inv?.sub_group_01 || '').trim().toUpperCase();
+      const sg2 = (inv?.sub_group_02 || '').trim().toUpperCase();
       const category = (inv?.category || '').toUpperCase();
-      return { label: row.label || 'Unnamed', cost: cost || 0, category };
-    }).filter(r => r.cost > 0 && (r.category === 'DIGITAL MONITORING EQUIPMENT' || r.category.includes('VENTILATION EQUIPMENT')));
+      let group = null;
+      if (sg2 === 'LOGISTICS') group = 'LOGISTICS';
+      else if (sg1 === 'DCSM' || category === 'DIGITAL MONITORING EQUIPMENT') group = 'DIGITAL MONITORING EQUIPMENT';
+      else if (sg1 === 'VENTILATION' || category.includes('VENTILATION EQUIPMENT')) group = 'VENTILATION EQUIPMENT';
+      return { label: row.label || 'Unnamed', cost: cost || 0, group };
+    }).filter(r => r.cost > 0 && r.group);
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
     const equipmentGroupsMap = {};
     equipmentRows.forEach(r => {
-      const g = r.category || 'Uncategorized';
+      const g = r.group || 'Uncategorized';
       if (!equipmentGroupsMap[g]) equipmentGroupsMap[g] = [];
       equipmentGroupsMap[g].push(r);
     });
