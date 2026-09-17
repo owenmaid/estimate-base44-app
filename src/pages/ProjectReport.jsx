@@ -117,6 +117,16 @@ export default function ProjectReport() {
       return { label: row.label || 'Unnamed', cost: cost || 0, category };
     }).filter(r => r.cost > 0 && (r.category === 'DIGITAL MONITORING EQUIPMENT' || r.category.includes('VENTILATION EQUIPMENT')));
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
+    const equipmentGroupsMap = {};
+    equipmentRows.forEach(r => {
+      const g = r.category || 'Uncategorized';
+      if (!equipmentGroupsMap[g]) equipmentGroupsMap[g] = [];
+      equipmentGroupsMap[g].push(r);
+    });
+    const equipmentGroups = Object.keys(equipmentGroupsMap).sort().map(group => {
+      const rows = equipmentGroupsMap[group];
+      return { group, rows, totalCost: rows.reduce((s, r) => s + r.cost, 0) };
+    });
 
     // Manpower total: sum of scheduled manpower row costs, excluding conventional costs
     const manpowerTotal = (selectedProject.equipment_rows || []).reduce((sum, row) => {
@@ -152,6 +162,7 @@ export default function ProjectReport() {
       personnelGroups,
       totalManpowerItems: assignees.reduce((s, a) => s + a.tasks, 0),
       equipmentRows,
+      equipmentGroups,
       totalEquipmentCost,
       manpowerTotal,
       conflicts,
@@ -408,13 +419,28 @@ export default function ProjectReport() {
                       </tr>
                     </thead>
                     <tbody>
-                      {summary.equipmentRows.map((row, i) => (
-                        <tr key={i} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
-                          <td className="px-4 py-2.5 truncate">{row.label}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold tabular-nums">
-                            ${row.cost.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
-                          </td>
-                        </tr>
+                      {summary.equipmentGroups.map(g => (
+                        <React.Fragment key={g.group}>
+                          <tr className="bg-primary/10 border-b border-primary/20">
+                            <td colSpan={2} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                              {g.group}
+                            </td>
+                          </tr>
+                          {g.rows.map((row, i) => (
+                            <tr key={`${g.group}-${i}`} className="border-b border-border/40 hover:bg-muted/25 transition-colors">
+                              <td className="px-4 py-2.5 pl-8 truncate">{row.label}</td>
+                              <td className="px-4 py-2.5 text-right font-semibold tabular-nums">
+                                ${row.cost.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="border-b border-border bg-muted/20 font-medium">
+                            <td className="px-4 py-2 text-right text-muted-foreground uppercase text-[11px] tracking-wider">{g.group} Subtotal</td>
+                            <td className="px-4 py-2 text-right tabular-nums text-primary">
+                              ${g.totalCost.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        </React.Fragment>
                       ))}
                     </tbody>
                     <tfoot>
