@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart, GitCompare, TrendingUp, CalendarRange, ContactRound } from 'lucide-react';
+import { LayoutDashboard, FilePlus, FileText, X, FolderKanban, Settings, HelpCircle, LogOut, User, ChevronDown, Calendar, BarChart2, LayoutTemplate, Package, Users, TableProperties, GitBranch, Cpu, SlidersHorizontal, PanelLeftOpen, PieChart, GitCompare, TrendingUp, CalendarRange, ContactRound, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
 
@@ -23,6 +23,7 @@ const bottomSections = [
   [
     { label: 'Projects', path: '/projects', icon: FolderKanban },
     { label: 'Project Details Setup', path: '/project-details-setup', icon: TableProperties },
+    { label: 'Project Report', path: '/project-report', icon: ClipboardList },
     { label: 'Line Item Comparison', path: '/line-item-comparison', icon: GitCompare },
     { label: 'Item Cost Comparison', path: '/item-cost-comparison', icon: TrendingUp },
     { label: 'Calculation Engine', path: '/calculation-engine', icon: Cpu },
