@@ -7,6 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { Pencil, GripVertical, FolderKanban } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 const COLUMNS = [
   { key: 'planning',  label: 'Planning',  color: 'text-blue-400',   border: 'border-blue-500/40',  bg: 'bg-blue-500/10' },
@@ -141,11 +148,25 @@ export default function ProjectBoard() {
                                   </div>
                                 )}
 
-                                <div className="flex items-center justify-between mt-2">
-                                  {project.due && (
-                                    <span className="text-xs text-muted-foreground">Due {project.due}</span>
-                                  )}
-                                  <Link to={`/project-planning?id=${project.id}`} className="ml-auto">
+                                <div className="flex items-center justify-between mt-2 gap-2">
+                                  <Select
+                                    value={project.status}
+                                    onValueChange={(value) => {
+                                      if (value === project.status) return;
+                                      updateMutation.mutate({ id: project.id, status: value });
+                                      toast.success(`Moved to ${COLUMNS.find(c => c.key === value)?.label}`);
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs px-2 py-0.5 gap-1">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {COLUMNS.map(c => (
+                                        <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Link to={`/project-planning?id=${project.id}`}>
                                     <button className="text-muted-foreground hover:text-primary transition-colors">
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>
