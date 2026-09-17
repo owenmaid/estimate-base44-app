@@ -50,11 +50,15 @@ export function validateEstimateData(clientInfo = {}, sections = []) {
     .find(item => {
       const quantity = Number(item.quantity || 0);
       const unitPrice = Number(item.unit_price || 0);
+      const markup = Number(item.markup || 0);
       return !String(item.description || '').trim()
         || !Number.isFinite(quantity)
         || quantity < 0
         || !Number.isFinite(unitPrice)
-        || unitPrice < 0;
+        || unitPrice < 0
+        || !Number.isFinite(markup)
+        || markup < 0
+        || markup > 1000;
     });
-  return invalidItem ? 'Each line item needs a description and non-negative quantity and price.' : null;
+  return invalidItem ? 'Each line item needs a description, non-negative quantity and price, and markup between 0 and 1000%.' : null;
 }

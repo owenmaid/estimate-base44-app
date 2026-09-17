@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function ProjectModal({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', client: '', status: 'planning', start_date: '', end_date: '' });
+  const [form, setForm] = useState({ name: '', project_number: '', client: '', status: 'planning', start_date: '', end_date: '' });
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
   const { data: templates = [] } = useQuery({
@@ -21,9 +22,21 @@ export default function ProjectModal({ onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name) return;
+    if (!form.name.trim()) {
+      toast.error('Enter a project name.');
+      return;
+    }
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      toast.error('End date cannot be earlier than start date.');
+      return;
+    }
 
-    const projectData = { ...form };
+    const projectData = {
+      ...form,
+      name: form.name.trim(),
+      project_number: form.project_number.trim(),
+      client: form.client.trim(),
+    };
 
     if (selectedTemplate) {
       projectData.task_list = (selectedTemplate.task_list || []).map(t => ({ ...t, done: false }));
@@ -106,6 +119,10 @@ export default function ProjectModal({ onClose, onSave }) {
           <div>
             <Label>Project Name *</Label>
             <Input required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="My Project" />
+          </div>
+          <div>
+            <Label>Project Number</Label>
+            <Input value={form.project_number} onChange={e => setForm(p => ({ ...p, project_number: e.target.value }))} placeholder="Project number" />
           </div>
           <div>
             <Label>Client</Label>

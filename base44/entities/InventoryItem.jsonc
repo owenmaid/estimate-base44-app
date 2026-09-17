@@ -35,7 +35,8 @@
     "quantity": {
       "type": "number",
       "default": 0,
-      "description": "Current quantity in stock"
+      "description": "Current quantity in stock",
+      "minimum": 0
     },
     "unit": {
       "type": "string",
@@ -43,15 +44,18 @@
     },
     "unit_cost": {
       "type": "number",
-      "description": "Cost per unit"
+      "description": "Cost per unit",
+      "minimum": 0
     },
     "reg_value": {
       "type": "number",
-      "description": "Regular rate value"
+      "description": "Regular rate value",
+      "minimum": 0
     },
     "ot_value": {
       "type": "number",
-      "description": "Overtime rate value"
+      "description": "Overtime rate value",
+      "minimum": 0
     },
     "supplier": {
       "type": "string",
@@ -64,7 +68,8 @@
     "min_stock": {
       "type": "number",
       "default": 0,
-      "description": "Minimum stock level before reorder alert"
+      "description": "Minimum stock level before reorder alert",
+      "minimum": 0
     },
     "notes": {
       "type": "string",

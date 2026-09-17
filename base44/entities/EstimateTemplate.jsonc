@@ -4,7 +4,7 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Template name \u2014 must be unique and not 'Est_Template'"
+      "description": "Template name — must be unique and not 'Est_Template'"
     },
     "description": {
       "type": "string",
@@ -29,16 +29,21 @@
             "type": "string"
           },
           "quantity": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "unit_price": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "markup": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000
           },
           "total": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "_isSummary": {
             "type": "boolean",
@@ -46,11 +51,22 @@
           },
           "tax_rate": {
             "type": "number",
-            "description": "Tax rate stored on the summary row"
+            "description": "Tax rate stored on the summary row",
+            "minimum": 0,
+            "maximum": 100
           },
           "discount": {
             "type": "number",
-            "description": "Discount stored on the summary row"
+            "description": "Discount stored on the summary row",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable line-item identifier"
+          },
+          "calculation_code": {
+            "type": "string",
+            "description": "Stable business-rule code; labels may change without changing calculations"
           }
         }
       }

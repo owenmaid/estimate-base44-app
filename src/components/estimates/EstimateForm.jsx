@@ -11,8 +11,9 @@ import LineItemRow from './LineItemRow';
 import { calculateEstimateFromLineItems, roundMoney } from '@/lib/calculations';
 import { createStableId, validateEstimateData } from '@/lib/reliability';
 import { toast } from 'sonner';
+import { inferCalculationCode } from '@/lib/calculationCodes';
 
-const emptyItem = () => ({ _uiId: createStableId('line'), description: '', quantity: 1, unit_price: 0, total: 0 });
+const emptyItem = () => ({ id: createStableId('line'), description: '', quantity: 1, unit_price: 0, total: 0 });
 
 export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
   const [form, setForm] = useState({
@@ -36,7 +37,11 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
     if (initialData) setForm(prev => ({
       ...prev,
       ...initialData,
-      line_items: (initialData.line_items || []).map(item => ({ ...item, _uiId: createStableId('line') })),
+      line_items: (initialData.line_items || []).map(item => ({
+        ...item,
+        id: item.id || createStableId('line'),
+        calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
+      })),
     }));
   }, [initialData]);
 
@@ -74,8 +79,10 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
       project_name: form.project_name.trim(),
       tax_rate: Number(form.tax_rate || 0),
       discount: roundMoney(form.discount),
-      line_items: form.line_items.map(({ _uiId, ...item }) => ({
+      line_items: form.line_items.map(item => ({
         ...item,
+        id: item.id || createStableId('line'),
+        calculation_code: item.calculation_code || inferCalculationCode(item.description) || undefined,
         description: item.description.trim(),
         quantity: Number(item.quantity || 0),
         unit_price: roundMoney(item.unit_price),
@@ -173,7 +180,7 @@ export default function EstimateForm({ initialData, onSubmit, isSubmitting }) {
           </div>
           <div className="space-y-2 min-w-[560px]">
           {form.line_items.map((item, i) => (
-            <LineItemRow key={item._uiId} item={item} index={i} onChange={updateLineItem} onRemove={removeLineItem} />
+            <LineItemRow key={item.id} item={item} index={i} onChange={updateLineItem} onRemove={removeLineItem} />
           ))}
           </div>
           </div>

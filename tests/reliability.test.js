@@ -8,6 +8,7 @@ import {
   getErrorMessage,
   validateEstimateData,
 } from '../src/lib/reliability.js';
+import { CALCULATION_CODES, calculationCodeFor, inferCalculationCode } from '../src/lib/calculationCodes.js';
 
 test('creates unique prefixed stable IDs', () => {
   const ids = new Set(Array.from({ length: 100 }, () => createStableId('item')));
@@ -41,9 +42,35 @@ test('validates required estimate fields, dates and money inputs', () => {
   assert.match(validateEstimateData({ ...valid, end_date: '2026-08-31' }, sections), /end date/i);
   assert.match(validateEstimateData({ ...valid, discount: -1 }, sections), /discount/i);
   assert.match(validateEstimateData(valid, [{ items: [{ description: '', quantity: 1, unit_price: 10 }] }]), /line item/i);
+  assert.match(validateEstimateData(valid, [{ items: [{ description: 'Labour', quantity: 1, unit_price: 10, markup: 1001 }] }]), /markup/i);
 });
 
 test('extracts useful API errors and preserves a fallback', () => {
   assert.equal(getErrorMessage({ response: { data: { message: 'Denied' } } }), 'Denied');
   assert.equal(getErrorMessage(null, 'Save failed'), 'Save failed');
+});
+
+
+test('infers stable calculation codes for legacy estimate labels', () => {
+  assert.equal(inferCalculationCode('DCSM Est Total'), CALCULATION_CODES.DCSM_TOTAL);
+  assert.equal(inferCalculationCode('[Lead Ventilation Tech]'), CALCULATION_CODES.LEAD_VENT_BRACKET);
+  assert.equal(
+    inferCalculationCode('Ventilation Total Labour | Logistics Cost', { section: true }),
+    CALCULATION_CODES.VENT_LABOUR_LOGISTICS,
+  );
+});
+
+test('stored calculation codes survive display-label changes', () => {
+  const renamed = {
+    description: 'Customer-facing renamed total',
+    calculation_code: CALCULATION_CODES.PROJECT_COST_TOTAL,
+  };
+  assert.equal(calculationCodeFor(renamed), CALCULATION_CODES.PROJECT_COST_TOTAL);
+  assert.equal(
+    calculationCodeFor(
+      { title: 'Indirects Total', calculation_code: CALCULATION_CODES.SECTION },
+      { section: true },
+    ),
+    CALCULATION_CODES.INDIRECTS_TOTAL,
+  );
 });

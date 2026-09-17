@@ -9,12 +9,15 @@
     "project_days": {
       "type": "number",
       "default": 1,
-      "description": "Project duration in days"
+      "description": "Project duration in days",
+      "minimum": 1
     },
     "tax_rate": {
       "type": "number",
       "default": 0,
-      "description": "Tax rate as a percentage"
+      "description": "Tax rate as a percentage",
+      "minimum": 0,
+      "maximum": 100
     },
     "line_items": {
       "type": "array",
@@ -35,19 +38,24 @@
             "type": "string"
           },
           "unit_cost": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "reg_value": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "ot_value": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "quantity": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "ot_hours": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "item_group": {
             "type": "string"
@@ -57,15 +65,18 @@
     },
     "subtotal": {
       "type": "number",
-      "description": "Computed subtotal at time of save"
+      "description": "Computed subtotal at time of save",
+      "minimum": 0
     },
     "tax_amount": {
       "type": "number",
-      "description": "Computed tax amount at time of save"
+      "description": "Computed tax amount at time of save",
+      "minimum": 0
     },
     "total": {
       "type": "number",
-      "description": "Computed grand total at time of save"
+      "description": "Computed grand total at time of save",
+      "minimum": 0
     }
   },
   "required": [

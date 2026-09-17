@@ -65,7 +65,13 @@ export default function Projects() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Project.create({ ...data, progress: 0, tasks: 0, done: 0 }),
+    mutationFn: async (data) => {
+      if (data.project_number) {
+        const duplicate = await base44.entities.Project.filter({ project_number: data.project_number }, null, 1);
+        if (duplicate.length > 0) throw new Error(`Project number "${data.project_number}" already exists.`);
+      }
+      return base44.entities.Project.create({ ...data, progress: 0, tasks: 0, done: 0 });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setModalOpen(false);
