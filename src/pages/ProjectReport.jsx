@@ -187,22 +187,13 @@ export default function ProjectReport() {
       ) : !summary ? null : (
         <>
           {/* Status & Progress overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Card>
               <CardContent className="pt-5 pb-5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Current Status</p>
                 <Badge className={`mt-2 text-sm border ${STATUS_STYLES[selectedProject.status] || ''}`}>
                   {summary.statusLabel}
                 </Badge>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Progress</p>
-                <p className="text-2xl font-bold mt-1 text-primary">{summary.progress}%</p>
-                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${summary.progress}%` }} />
-                </div>
               </CardContent>
             </Card>
             <Card>
