@@ -336,10 +336,22 @@ const addEquipmentRow = () => {
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
+  const isAlbertaLocation = (loc) => {
+    const s = (loc || '').trim().toLowerCase();
+    if (!s) return false;
+    if (s.includes('alberta')) return true;
+    // Match "AB" as a standalone token (e.g. "Edmonton, AB" or "Edmonton AB Canada")
+    return /\bab\b/.test(s);
+  };
+
   const fetchStatHolidays = async () => {
     if (!startDate || !endDate) return;
+    if (!isAlbertaLocation(projectLocation)) {
+      toast.info('Statutory holidays are only fetched for projects located in Alberta, Canada. Update the Location field to include "Alberta" or "AB".');
+      return;
+    }
     setLoadingHolidays(true);
-    const res = await base44.functions.invoke('getCanadaStatHolidays', { startDate, endDate });
+    const res = await base44.functions.invoke('getCanadaStatHolidays', { startDate, endDate, province: 'AB' });
     const holidays = res.data?.holidays || [];
     setStatHolidays(holidays);
     setLoadingHolidays(false);
