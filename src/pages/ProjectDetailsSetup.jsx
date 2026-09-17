@@ -37,6 +37,9 @@ export default function ProjectDetailsSetup() {
   const [projectNotes, setProjectNotes] = useState('');
   const [newEquipmentItemId, setNewEquipmentItemId] = useState('');
   const [newEquipmentCategory, setNewEquipmentCategory] = useState('');
+  const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [showEquipmentResults, setShowEquipmentResults] = useState(false);
+  const equipmentSearchRef = useRef(null);
   const [statHolidays, setStatHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [expandedSchedule, setExpandedSchedule] = useState(false);
@@ -335,6 +338,29 @@ const addEquipmentRow = () => {
 
 
   const sampleProjects = projects.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
+
+  const equipmentSearchResults = useMemo(() => {
+    const q = equipmentSearch.trim().toLowerCase();
+    if (!q) return [];
+    return equipmentInventory
+      .filter(i =>
+        (i.sku || '').toLowerCase().includes(q) ||
+        (i.name || '').toLowerCase().includes(q) ||
+        (i.category || '').toLowerCase().includes(q)
+      )
+      .slice(0, 20);
+  }, [equipmentSearch, equipmentInventory]);
+
+  const addEquipmentByItem = (item) => {
+    const newId = Math.max(...equipmentRows.map(r => r.id), 0) + 1;
+    setEquipmentRows(prev => [...prev, {
+      id: newId,
+      label: item?.name || item?.sku || `Equipment ${newId}`,
+      item_id: item.id
+    }]);
+    setEquipmentSearch('');
+    setShowEquipmentResults(false);
+  };
 
   const PROVINCE_PATTERNS = [
     { code: 'AB', names: ['alberta'] },
@@ -1144,7 +1170,44 @@ const addEquipmentRow = () => {
               <div style={{ width: tableScrollWidth || '100%', height: '1px' }} />
             </div>
 
-            <div className="px-4 py-3 border-t border-border flex items-center gap-2">
+            <div className="px-4 py-3 border-t border-border flex flex-wrap items-center gap-2">
+              <div className="relative" ref={equipmentSearchRef}>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search by SKU or description..."
+                    value={equipmentSearch}
+                    onChange={e => { setEquipmentSearch(e.target.value); setShowEquipmentResults(true); }}
+                    onFocus={() => setShowEquipmentResults(true)}
+                    onBlur={() => setTimeout(() => setShowEquipmentResults(false), 150)}
+                    className="pl-7 pr-3 py-1.5 border border-border rounded bg-white/25 text-primary text-sm w-64 outline-none focus:border-primary"
+                  />
+                </div>
+                {showEquipmentResults && equipmentSearch.trim() && (
+                  <div className="absolute top-full mt-1 w-72 bg-card border border-border rounded-md shadow-lg z-20 max-h-72 overflow-y-auto">
+                    {equipmentSearchResults.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">No matches found</div>
+                    ) : (
+                      equipmentSearchResults.map(item => (
+                        <button
+                          key={item.id}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => addEquipmentByItem(item)}
+                          className="w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 text-sm"
+                        >
+                          <div className="font-medium text-foreground truncate">{item.name}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            {item.sku && <span className="font-mono">{item.sku}</span>}
+                            {item.category && <span className="truncate">{item.category}</span>}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">or browse:</span>
               <select
                 value={newEquipmentCategory}
                 onChange={e => { setNewEquipmentCategory(e.target.value); setNewEquipmentItemId(''); }}
