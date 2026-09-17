@@ -93,7 +93,7 @@ export default function ProjectReport() {
       const inv = rowInventoryEntry(row, inventoryItems);
       const category = (inv?.category || '').toUpperCase();
       return { label: row.label || 'Unnamed', cost: cost || 0, category };
-    }).filter(r => r.cost > 0 && (r.category === 'DCSM' || r.category === 'VENTILATION'));
+    }).filter(r => r.cost > 0 && (r.category === 'DIGITAL MONITORING EQUIPMENT' || r.category.includes('VENTILATION EQUIPMENT')));
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
 
     // Manpower total: sum of scheduled manpower row costs, excluding conventional costs
