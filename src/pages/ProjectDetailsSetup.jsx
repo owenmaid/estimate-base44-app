@@ -1275,7 +1275,7 @@ const addEquipmentRow = () => {
                      <div>Engine</div>
                    </td>
                  </tr>
-                 {equipmentRows.map((row, idx) => {
+                 {filteredEquipmentRows.map((row, idx) => {
                    const rowTotal = Object.entries(equipmentGrid).reduce((sum, [key, value]) => {
                      return key.startsWith(`${row.id}_`) ? sum + (parseInt(value) || 0) : sum;
                    }, 0);
@@ -1291,18 +1291,18 @@ const addEquipmentRow = () => {
                          })}
                  <tr className="bg-secondary/40 border-t-2 border-border font-semibold" style={{ height: '36px' }}>
                    <td className="px-4 py-2 text-foreground border-r border-border text-right">
-                     {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0).toFixed(2)}
+                     {filteredEquipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0).toFixed(2)}
                    </td>
                    <td className="px-4 py-2 text-foreground border-r border-border text-right">
-                     {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.otCost || 0), 0).toFixed(2)}
+                     {filteredEquipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.otCost || 0), 0).toFixed(2)}
                    </td>
                    <td className="px-4 py-2 text-foreground border-r border-border text-right">
-                     {equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0).toFixed(2)}
+                     {filteredEquipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0).toFixed(2)}
                    </td>
                    <td className="px-4 py-2 text-foreground text-right">
-                     {(equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0) + 
-                       equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.otCost || 0), 0) + 
-                       equipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0)).toFixed(2)}
+                     {(filteredEquipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.regCost || 0), 0) +
+                       filteredEquipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.otCost || 0), 0) +
+                       filteredEquipmentRows.reduce((sum, row) => sum + (calculateRowCosts[row.id]?.specialCost || 0), 0)).toFixed(2)}
                    </td>
                  </tr>
                </tbody>
