@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
-import { Users, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { Users, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronRight, Package, ShieldAlert } from 'lucide-react';
 
 const DEFAULT_CAPACITY = 10; // fallback if no manpower SKU found
 
@@ -22,6 +22,21 @@ function orderedGroupKeys(groups) {
     if (b === 'Other') return -1;
     return a.localeCompare(b);
   });
+}
+
+function parseDate(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function rangesOverlap(p1, p2) {
+  const s1 = parseDate(p1.start_date);
+  const e1 = parseDate(p1.end_date);
+  const s2 = parseDate(p2.start_date);
+  const e2 = parseDate(p2.end_date);
+  if (!s1 || !e1 || !s2 || !e2) return false;
+  return s1 <= e2 && s2 <= e1;
 }
 
 const STATUS_STYLES = {
@@ -75,6 +90,11 @@ function MemberRow({ member }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm">{member.name}</span>
+            {member.conflicts.length > 0 && (
+              <span title={`${member.conflicts.length} double-booking conflict${member.conflicts.length !== 1 ? 's' : ''}`} className="flex items-center gap-1 text-[10px] text-destructive font-semibold bg-destructive/15 border border-destructive/30 rounded px-1.5 py-0.5">
+                <ShieldAlert className="h-3 w-3" /> Double-Booked
+              </span>
+            )}
             {burnoutRisk && (
               <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] border flex items-center gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" /> Over Capacity
@@ -104,6 +124,27 @@ function MemberRow({ member }) {
 
       {expanded && (
         <div className="border-t border-border bg-muted/10 px-5 py-2">
+          {member.conflicts.length > 0 && (
+            <div className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldAlert className="h-4 w-4 text-destructive" />
+                <p className="text-xs font-semibold text-destructive">
+                  {member.conflicts.length} Double-Booking Conflict{member.conflicts.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {member.conflicts.map((c, i) => (
+                  <div key={i} className="text-xs text-muted-foreground">
+                    <span className="text-foreground font-medium">{c.project1}</span>
+                    <span className="text-muted-foreground/60"> ({c.dates1[0]} → {c.dates1[1]})</span>
+                    <span className="text-destructive font-medium"> overlaps </span>
+                    <span className="text-foreground font-medium">{c.project2}</span>
+                    <span className="text-muted-foreground/60"> ({c.dates2[0]} → {c.dates2[1]})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {(() => {
             // Flatten all tasks across projects, tagged with their project
             const allTasks = [];
@@ -261,12 +302,28 @@ export default function ResourceAllocation() {
       const key = m.name.toLowerCase();
       const inventoryItem = manpowerLookup[key] || null;
       const capacity = inventoryItem ? (inventoryItem.quantity || DEFAULT_CAPACITY) : DEFAULT_CAPACITY;
+      const breakdown = Object.values(m.projectBreakdown);
+      // Detect double-booking: any two projects with overlapping date ranges
+      const conflicts = [];
+      for (let i = 0; i < breakdown.length; i++) {
+        for (let j = i + 1; j < breakdown.length; j++) {
+          if (rangesOverlap(breakdown[i].project, breakdown[j].project)) {
+            conflicts.push({
+              project1: breakdown[i].project.name,
+              project2: breakdown[j].project.name,
+              dates1: [breakdown[i].project.start_date, breakdown[i].project.end_date],
+              dates2: [breakdown[j].project.start_date, breakdown[j].project.end_date],
+            });
+          }
+        }
+      }
       return {
         ...m,
-        projectBreakdown: Object.values(m.projectBreakdown),
+        projectBreakdown: breakdown,
         used: m.tasks.length,
         capacity,
         inventoryItem,
+        conflicts,
       };
     }).sort((a, b) => (b.used / b.capacity) - (a.used / a.capacity));
   }, [projects, manpowerLookup]);
@@ -326,6 +383,7 @@ export default function ResourceAllocation() {
   const totalUsed = memberMap.reduce((s, m) => s + m.used, 0);
   const totalCapacity = memberMap.reduce((s, m) => s + m.capacity, 0);
   const overCapacityCount = memberMap.filter(m => m.used > m.capacity).length;
+  const doubleBookedCount = memberMap.filter(m => m.conflicts.length > 0).length;
   const unassignedCount = projects.reduce((s, p) => s + (p.task_list || []).filter(t => !t.assignee?.trim()).length, 0);
   const manpowerCount = inventoryItems.filter(i => ['direct labour', 'indirect labour'].includes(i.category?.toLowerCase())).length;
 
@@ -340,7 +398,7 @@ export default function ResourceAllocation() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Team Members</p>
@@ -357,6 +415,15 @@ export default function ResourceAllocation() {
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-muted-foreground">Over Capacity</p>
             <p className={`text-xl sm:text-2xl font-bold mt-1 ${overCapacityCount > 0 ? 'text-destructive' : ''}`}>{overCapacityCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-1.5">
+              <ShieldAlert className={`h-3.5 w-3.5 ${doubleBookedCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
+              <p className="text-xs text-muted-foreground">Double-Booked</p>
+            </div>
+            <p className={`text-xl sm:text-2xl font-bold mt-1 ${doubleBookedCount > 0 ? 'text-destructive' : ''}`}>{doubleBookedCount}</p>
           </CardContent>
         </Card>
         <Card>
