@@ -198,10 +198,8 @@ export default function ProjectReport() {
             </Card>
             <Card>
               <CardContent className="pt-5 pb-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Tasks Completed</p>
-                <p className="text-2xl font-bold mt-1">
-                  {summary.doneTasks} <span className="text-base text-muted-foreground font-normal">/ {summary.totalTasks}</span>
-                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Man Power Required</p>
+                <p className="text-2xl font-bold mt-1">{summary.totalTasks}</p>
               </CardContent>
             </Card>
           </div>
