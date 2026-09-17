@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,6 +38,8 @@ export default function ProjectBoard() {
 
   // Local columns state for optimistic UI
   const [columns, setColumns] = useState({});
+  const [dragOverCol, setDragOverCol] = useState(null);
+  const [draggingId, setDraggingId] = useState(null);
 
   useEffect(() => {
     const grouped = {};
@@ -58,29 +59,51 @@ export default function ProjectBoard() {
     onError: () => toast.error('Failed to update project status'),
   });
 
-  const onDragEnd = (result) => {
-    const { source, destination, draggableId } = result;
-    if (!destination) return;
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+  const moveProject = (projectId, fromCol, toCol) => {
+    if (fromCol === toCol) return;
+    const sourceCol = Array.from(columns[fromCol] || []);
+    const destCol = Array.from(columns[toCol] || []);
+    const idx = sourceCol.findIndex(p => p.id === projectId);
+    if (idx === -1) return;
+    const [moved] = sourceCol.splice(idx, 1);
+    destCol.push(moved);
+    setColumns(prev => ({ ...prev, [fromCol]: sourceCol, [toCol]: destCol }));
+    updateMutation.mutate({ id: projectId, status: toCol });
+    toast.success(`Moved to ${COLUMNS.find(c => c.key === toCol)?.label}`);
+  };
 
-    const sourceCol = Array.from(columns[source.droppableId]);
-    const destCol = source.droppableId === destination.droppableId
-      ? sourceCol
-      : Array.from(columns[destination.droppableId]);
+  const onDragStart = (e, project, fromCol) => {
+    setDraggingId(project.id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ id: project.id, fromCol }));
+  };
 
-    const [moved] = sourceCol.splice(source.index, 1);
-    destCol.splice(destination.index, 0, moved);
+  const onDragOver = (e, colKey) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverCol !== colKey) setDragOverCol(colKey);
+  };
 
-    const newColumns = { ...columns, [source.droppableId]: sourceCol };
-    if (source.droppableId !== destination.droppableId) {
-      newColumns[destination.droppableId] = destCol;
+  const onDragLeave = (e, colKey) => {
+    // Only clear if leaving the column entirely (not entering a child)
+    if (dragOverCol === colKey) setDragOverCol(null);
+  };
+
+  const onDrop = (e, toCol) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    setDraggingId(null);
+    try {
+      const { id, fromCol } = JSON.parse(e.dataTransfer.getData('text/plain'));
+      moveProject(id, fromCol, toCol);
+    } catch {
+      // ignore malformed drop data
     }
-    setColumns(newColumns);
+  };
 
-    if (source.droppableId !== destination.droppableId) {
-      updateMutation.mutate({ id: draggableId, status: destination.droppableId });
-      toast.success(`Moved to ${COLUMNS.find(c => c.key === destination.droppableId)?.label}`);
-    }
+  const onDragEnd = () => {
+    setDraggingId(null);
+    setDragOverCol(null);
   };
 
   if (isLoading) {
@@ -95,104 +118,96 @@ export default function ProjectBoard() {
     <div className="p-4 sm:p-6 space-y-6 h-full flex flex-col">
       <div>
         <h1 className="text-2xl font-bold">Project Board</h1>
-        <p className="text-sm text-muted-foreground mt-1">Drag cards between columns to update project status</p>
+        <p className="text-sm text-muted-foreground mt-1">Drag cards between columns or use the status dropdown to update project status</p>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 min-h-0">
-          {COLUMNS.map(col => (
-            <div key={col.key} className={`flex flex-col rounded-xl border ${col.border} ${col.bg} p-3 min-h-[500px]`}>
-              {/* Column header */}
-              <div className="flex items-center justify-between mb-3 px-1">
-                <span className={`text-sm font-semibold ${col.color}`}>{col.label}</span>
-                <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                  {(columns[col.key] || []).length}
-                </span>
-              </div>
-
-              <Droppable droppableId={col.key}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex-1 space-y-2 rounded-lg transition-colors min-h-[40px] ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
-                  >
-                    {(columns[col.key] || []).map((project, index) => (
-                      <Draggable key={project.id} draggableId={project.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`bg-card border border-border rounded-lg p-3 shadow-sm transition-shadow ${snapshot.isDragging ? 'shadow-lg rotate-1 opacity-90' : 'hover:shadow-md'}`}
-                          >
-                            <div className="flex items-start gap-2">
-                              <div {...provided.dragHandleProps} className="mt-0.5 text-muted-foreground cursor-grab active:cursor-grabbing flex-shrink-0">
-                                <GripVertical className="h-4 w-4" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{project.name}</p>
-                                {project.client && (
-                                  <p className="text-xs text-muted-foreground truncate mt-0.5">{project.client}</p>
-                                )}
-
-                                {/* Progress bar */}
-                                {(project.tasks > 0) && (
-                                  <div className="mt-2">
-                                    <div className="h-1 bg-muted rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-primary rounded-full"
-                                        style={{ width: `${project.progress || 0}%` }}
-                                      />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{project.done}/{project.tasks} tasks</p>
-                                  </div>
-                                )}
-
-                                <div className="flex items-center justify-between mt-2 gap-2">
-                                  <Select
-                                    value={project.status}
-                                    onValueChange={(value) => {
-                                      if (value === project.status) return;
-                                      updateMutation.mutate({ id: project.id, status: value });
-                                      toast.success(`Moved to ${COLUMNS.find(c => c.key === value)?.label}`);
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs px-2 py-0.5 gap-1">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {COLUMNS.map(c => (
-                                        <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <Link to={`/project-planning?id=${project.id}`}>
-                                    <button className="text-muted-foreground hover:text-primary transition-colors">
-                                      <Pencil className="h-3.5 w-3.5" />
-                                    </button>
-                                  </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-
-                    {(columns[col.key] || []).length === 0 && !snapshot.isDraggingOver && (
-                      <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/40">
-                        <FolderKanban className="h-6 w-6 mb-1" />
-                        <p className="text-xs">Drop here</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Droppable>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 min-h-0">
+        {COLUMNS.map(col => (
+          <div
+            key={col.key}
+            className={`flex flex-col rounded-xl border ${col.border} ${col.bg} p-3 min-h-[500px] transition-colors ${dragOverCol === col.key ? 'ring-2 ring-primary/50' : ''}`}
+            onDragOver={(e) => onDragOver(e, col.key)}
+            onDragLeave={(e) => onDragLeave(e, col.key)}
+            onDrop={(e) => onDrop(e, col.key)}
+          >
+            {/* Column header */}
+            <div className="flex items-center justify-between mb-3 px-1">
+              <span className={`text-sm font-semibold ${col.color}`}>{col.label}</span>
+              <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                {(columns[col.key] || []).length}
+              </span>
             </div>
-          ))}
-        </div>
-      </DragDropContext>
+
+            <div className={`flex-1 space-y-2 rounded-lg transition-colors min-h-[40px] ${dragOverCol === col.key ? 'bg-primary/5' : ''}`}>
+              {(columns[col.key] || []).map((project) => (
+                <div
+                  key={project.id}
+                  draggable
+                  onDragStart={(e) => onDragStart(e, project, col.key)}
+                  onDragEnd={onDragEnd}
+                  className={`bg-card border border-border rounded-lg p-3 shadow-sm transition-shadow cursor-grab active:cursor-grabbing ${draggingId === project.id ? 'opacity-50' : 'hover:shadow-md'}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 text-muted-foreground flex-shrink-0">
+                      <GripVertical className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{project.name}</p>
+                      {project.client && (
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{project.client}</p>
+                      )}
+
+                      {/* Progress bar */}
+                      {(project.tasks > 0) && (
+                        <div className="mt-2">
+                          <div className="h-1 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${project.progress || 0}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{project.done}/{project.tasks} tasks</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between mt-2 gap-2">
+                        <Select
+                          value={project.status}
+                          onValueChange={(value) => {
+                            if (value === project.status) return;
+                            moveProject(project.id, project.status, value);
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs px-2 py-0.5 gap-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COLUMNS.map(c => (
+                              <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Link to={`/project-planning?id=${project.id}`}>
+                          <button className="text-muted-foreground hover:text-primary transition-colors">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {(columns[col.key] || []).length === 0 && dragOverCol !== col.key && (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/40">
+                  <FolderKanban className="h-6 w-6 mb-1" />
+                  <p className="text-xs">Drop here</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
