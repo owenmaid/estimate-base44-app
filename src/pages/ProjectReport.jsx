@@ -144,15 +144,8 @@ export default function ProjectReport() {
       return sum + (result.totalCost || 0);
     }, 0);
 
-    // Grand total: sum of all scheduled row costs, excluding CONVENTIONAL rows
-    const grandTotal = (selectedProject.equipment_rows || []).reduce((sum, row) => {
-      const result = calculateScheduleRow(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
-      if (!result) return sum;
-      const sg1 = (result.inventoryItem?.sub_group_01 || '').trim().toUpperCase();
-      const cat = (result.inventoryItem?.category || '').toUpperCase();
-      if (sg1 === 'CONVENTIONAL' || cat === 'CONVENTIONAL COSTS') return sum;
-      return sum + (result.totalCost || 0);
-    }, 0);
+    // Grand total: Project Manpower Total + Equipment Cost (excludes conventional)
+    const grandTotal = manpowerTotal + totalEquipmentCost;
 
     // Conflicts: check if this project's assignees are double-booked across OTHER projects
     const conflicts = [];
