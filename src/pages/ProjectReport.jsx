@@ -346,8 +346,8 @@ export default function ProjectReport() {
                   <DollarSign className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">DCSM Equipment + Ventilation Equipment</p>
-                  <p className="text-xl font-bold">${(summary.dcsmEquipmentOnly + summary.ventilationEquipmentOnly).toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xs text-muted-foreground">DCSM Equipment + Ventilation Equipment (incl. Logistics)</p>
+                  <p className="text-xl font-bold">${(summary.dcsmTotal + summary.ventilationTotal).toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
                 </div>
               </CardContent>
             </Card>
