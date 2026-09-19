@@ -117,7 +117,8 @@ export default function ProjectReport() {
       const sg2 = (inv?.sub_group_02 || '').trim().toUpperCase();
       const category = (inv?.category || '').toUpperCase();
       let group = null;
-      if (sg2 === 'LOGISTICS') group = 'LOGISTICS';
+      if (sg2 === 'LOGISTICS' && sg1 === 'VENTILATION') group = 'VENTILATION LOGISTICS';
+      else if (sg2 === 'LOGISTICS') group = 'DCSM LOGISTICS';
       else if (sg1 === 'DCSM' || category === 'DIGITAL MONITORING EQUIPMENT') group = 'DIGITAL MONITORING EQUIPMENT';
       else if (sg1 === 'VENTILATION' || category.includes('VENTILATION EQUIPMENT')) group = 'VENTILATION EQUIPMENT';
       return { label: row.label || 'Unnamed', cost: cost || 0, group };
