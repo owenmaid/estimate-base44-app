@@ -119,8 +119,8 @@ export default function ProjectReport() {
       let group = null;
       if (sg2 === 'LOGISTICS' && sg1 === 'VENTILATION') group = 'VENTILATION LOGISTICS';
       else if (sg2 === 'LOGISTICS') group = 'DCSM LOGISTICS';
-      else if (sg1 === 'DCSM' || category === 'DIGITAL MONITORING EQUIPMENT') group = 'DIGITAL MONITORING EQUIPMENT';
-      else if (sg1 === 'VENTILATION' || category.includes('VENTILATION EQUIPMENT')) group = 'VENTILATION EQUIPMENT';
+      else if (sg2 === 'EQUIPMENT' && (sg1 === 'DCSM' || category === 'DIGITAL MONITORING EQUIPMENT')) group = 'DIGITAL MONITORING EQUIPMENT';
+      else if (sg2 === 'EQUIPMENT' && (sg1 === 'VENTILATION' || category.includes('VENTILATION EQUIPMENT'))) group = 'VENTILATION EQUIPMENT';
       return { label: row.label || 'Unnamed', cost: cost || 0, group };
     }).filter(r => r.cost > 0 && r.group);
     const totalEquipmentCost = equipmentRows.reduce((s, r) => s + r.cost, 0);
