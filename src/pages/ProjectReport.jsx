@@ -166,6 +166,16 @@ export default function ProjectReport() {
       return sum + (result.totalCost || 0);
     }, 0);
 
+    // DCSM equipment only (excludes logistics)
+    const dcsmEquipmentOnly = equipmentGroups
+      .filter(g => g.group === 'DIGITAL MONITORING EQUIPMENT')
+      .reduce((s, g) => s + g.totalCost, 0);
+
+    // Ventilation equipment only (excludes logistics)
+    const ventilationEquipmentOnly = equipmentGroups
+      .filter(g => g.group === 'VENTILATION EQUIPMENT')
+      .reduce((s, g) => s + g.totalCost, 0);
+
     // DCSM total: DCSM equipment + DCSM logistics
     const dcsmTotal = equipmentGroups
       .filter(g => g.group === 'DIGITAL MONITORING EQUIPMENT' || g.group === 'DCSM LOGISTICS')
@@ -209,6 +219,8 @@ export default function ProjectReport() {
       manpowerTotal,
       dcsmManpower,
       ventilationManpower,
+      dcsmEquipmentOnly,
+      ventilationEquipmentOnly,
       dcsmTotal,
       ventilationTotal,
       grandTotal,
@@ -331,11 +343,11 @@ export default function ProjectReport() {
             <Card>
               <CardContent className="pt-5 pb-5 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                  <Users className="h-5 w-5 text-primary" />
+                  <DollarSign className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Assigned Resources</p>
-                  <p className="text-xl font-bold">{summary.assignees.length}</p>
+                  <p className="text-xs text-muted-foreground">DCSM Equipment + Ventilation Equipment</p>
+                  <p className="text-xl font-bold">${(summary.dcsmEquipmentOnly + summary.ventilationEquipmentOnly).toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
                 </div>
               </CardContent>
             </Card>
