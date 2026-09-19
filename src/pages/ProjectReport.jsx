@@ -315,17 +315,6 @@ export default function ProjectReport() {
                   <DollarSign className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Equipment Cost</p>
-                  <p className="text-xl font-bold">${summary.totalEquipmentCost.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-5 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                </div>
-                <div>
                   <p className="text-xs text-muted-foreground">DCSM Equipment + Logistics</p>
                   <p className="text-xl font-bold">${summary.dcsmTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
                 </div>
