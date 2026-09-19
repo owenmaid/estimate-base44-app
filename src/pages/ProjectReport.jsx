@@ -144,6 +144,11 @@ export default function ProjectReport() {
       return sum + (result.totalCost || 0);
     }, 0);
 
+    // DCSM total: DCSM equipment + DCSM logistics
+    const dcsmTotal = equipmentGroups
+      .filter(g => g.group === 'DIGITAL MONITORING EQUIPMENT' || g.group === 'DCSM LOGISTICS')
+      .reduce((s, g) => s + g.totalCost, 0);
+
     // Grand total: Project Manpower Total + Equipment Cost (excludes conventional)
     const grandTotal = manpowerTotal + totalEquipmentCost;
 
@@ -311,6 +316,17 @@ export default function ProjectReport() {
                 <div>
                   <p className="text-xs text-muted-foreground">Equipment Cost</p>
                   <p className="text-xl font-bold">${summary.totalEquipmentCost.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 pb-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">DCSM Equipment + Logistics</p>
+                  <p className="text-xl font-bold">${summary.dcsmTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
                 </div>
               </CardContent>
             </Card>
