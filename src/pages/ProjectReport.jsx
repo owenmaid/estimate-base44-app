@@ -144,6 +144,16 @@ export default function ProjectReport() {
       return sum + (result.totalCost || 0);
     }, 0);
 
+    // Grand total: sum of all scheduled row costs, excluding CONVENTIONAL rows
+    const grandTotal = (selectedProject.equipment_rows || []).reduce((sum, row) => {
+      const result = calculateScheduleRow(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
+      if (!result) return sum;
+      const sg1 = (result.inventoryItem?.sub_group_01 || '').trim().toUpperCase();
+      const cat = (result.inventoryItem?.category || '').toUpperCase();
+      if (sg1 === 'CONVENTIONAL' || cat === 'CONVENTIONAL COSTS') return sum;
+      return sum + (result.totalCost || 0);
+    }, 0);
+
     // Conflicts: check if this project's assignees are double-booked across OTHER projects
     const conflicts = [];
     const otherProjects = projects.filter(p => p.id !== selectedProject.id);
@@ -172,6 +182,7 @@ export default function ProjectReport() {
       equipmentGroups,
       totalEquipmentCost,
       manpowerTotal,
+      grandTotal,
       conflicts,
     };
   }, [selectedProject, projects, inventoryItems]);
@@ -322,6 +333,24 @@ export default function ProjectReport() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Grand total excluding conventional costs */}
+          <Card className="bg-primary/10 border-primary/30">
+            <CardContent className="pt-5 pb-5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Project Grand Total</p>
+                  <p className="text-[11px] text-muted-foreground">Excluding Conventional Costs</p>
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-primary tabular-nums">
+                ${summary.grandTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Conflicts */}
           {summary.conflicts.length > 0 && (
