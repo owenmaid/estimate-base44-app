@@ -155,6 +155,17 @@ export default function ProjectReport() {
       return sum + (result.totalCost || 0);
     }, 0);
 
+    // Ventilation manpower only
+    const ventilationManpower = (selectedProject.equipment_rows || []).reduce((sum, row) => {
+      const result = calculateScheduleRow(row, selectedProject.equipment_grid || {}, selectedProject.type_grid || {}, inventoryItems);
+      if (!result || !result.isManpower) return sum;
+      const sg1 = (result.inventoryItem?.sub_group_01 || '').trim().toUpperCase();
+      const cat = (result.inventoryItem?.category || '').toUpperCase();
+      if (cat === 'CONVENTIONAL COSTS') return sum;
+      if (sg1 !== 'VENTILATION' && !cat.includes('VENTILATION EQUIPMENT')) return sum;
+      return sum + (result.totalCost || 0);
+    }, 0);
+
     // DCSM total: DCSM equipment + DCSM logistics
     const dcsmTotal = equipmentGroups
       .filter(g => g.group === 'DIGITAL MONITORING EQUIPMENT' || g.group === 'DCSM LOGISTICS')
@@ -197,6 +208,7 @@ export default function ProjectReport() {
       totalEquipmentCost,
       manpowerTotal,
       dcsmManpower,
+      ventilationManpower,
       dcsmTotal,
       ventilationTotal,
       grandTotal,
@@ -352,7 +364,7 @@ export default function ProjectReport() {
           </div>
 
           {/* Manpower totals — sits under Assigned Resources */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Card>
               <CardContent className="pt-5 pb-5 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
@@ -372,6 +384,17 @@ export default function ProjectReport() {
                 <div>
                   <p className="text-xs text-muted-foreground">DCSM Manpower</p>
                   <p className="text-xl font-bold">${summary.dcsmManpower.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 pb-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ventilation Manpower</p>
+                  <p className="text-xl font-bold">${summary.ventilationManpower.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
                 </div>
               </CardContent>
             </Card>
