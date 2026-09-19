@@ -180,6 +180,7 @@ export default function ProjectReport() {
       equipmentGroups,
       totalEquipmentCost,
       manpowerTotal,
+      dcsmTotal,
       grandTotal,
       conflicts,
     };
