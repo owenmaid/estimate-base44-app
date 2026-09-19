@@ -306,17 +306,6 @@ export default function ProjectReport() {
             <Card>
               <CardContent className="pt-5 pb-5 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Project Manpower Total</p>
-                  <p className="text-xl font-bold">${summary.manpowerTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-5 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
                   <DollarSign className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -326,6 +315,19 @@ export default function ProjectReport() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Project Manpower Total — sits under Assigned Resources */}
+          <Card>
+            <CardContent className="pt-5 pb-5 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Project Manpower Total</p>
+                <p className="text-xl font-bold">${summary.manpowerTotal.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Grand total excluding conventional costs */}
           <Card className="bg-primary/10 border-primary/30">
